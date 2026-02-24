@@ -1,0 +1,8 @@
+services:
+  api:
+    env_file:
+      - .env.prd
+    environment:
+      SPRING_PROFILES_ACTIVE: prd
+    restart: unless-stopped
+

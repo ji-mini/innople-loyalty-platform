@@ -1,0 +1,7 @@
+services:
+  api:
+    build:
+      context: .
+    environment:
+      SERVER_PORT: "8080"
+

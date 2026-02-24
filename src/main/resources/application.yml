@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: innople-loyalty-platform
+  jpa:
+    open-in-view: false
+  profiles:
+    default: dev
+
+server:
+  port: ${SERVER_PORT:8080}
+
+app:
+  tenant:
+    header-name: ${APP_TENANT_HEADER_NAME:X-Tenant-Id}
+

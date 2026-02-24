@@ -1,0 +1,22 @@
+# Environment
+.env
+.env.*
+!.env.*.example
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Build
+build/
+.gradle/
+out/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db

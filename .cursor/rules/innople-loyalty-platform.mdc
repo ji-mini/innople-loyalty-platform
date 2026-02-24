@@ -1,0 +1,27 @@
+---
+description: 
+alwaysApply: true
+---
+
+Project: INNOPLE Loyalty Platform
+Type: Multi-tenant SaaS loyaltysystemAll entities must include tenantIdfor multi-tenancy.
+
+Pointsystem must follow Ledger-based design:- Use PointLotfor earned points- Use PointLedgerfor event history- Use PointAllocationfor lot deduction tracking- Use PointAccount.currentBalanceas cached balance
+
+Deduction logic must follow FEFO:-Orderby expiresAtASC, createdAtASCAll point operations (earn, use, manualExpire, autoExpire)
+must be handled inside a single transactional service.
+
+Never directly modify currentBalancewithout creating Ledgerand Allocation records.
+
+Use optimistic lockingfor PointAccount.
+
+Code must be scalableand enterprise-ready.
+Avoidover-simplified CRUD-only design.
+
+All repository queries must filter by tenantId.
+Never allow cross-tenant data access.
+
+If tenantId is missing, reject the request.
+
+Tenant context must be resolved from request header or authentication context.
+Do not trust client-provided tenantId blindly.
