@@ -5,4 +5,4 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
     ports:
-      - "8080:8080"
+      - "3201:3201"

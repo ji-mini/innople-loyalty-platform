@@ -1,6 +1,7 @@
 package com.innople.loyalty.controller;
 
 import com.innople.loyalty.domain.common.TenantMismatchException;
+import com.innople.loyalty.service.admin.AdminAuthExceptions;
 import com.innople.loyalty.service.member.MemberExceptions;
 import com.innople.loyalty.service.points.PointExceptions;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,8 @@ public class GlobalExceptionHandler {
             PointExceptions.PointAccountNotFoundException.class,
             MemberExceptions.MemberAlreadyExistsException.class,
             MemberExceptions.MemberNotFoundException.class,
-            MemberExceptions.InvalidMemberStatusException.class
+            MemberExceptions.InvalidMemberStatusException.class,
+            AdminAuthExceptions.InvalidCredentialsException.class
     })
     public ResponseEntity<ApiErrorResponse> handleBusiness(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(ex.getMessage()));

@@ -7,7 +7,7 @@ spring:
     default: dev
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${PORT:${SERVER_PORT:3201}}
 
 app:
   tenant:
