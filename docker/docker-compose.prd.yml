@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    env_file:
+      - ../.env.prd
+    environment:
+      SPRING_PROFILES_ACTIVE: prd
+      SERVER_PORT: "3201"
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ..
+      dockerfile: nginx/Dockerfile.prd
+    ports:
+      - "8090:8090"
+    depends_on:
+      - backend
+    restart: unless-stopped
+

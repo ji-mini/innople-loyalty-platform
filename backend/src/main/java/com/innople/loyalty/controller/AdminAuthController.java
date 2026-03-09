@@ -3,6 +3,7 @@ package com.innople.loyalty.controller;
 import com.innople.loyalty.controller.dto.AdminAuthDtos;
 import com.innople.loyalty.service.admin.AdminLoginResult;
 import com.innople.loyalty.service.admin.AdminAuthService;
+import com.innople.loyalty.service.admin.AdminRegisterResult;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +26,16 @@ public class AdminAuthController {
                 result.email(),
                 result.name(),
                 result.accessToken()
+        );
+    }
+
+    @PostMapping("/register")
+    public AdminAuthDtos.RegisterResponse register(@Valid @RequestBody AdminAuthDtos.RegisterRequest request) {
+        AdminRegisterResult result = adminAuthService.register(request.email(), request.name(), request.password());
+        return new AdminAuthDtos.RegisterResponse(
+                result.adminUserId(),
+                result.email(),
+                result.name()
         );
     }
 }

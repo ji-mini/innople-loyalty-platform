@@ -3,8 +3,6 @@ spring:
     name: innople-loyalty-platform
   jpa:
     open-in-view: false
-  profiles:
-    default: dev
 
 server:
   port: ${PORT:${SERVER_PORT:3201}}

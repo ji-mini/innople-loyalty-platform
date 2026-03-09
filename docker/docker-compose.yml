@@ -1,18 +1,14 @@
 services:
   backend:
     build:
-      context: .
+      context: ../backend
       dockerfile: Dockerfile
     ports:
       - "3201:3201"
-    env_file:
-      - .env.dev
-    environment:
-      SERVER_PORT: "3201"
 
   frontend:
     build:
-      context: ./admin-web
+      context: ../admin-web
       dockerfile: Dockerfile
     ports:
       - "3200:3200"
@@ -26,7 +22,7 @@ services:
     ports:
       - "8090:8090"
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - frontend
       - backend

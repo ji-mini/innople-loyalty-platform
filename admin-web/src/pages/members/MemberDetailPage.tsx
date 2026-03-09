@@ -1,5 +1,4 @@
 import { Card, Descriptions, Divider, Space, Table, Tag, Typography } from 'antd'
-import React from 'react'
 import { useParams } from 'react-router-dom'
 import { useMemberDetail, useMemberLedgers } from '../../shared/queries'
 import type { MemberLedger } from '../../shared/types'

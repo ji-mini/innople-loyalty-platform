@@ -1,6 +1,6 @@
 import { api } from './api'
 import { clearSession, setSession, type AdminSession } from './storage'
-import type { AdminLoginRequest, AdminLoginResponse } from './types'
+import type { AdminLoginRequest, AdminLoginResponse, AdminRegisterRequest, AdminRegisterResponse } from './types'
 
 export async function login(tenantId: string, req: AdminLoginRequest): Promise<AdminSession> {
   const res = await api.post<AdminLoginResponse>('/api/v1/admin/auth/login', req, {
@@ -17,6 +17,13 @@ export async function login(tenantId: string, req: AdminLoginRequest): Promise<A
 
   setSession(session)
   return session
+}
+
+export async function registerAdmin(tenantId: string, req: AdminRegisterRequest): Promise<AdminRegisterResponse> {
+  const res = await api.post<AdminRegisterResponse>('/api/v1/admin/auth/register', req, {
+    headers: { 'X-Tenant-Id': tenantId },
+  })
+  return res.data
 }
 
 export function logout(): void {

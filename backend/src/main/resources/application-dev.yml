@@ -1,6 +1,3 @@
-springdotenv:
-  filename: .env.dev
-
 spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL}

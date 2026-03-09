@@ -22,5 +22,19 @@ public final class AdminAuthDtos {
             String accessToken
     ) {
     }
+
+    public record RegisterRequest(
+            @NotBlank @Email String email,
+            @NotBlank String name,
+            @NotBlank String password
+    ) {
+    }
+
+    public record RegisterResponse(
+            UUID adminUserId,
+            String email,
+            String name
+    ) {
+    }
 }
 

@@ -9,5 +9,11 @@ public final class AdminAuthExceptions {
             super(message);
         }
     }
+
+    public static class AdminUserAlreadyExistsException extends RuntimeException {
+        public AdminUserAlreadyExistsException(String message) {
+            super(message);
+        }
+    }
 }
 

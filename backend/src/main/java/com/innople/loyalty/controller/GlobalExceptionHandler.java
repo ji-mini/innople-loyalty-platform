@@ -41,7 +41,8 @@ public class GlobalExceptionHandler {
             MemberExceptions.MemberAlreadyExistsException.class,
             MemberExceptions.MemberNotFoundException.class,
             MemberExceptions.InvalidMemberStatusException.class,
-            AdminAuthExceptions.InvalidCredentialsException.class
+            AdminAuthExceptions.InvalidCredentialsException.class,
+            AdminAuthExceptions.AdminUserAlreadyExistsException.class
     })
     public ResponseEntity<ApiErrorResponse> handleBusiness(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(ex.getMessage()));

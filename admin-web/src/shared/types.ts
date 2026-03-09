@@ -10,6 +10,18 @@ export type AdminLoginResponse = {
   accessToken: string
 }
 
+export type AdminRegisterRequest = {
+  email: string
+  name: string
+  password: string
+}
+
+export type AdminRegisterResponse = {
+  adminUserId: string
+  email: string
+  name: string
+}
+
 export type PagedResponse<T> = {
   items: T[]
   page: number

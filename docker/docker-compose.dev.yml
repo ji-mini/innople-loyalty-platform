@@ -1,8 +1,7 @@
 services:
-  api:
+  backend:
     env_file:
-      - .env.dev
+      - ../.env.dev
     environment:
       SPRING_PROFILES_ACTIVE: dev
-    ports:
-      - "3201:3201"
+      SERVER_PORT: "3201"
