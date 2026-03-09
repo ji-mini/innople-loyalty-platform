@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: innople_loyalty_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: jimini00!
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d innople_loyalty_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - innople_loyalty_pgdata:/var/lib/postgresql/data
+
+  backend:
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/innople_loyalty_db?currentSchema=public
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: jimini00!
+
+volumes:
+  innople_loyalty_pgdata:
+

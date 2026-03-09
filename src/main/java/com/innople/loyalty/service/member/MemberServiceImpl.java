@@ -210,21 +210,21 @@ public class MemberServiceImpl implements MemberService {
     }
 
     private String toSnapshotJson(Member member) {
-        Map<String, Object> snapshot = Map.of(
-                "memberNo", member.getMemberNo(),
-                "name", member.getName(),
-                "birthDate", member.getBirthDate(),
-                "calendarType", member.getCalendarType(),
-                "gender", member.getGender(),
-                "phoneNumber", member.getPhoneNumber(),
-                "address", member.getAddress(),
-                "webId", member.getWebId(),
-                "statusCode", member.getStatusCode(),
-                "joinedAt", member.getJoinedAt(),
-                "dormantAt", member.getDormantAt(),
-                "withdrawnAt", member.getWithdrawnAt(),
-                "ci", member.getCi(),
-                "anniversaries", member.getAnniversaries()
+        Map<String, Object> snapshot = Map.ofEntries(
+                Map.entry("memberNo", member.getMemberNo()),
+                Map.entry("name", member.getName()),
+                Map.entry("birthDate", member.getBirthDate()),
+                Map.entry("calendarType", member.getCalendarType()),
+                Map.entry("gender", member.getGender()),
+                Map.entry("phoneNumber", member.getPhoneNumber()),
+                Map.entry("address", member.getAddress()),
+                Map.entry("webId", member.getWebId()),
+                Map.entry("statusCode", member.getStatusCode()),
+                Map.entry("joinedAt", member.getJoinedAt()),
+                Map.entry("dormantAt", member.getDormantAt()),
+                Map.entry("withdrawnAt", member.getWithdrawnAt()),
+                Map.entry("ci", member.getCi()),
+                Map.entry("anniversaries", member.getAnniversaries())
         );
         try {
             return objectMapper.writeValueAsString(snapshot);
