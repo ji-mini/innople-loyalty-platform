@@ -2,7 +2,8 @@ export type AdminSession = {
   tenantId: string
   accessToken: string
   adminUserId: string
-  email: string
+  phoneNumber: string
+  email: string | null
   name: string
 }
 

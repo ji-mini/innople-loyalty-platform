@@ -1,25 +1,37 @@
 export type AdminLoginRequest = {
-  email: string
+  phoneNumber: string
   password: string
 }
 
 export type AdminLoginResponse = {
   adminUserId: string
-  email: string
+  phoneNumber: string
+  email: string | null
   name: string
   accessToken: string
 }
 
 export type AdminRegisterRequest = {
-  email: string
+  phoneNumber: string
+  email?: string | null
   name: string
   password: string
 }
 
 export type AdminRegisterResponse = {
   adminUserId: string
-  email: string
+  phoneNumber: string
+  email: string | null
   name: string
+}
+
+export type TenantPublicItem = {
+  tenantId: string
+  name: string
+}
+
+export type TenantPublicListResponse = {
+  items: TenantPublicItem[]
 }
 
 export type PagedResponse<T> = {

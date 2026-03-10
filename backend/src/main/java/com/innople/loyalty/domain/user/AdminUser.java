@@ -14,14 +14,18 @@ import lombok.NoArgsConstructor;
         name = "admin_users",
         indexes = {
                 @Index(name = "idx_admin_users_tenant_id", columnList = "tenantId"),
-                @Index(name = "idx_admin_users_tenant_email", columnList = "tenantId,email", unique = true)
+                @Index(name = "idx_admin_users_tenant_email", columnList = "tenantId,email", unique = true),
+                @Index(name = "idx_admin_users_tenant_phone_number", columnList = "tenantId,phoneNumber", unique = true)
         }
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AdminUser extends BaseEntity {
 
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false, length = 20)
+    private String phoneNumber;
+
+    @Column(nullable = true, length = 200)
     private String email;
 
     @Column(nullable = false, length = 100)
@@ -30,7 +34,8 @@ public class AdminUser extends BaseEntity {
     @Column(nullable = false, length = 200)
     private String passwordHash;
 
-    public AdminUser(String email, String name, String passwordHash) {
+    public AdminUser(String phoneNumber, String email, String name, String passwordHash) {
+        this.phoneNumber = phoneNumber;
         this.email = email;
         this.name = name;
         this.passwordHash = passwordHash;

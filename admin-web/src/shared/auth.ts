@@ -11,6 +11,7 @@ export async function login(tenantId: string, req: AdminLoginRequest): Promise<A
     tenantId,
     accessToken: res.data.accessToken,
     adminUserId: res.data.adminUserId,
+    phoneNumber: res.data.phoneNumber,
     email: res.data.email,
     name: res.data.name,
   }

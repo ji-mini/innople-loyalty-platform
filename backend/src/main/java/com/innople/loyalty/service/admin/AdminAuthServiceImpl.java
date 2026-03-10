@@ -22,16 +22,16 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
     @Override
     @Transactional(readOnly = true)
-    public AdminLoginResult login(String email, String password) {
+    public AdminLoginResult login(String phoneNumber, String password) {
         UUID tenantId = TenantContext.requireTenantId();
 
-        if (email == null || email.isBlank() || password == null || password.isBlank()) {
+        String normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
+        if (normalizedPhoneNumber == null || password == null || password.isBlank()) {
             throw new InvalidCredentialsException("Invalid credentials");
         }
 
-        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         AdminUser admin = adminUserRepository
-                .findByTenantIdAndEmail(tenantId, normalizedEmail)
+                .findByTenantIdAndPhoneNumber(tenantId, normalizedPhoneNumber)
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
 
         if (!matches(password, admin.getPasswordHash())) {
@@ -40,16 +40,17 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
         // NOTE: Security is not implemented yet. This token is for UI session only.
         String token = UUID.randomUUID().toString();
-        return new AdminLoginResult(admin.getId(), admin.getEmail(), admin.getName(), token);
+        return new AdminLoginResult(admin.getId(), admin.getPhoneNumber(), admin.getEmail(), admin.getName(), token);
     }
 
     @Override
     @Transactional
-    public AdminRegisterResult register(String email, String name, String password) {
+    public AdminRegisterResult register(String phoneNumber, String email, String name, String password) {
         UUID tenantId = TenantContext.requireTenantId();
 
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("email must not be blank");
+        String normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
+        if (normalizedPhoneNumber == null) {
+            throw new IllegalArgumentException("phoneNumber must be a valid phone number");
         }
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("name must not be blank");
@@ -58,19 +59,61 @@ public class AdminAuthServiceImpl implements AdminAuthService {
             throw new IllegalArgumentException("password must not be blank");
         }
 
-        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
-        if (adminUserRepository.findByTenantIdAndEmail(tenantId, normalizedEmail).isPresent()) {
+        if (adminUserRepository.findByTenantIdAndPhoneNumber(tenantId, normalizedPhoneNumber).isPresent()) {
+            throw new AdminUserAlreadyExistsException("admin phoneNumber already exists");
+        }
+
+        String normalizedEmail = normalizeEmailOrNull(email);
+        if (normalizedEmail != null && adminUserRepository.findByTenantIdAndEmail(tenantId, normalizedEmail).isPresent()) {
             throw new AdminUserAlreadyExistsException("admin email already exists");
         }
 
         String passwordHash = "sha256:" + PasswordHash.sha256Hex(password);
-        AdminUser admin = new AdminUser(normalizedEmail, name.trim(), passwordHash);
+        AdminUser admin = new AdminUser(normalizedPhoneNumber, normalizedEmail, name.trim(), passwordHash);
         try {
             AdminUser saved = adminUserRepository.save(admin);
-            return new AdminRegisterResult(saved.getId(), saved.getEmail(), saved.getName());
+            return new AdminRegisterResult(saved.getId(), saved.getPhoneNumber(), saved.getEmail(), saved.getName());
         } catch (DataIntegrityViolationException e) {
-            throw new AdminUserAlreadyExistsException("admin email already exists");
+            throw new AdminUserAlreadyExistsException("admin user already exists");
         }
+    }
+
+    private String normalizeEmailOrNull(String rawEmail) {
+        if (rawEmail == null) return null;
+        String trimmed = rawEmail.trim();
+        if (trimmed.isEmpty()) return null;
+        return trimmed.toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizePhoneNumber(String rawPhoneNumber) {
+        if (rawPhoneNumber == null) return null;
+        String trimmed = rawPhoneNumber.trim();
+        if (trimmed.isEmpty()) return null;
+
+        StringBuilder sb = new StringBuilder(trimmed.length());
+        boolean plusSeen = false;
+        for (int i = 0; i < trimmed.length(); i++) {
+            char c = trimmed.charAt(i);
+            if (c == '+' && sb.length() == 0 && !plusSeen) {
+                sb.append(c);
+                plusSeen = true;
+                continue;
+            }
+            if (c >= '0' && c <= '9') {
+                sb.append(c);
+            }
+        }
+
+        if (sb.length() == 0) return null;
+
+        int digits = 0;
+        for (int i = 0; i < sb.length(); i++) {
+            char c = sb.charAt(i);
+            if (c >= '0' && c <= '9') digits++;
+        }
+        if (digits < 9 || digits > 15) return null;
+
+        return sb.toString();
     }
 
     private boolean matches(String rawPassword, String storedHash) {

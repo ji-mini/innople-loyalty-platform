@@ -1,12 +1,15 @@
-import { Alert, Button, Card, Form, Input, Typography, message } from 'antd'
+import { Alert, Button, Card, Form, Input, Select, Typography, message } from 'antd'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { KeyOutlined, LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons'
+import { LockOutlined, MailOutlined, PhoneOutlined, UserOutlined } from '@ant-design/icons'
 import { registerAdmin } from '../../shared/auth'
+import { listPublicTenants } from '../../shared/tenants'
+import type { TenantPublicItem } from '../../shared/types'
 
 type FormValues = {
   tenantId: string
   name: string
+  phoneNumber: string
   email: string
   password: string
   passwordConfirm: string
@@ -16,12 +19,40 @@ export function AdminSignUpPage() {
   const nav = useNavigate()
   const [error, setError] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(false)
+  const [tenantsLoading, setTenantsLoading] = React.useState(false)
+  const [tenants, setTenants] = React.useState<TenantPublicItem[]>([])
+
+  React.useEffect(() => {
+    let cancelled = false
+    setTenantsLoading(true)
+    listPublicTenants()
+      .then((r) => {
+        if (cancelled) return
+        setTenants(r.items)
+      })
+      .catch((e: any) => {
+        if (cancelled) return
+        setError(e?.response?.data?.message ?? e?.message ?? '테넌트 목록 조회 실패')
+      })
+      .finally(() => {
+        if (cancelled) return
+        setTenantsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const onFinish = async (v: FormValues) => {
     setError(null)
     setLoading(true)
     try {
-      await registerAdmin(v.tenantId, { email: v.email, name: v.name, password: v.password })
+      await registerAdmin(v.tenantId, {
+        phoneNumber: v.phoneNumber,
+        email: v.email,
+        name: v.name,
+        password: v.password,
+      })
       message.success('직원 계정이 생성되었습니다. 로그인 해주세요.')
       nav('/login', { replace: true })
     } catch (e: any) {
@@ -46,23 +77,33 @@ export function AdminSignUpPage() {
         <Form<FormValues>
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{ tenantId: '', name: '', email: '', password: '', passwordConfirm: '' }}
+          initialValues={{ tenantId: '', name: '', phoneNumber: '', email: '', password: '', passwordConfirm: '' }}
           requiredMark={false}
           size="large"
         >
           <Form.Item
-            label="Tenant ID"
+            label="Tenant"
             name="tenantId"
-            rules={[{ required: true, message: 'Tenant ID(UUID)를 입력하세요' }]}
+            rules={[{ required: true, message: '테넌트를 선택하세요' }]}
           >
-            <Input placeholder="예: 11111111-1111-1111-1111-111111111111" prefix={<KeyOutlined />} />
+            <Select
+              placeholder={tenantsLoading ? '테넌트 목록 불러오는 중...' : '테넌트를 선택하세요'}
+              loading={tenantsLoading}
+              options={tenants.map((t) => ({ value: t.tenantId, label: t.name }))}
+              showSearch
+              optionFilterProp="label"
+            />
           </Form.Item>
 
           <Form.Item label="이름" name="name" rules={[{ required: true, message: '이름을 입력하세요' }]}>
             <Input placeholder="홍길동" prefix={<UserOutlined />} />
           </Form.Item>
 
-          <Form.Item label="이메일" name="email" rules={[{ required: true }, { type: 'email' }]}>
+          <Form.Item label="휴대폰 번호" name="phoneNumber" rules={[{ required: true, message: '휴대폰 번호를 입력하세요' }]}>
+            <Input placeholder="예: 010-1234-5678" prefix={<PhoneOutlined />} />
+          </Form.Item>
+
+          <Form.Item label="이메일(선택)" name="email" rules={[{ type: 'email' }]}>
             <Input placeholder="admin@company.com" prefix={<MailOutlined />} />
           </Form.Item>
 

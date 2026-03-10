@@ -9,5 +9,6 @@ import java.util.UUID;
 public interface AdminUserRepository extends JpaRepository<AdminUser, UUID> {
     Optional<AdminUser> findByTenantIdAndId(UUID tenantId, UUID id);
     Optional<AdminUser> findByTenantIdAndEmail(UUID tenantId, String email);
+    Optional<AdminUser> findByTenantIdAndPhoneNumber(UUID tenantId, String phoneNumber);
 }
 

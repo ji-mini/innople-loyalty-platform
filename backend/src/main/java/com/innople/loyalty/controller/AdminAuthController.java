@@ -20,9 +20,10 @@ public class AdminAuthController {
 
     @PostMapping("/login")
     public AdminAuthDtos.LoginResponse login(@Valid @RequestBody AdminAuthDtos.LoginRequest request) {
-        AdminLoginResult result = adminAuthService.login(request.email(), request.password());
+        AdminLoginResult result = adminAuthService.login(request.phoneNumber(), request.password());
         return new AdminAuthDtos.LoginResponse(
                 result.adminUserId(),
+                result.phoneNumber(),
                 result.email(),
                 result.name(),
                 result.accessToken()
@@ -31,9 +32,10 @@ public class AdminAuthController {
 
     @PostMapping("/register")
     public AdminAuthDtos.RegisterResponse register(@Valid @RequestBody AdminAuthDtos.RegisterRequest request) {
-        AdminRegisterResult result = adminAuthService.register(request.email(), request.name(), request.password());
+        AdminRegisterResult result = adminAuthService.register(request.phoneNumber(), request.email(), request.name(), request.password());
         return new AdminAuthDtos.RegisterResponse(
                 result.adminUserId(),
+                result.phoneNumber(),
                 result.email(),
                 result.name()
         );

@@ -21,6 +21,18 @@ public class TenantContextFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+        String uri = request.getRequestURI();
+        if ("/error".equals(uri)) {
+            return true;
+        }
+        return uri != null && uri.startsWith("/api/v1/public/");
+    }
+
+    @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
