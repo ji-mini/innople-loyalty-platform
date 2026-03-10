@@ -32,6 +32,7 @@ export function LoginPage() {
       .catch((e: any) => {
         if (cancelled) return
         setError(e?.response?.data?.message ?? e?.message ?? '테넌트 목록 조회 실패')
+        setTenants([])
       })
       .finally(() => {
         if (cancelled) return
@@ -109,15 +110,19 @@ export function LoginPage() {
             <Form.Item
               label="Tenant"
               name="tenantId"
-              rules={[{ required: true, message: '테넌트를 선택하세요' }]}
+              rules={[{ required: true, message: tenants.length > 0 ? '테넌트를 선택하세요' : 'Tenant ID(UUID)를 입력하세요' }]}
             >
-              <Select
-                placeholder={tenantsLoading ? '테넌트 목록 불러오는 중...' : '테넌트를 선택하세요'}
-                loading={tenantsLoading}
-                options={tenants.map((t) => ({ value: t.tenantId, label: t.name }))}
-                showSearch
-                optionFilterProp="label"
-              />
+              {tenants.length > 0 ? (
+                <Select
+                  placeholder={tenantsLoading ? '테넌트 목록 불러오는 중...' : '테넌트를 선택하세요'}
+                  loading={tenantsLoading}
+                  options={tenants.map((t) => ({ value: t.tenantId, label: t.name }))}
+                  showSearch
+                  optionFilterProp="label"
+                />
+              ) : (
+                <Input placeholder="예: 11111111-1111-1111-1111-111111111111" />
+              )}
             </Form.Item>
 
             <Form.Item label="휴대폰 번호" name="phoneNumber" rules={[{ required: true, message: '휴대폰 번호를 입력하세요' }]}>

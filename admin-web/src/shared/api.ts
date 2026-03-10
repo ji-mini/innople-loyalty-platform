@@ -2,7 +2,9 @@ import axios from 'axios'
 import { getSession } from './storage'
 
 export const api = axios.create({
-  baseURL: '',
+  // In dev, keep this empty to use Vite proxy (see vite.config.ts).
+  // In deployed environments, set VITE_API_BASE_URL at build time (e.g. "http://52.79.x.x:3201").
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? '',
   timeout: 15000,
 })
 
