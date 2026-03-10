@@ -5,6 +5,7 @@ import com.innople.loyalty.domain.user.AdminUser;
 import com.innople.loyalty.repository.AdminUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +20,10 @@ import static com.innople.loyalty.service.admin.AdminAuthExceptions.InvalidCrede
 public class AdminAuthServiceImpl implements AdminAuthService {
 
     private final AdminUserRepository adminUserRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public AdminLoginResult login(String phoneNumber, String password) {
         UUID tenantId = TenantContext.requireTenantId();
 
@@ -34,8 +36,14 @@ public class AdminAuthServiceImpl implements AdminAuthService {
                 .findByTenantIdAndPhoneNumber(tenantId, normalizedPhoneNumber)
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
 
-        if (!matches(password, admin.getPasswordHash())) {
+        String storedHash = admin.getPasswordHash();
+        if (!matches(password, storedHash)) {
             throw new InvalidCredentialsException("Invalid credentials");
+        }
+
+        if (shouldUpgradeToBcrypt(storedHash)) {
+            admin.changePasswordHash(passwordEncoder.encode(password));
+            adminUserRepository.save(admin);
         }
 
         // NOTE: Security is not implemented yet. This token is for UI session only.
@@ -68,7 +76,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
             throw new AdminUserAlreadyExistsException("admin email already exists");
         }
 
-        String passwordHash = "sha256:" + PasswordHash.sha256Hex(password);
+        String passwordHash = passwordEncoder.encode(password);
         AdminUser admin = new AdminUser(normalizedPhoneNumber, normalizedEmail, name.trim(), passwordHash);
         try {
             AdminUser saved = adminUserRepository.save(admin);
@@ -120,6 +128,10 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         if (storedHash == null) return false;
         String s = storedHash.trim();
 
+        if (looksLikeBcrypt(s)) {
+            return passwordEncoder.matches(rawPassword, s);
+        }
+
         if (s.startsWith("sha256:")) {
             String expected = s.substring("sha256:".length());
             return PasswordHash.sha256Hex(rawPassword).equalsIgnoreCase(expected);
@@ -131,6 +143,16 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
         // Legacy/dev fallback (plain compare)
         return rawPassword.equals(s);
+    }
+
+    private boolean shouldUpgradeToBcrypt(String storedHash) {
+        if (storedHash == null) return false;
+        String s = storedHash.trim();
+        return !looksLikeBcrypt(s);
+    }
+
+    private boolean looksLikeBcrypt(String hash) {
+        return hash.startsWith("$2a$") || hash.startsWith("$2b$") || hash.startsWith("$2y$");
     }
 }
 

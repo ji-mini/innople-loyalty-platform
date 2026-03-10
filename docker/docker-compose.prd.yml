@@ -8,6 +8,12 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prd
       SERVER_PORT: "3201"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3201/api/v1/public/health || exit 1"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+      start_period: 10s
     restart: unless-stopped
 
   nginx:
@@ -17,6 +23,7 @@ services:
     ports:
       - "8090:8090"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 

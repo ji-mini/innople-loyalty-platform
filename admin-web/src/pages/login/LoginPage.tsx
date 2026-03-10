@@ -20,24 +20,44 @@ export function LoginPage() {
   const [loading, setLoading] = React.useState(false)
   const [tenantsLoading, setTenantsLoading] = React.useState(false)
   const [tenants, setTenants] = React.useState<TenantPublicItem[]>([])
+  const [tenantsNotice, setTenantsNotice] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     let cancelled = false
-    setTenantsLoading(true)
-    listPublicTenants()
-      .then((r) => {
+    const run = async () => {
+      setTenantsLoading(true)
+      setTenantsNotice(null)
+
+      const delaysMs = [0, 700, 1500]
+      let lastErr: any = null
+      for (let i = 0; i < delaysMs.length; i++) {
+        const d = delaysMs[i]
+        if (d > 0) {
+          setTenantsNotice('서버 준비 중입니다. 잠시 후 자동으로 다시 시도합니다.')
+          await new Promise((r) => setTimeout(r, d))
+        }
         if (cancelled) return
-        setTenants(r.items)
-      })
-      .catch((e: any) => {
-        if (cancelled) return
-        setError(e?.response?.data?.message ?? e?.message ?? '테넌트 목록 조회 실패')
-        setTenants([])
-      })
-      .finally(() => {
-        if (cancelled) return
-        setTenantsLoading(false)
-      })
+        try {
+          const r = await listPublicTenants()
+          if (cancelled) return
+          setTenants(r.items)
+          setTenantsNotice(null)
+          return
+        } catch (e: any) {
+          lastErr = e
+        }
+      }
+
+      if (cancelled) return
+      setTenants([])
+      setError(lastErr?.response?.data?.message ?? lastErr?.message ?? '테넌트 목록 조회 실패')
+      setTenantsNotice('서버 준비 중일 수 있습니다. 잠시 후 다시 시도하거나 Tenant ID를 직접 입력하세요.')
+    }
+
+    run().finally(() => {
+      if (cancelled) return
+      setTenantsLoading(false)
+    })
     return () => {
       cancelled = true
     }
@@ -98,6 +118,7 @@ export function LoginPage() {
             <p className={styles.cardSub}>직원 계정으로 로그인합니다.</p>
           </div>
 
+          {tenantsNotice && <Alert type="info" message={tenantsNotice} showIcon style={{ marginBottom: 14 }} />}
           {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 14 }} />}
 
           <Form<FormValues>
