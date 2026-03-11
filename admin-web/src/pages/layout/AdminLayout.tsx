@@ -128,7 +128,7 @@ export function AdminLayout() {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Layout.Sider width={240} theme="light">
-        <div style={{ padding: 16 }}>
+        <div style={{ padding: 16, paddingTop: 60 }}>
           <Typography.Title level={5} style={{ margin: 0 }}>
             INNO MEMBERSHIP ADMIN
           </Typography.Title>

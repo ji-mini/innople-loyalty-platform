@@ -49,7 +49,13 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
         // NOTE: Security is not implemented yet. This token is for UI session only.
         String token = UUID.randomUUID().toString();
-        AdminRole role = admin.getRole() != null ? admin.getRole() : AdminRole.OPERATOR;
+        AdminRole role = admin.getRole();
+        if (role == null) {
+            // Legacy seed users: default to SUPER_ADMIN so admin UI features are accessible.
+            role = AdminRole.SUPER_ADMIN;
+            admin.changeRole(role);
+            adminUserRepository.save(admin);
+        }
         return new AdminLoginResult(admin.getId(), admin.getPhoneNumber(), admin.getEmail(), admin.getName(), role, token);
     }
 
