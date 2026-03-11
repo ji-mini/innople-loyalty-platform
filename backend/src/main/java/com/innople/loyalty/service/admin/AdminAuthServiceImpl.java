@@ -51,10 +51,17 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         String token = UUID.randomUUID().toString();
         AdminRole role = admin.getRole();
         if (role == null) {
-            // Legacy seed users: default to SUPER_ADMIN so admin UI features are accessible.
             role = AdminRole.SUPER_ADMIN;
             admin.changeRole(role);
             adminUserRepository.save(admin);
+        } else if (role == AdminRole.OPERATOR) {
+            // Bootstrap: if there is no SUPER_ADMIN in this tenant, promote the first operator who can log in.
+            boolean hasSuperAdmin = adminUserRepository.existsByTenantIdAndRole(tenantId, AdminRole.SUPER_ADMIN);
+            if (!hasSuperAdmin) {
+                role = AdminRole.SUPER_ADMIN;
+                admin.changeRole(role);
+                adminUserRepository.save(admin);
+            }
         }
         return new AdminLoginResult(admin.getId(), admin.getPhoneNumber(), admin.getEmail(), admin.getName(), role, token);
     }

@@ -1,6 +1,7 @@
 package com.innople.loyalty.repository;
 
 import com.innople.loyalty.domain.user.AdminUser;
+import com.innople.loyalty.domain.user.AdminRole;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +14,8 @@ public interface AdminUserRepository extends JpaRepository<AdminUser, UUID> {
     Optional<AdminUser> findByTenantIdAndId(UUID tenantId, UUID id);
     Optional<AdminUser> findByTenantIdAndEmail(UUID tenantId, String email);
     Optional<AdminUser> findByTenantIdAndPhoneNumber(UUID tenantId, String phoneNumber);
+
+    boolean existsByTenantIdAndRole(UUID tenantId, AdminRole role);
 
     @Query("""
             select a

@@ -1,20 +1,28 @@
-import { Card, Input, Space, Table, Tag, Typography } from 'antd'
+import { Card, Input, Space, Table, Typography } from 'antd'
+import { useQuery } from '@tanstack/react-query'
 import React from 'react'
 import { PageShell } from '../common/PageShell'
+import { listPublicTenants } from '../../shared/tenants'
 
 type Row = {
   tenantId: string
-  companyName: string
-  domain: string
-  status: 'active' | 'inactive'
-  createdAt: string
+  name: string
 }
 
 export function TenantsPage() {
   const [keyword, setKeyword] = React.useState('')
 
-  // TODO: connect to backend tenant admin APIs
-  const rows = React.useMemo<Row[]>(() => [], [])
+  const q = useQuery({
+    queryKey: ['public', 'tenants'],
+    queryFn: listPublicTenants,
+  })
+
+  const rows = React.useMemo<Row[]>(() => {
+    const k = keyword.trim().toLowerCase()
+    const items = (q.data?.items ?? []).map((t) => ({ tenantId: t.tenantId, name: t.name }))
+    if (!k) return items
+    return items.filter((r) => r.tenantId.toLowerCase().includes(k) || r.name.toLowerCase().includes(k))
+  }, [keyword, q.data?.items])
 
   return (
     <PageShell
@@ -41,20 +49,13 @@ export function TenantsPage() {
         <Table<Row>
           rowKey={(r) => r.tenantId}
           dataSource={rows}
-          pagination={false}
+          loading={q.isLoading}
+          pagination={{ pageSize: 20 }}
           columns={[
             { title: '테넌트ID', dataIndex: 'tenantId', width: 260 },
-            { title: '회사명', dataIndex: 'companyName', width: 220 },
-            { title: '도메인', dataIndex: 'domain' },
-            {
-              title: '상태',
-              dataIndex: 'status',
-              width: 120,
-              render: (v: Row['status']) => <Tag color={v === 'active' ? 'green' : 'default'}>{v}</Tag>,
-            },
-            { title: '생성일', dataIndex: 'createdAt', width: 170 },
+            { title: '테넌트명', dataIndex: 'name' },
           ]}
-          locale={{ emptyText: '테넌트 데이터가 없습니다.' }}
+          locale={{ emptyText: q.isError ? '테넌트 목록 조회에 실패했습니다.' : '테넌트 데이터가 없습니다.' }}
         />
       </Card>
     </PageShell>

@@ -1,13 +1,18 @@
 import { Card, Input, Select, Space, Table, Tag } from 'antd'
+import { useQuery } from '@tanstack/react-query'
 import React from 'react'
 import { PageShell } from '../common/PageShell'
+import { api } from '../../shared/api'
+import type { AdminRole } from '../../shared/types'
 
 type Row = {
   id: string
   name: string
-  loginId: string
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'OPERATOR'
-  status: 'ACTIVE' | 'DISABLED'
+  phoneNumber: string
+  email: string | null
+  role: AdminRole
+  createdAt: string
+  updatedAt: string
 }
 
 const ROLE_OPTIONS = [
@@ -21,15 +26,26 @@ export function TenantAdminsPage() {
   const [keyword, setKeyword] = React.useState('')
   const [role, setRole] = React.useState<Row['role'] | undefined>(undefined)
 
-  // TODO: connect to backend tenant admin user APIs
-  const rows = React.useMemo<Row[]>(() => [], [])
+  const q = useQuery({
+    queryKey: ['admin', 'admin-users', keyword],
+    queryFn: async () => {
+      const res = await api.get('/api/v1/admin/admin-users', { params: keyword ? { keyword } : {} })
+      return (res.data ?? []) as Row[]
+    },
+  })
+
+  const rows = React.useMemo<Row[]>(() => {
+    const items = q.data ?? []
+    if (!role) return items
+    return items.filter((r) => r.role === role)
+  }, [q.data, role])
 
   return (
     <PageShell title="테넌트 관리자">
       <Card>
         <Space wrap>
           <Input
-            placeholder="이름/아이디"
+            placeholder="이름/휴대폰/이메일"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             allowClear
@@ -43,19 +59,20 @@ export function TenantAdminsPage() {
         <Table<Row>
           rowKey={(r) => r.id}
           dataSource={rows}
-          pagination={false}
+          loading={q.isLoading}
+          pagination={{ pageSize: 20 }}
           columns={[
             { title: '이름', dataIndex: 'name', width: 180 },
-            { title: '아이디', dataIndex: 'loginId', width: 220 },
-            { title: '권한', dataIndex: 'role', width: 180 },
+            { title: '휴대폰', dataIndex: 'phoneNumber', width: 180 },
+            { title: '이메일', dataIndex: 'email', render: (v: string | null) => v ?? '-' },
+            { title: '권한', dataIndex: 'role', width: 180, render: (v: Row['role']) => <Tag>{v}</Tag> },
             {
-              title: '상태',
-              dataIndex: 'status',
-              width: 140,
-              render: (v: Row['status']) => <Tag color={v === 'ACTIVE' ? 'green' : 'default'}>{v}</Tag>,
+              title: '수정일시',
+              dataIndex: 'updatedAt',
+              width: 190,
             },
           ]}
-          locale={{ emptyText: '관리자 데이터가 없습니다.' }}
+          locale={{ emptyText: q.isError ? '관리자 목록 조회에 실패했습니다.' : '관리자 데이터가 없습니다.' }}
         />
       </Card>
     </PageShell>
