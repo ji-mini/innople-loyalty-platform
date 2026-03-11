@@ -128,6 +128,15 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         if (storedHash == null) return false;
         String s = storedHash.trim();
 
+        if (s.startsWith("bcrypt:")) {
+            String h = s.substring("bcrypt:".length()).trim();
+            return looksLikeBcrypt(h) && passwordEncoder.matches(rawPassword, h);
+        }
+        if (s.startsWith("{bcrypt}")) {
+            String h = s.substring("{bcrypt}".length()).trim();
+            return looksLikeBcrypt(h) && passwordEncoder.matches(rawPassword, h);
+        }
+
         if (looksLikeBcrypt(s)) {
             return passwordEncoder.matches(rawPassword, s);
         }

@@ -23,6 +23,13 @@ export function AdminSignUpPage() {
   const [tenants, setTenants] = React.useState<TenantPublicItem[]>([])
   const [tenantsNotice, setTenantsNotice] = React.useState<string | null>(null)
 
+  const onFinishFailed = (info: any) => {
+    const first = info?.errorFields?.[0]
+    const msg = first?.errors?.[0] ?? '입력값을 확인해 주세요.'
+    setError(msg)
+    message.error(msg)
+  }
+
   React.useEffect(() => {
     let cancelled = false
     const run = async () => {
@@ -99,9 +106,11 @@ export function AdminSignUpPage() {
         <Form<FormValues>
           layout="vertical"
           onFinish={onFinish}
+          onFinishFailed={onFinishFailed}
           initialValues={{ tenantId: '', name: '', phoneNumber: '', email: '', password: '', passwordConfirm: '' }}
           requiredMark={false}
           size="large"
+          scrollToFirstError
         >
           <Form.Item
             label="Tenant"

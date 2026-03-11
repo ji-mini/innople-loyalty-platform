@@ -70,7 +70,17 @@ export function LoginPage() {
       await login(v.tenantId, { phoneNumber: v.phoneNumber, password: v.password })
       nav('/members', { replace: true })
     } catch (e: any) {
-      setError(e?.response?.data?.message ?? e?.message ?? '로그인 실패')
+      const status = e?.response?.status as number | undefined
+      const serverMsg = e?.response?.data?.message as string | undefined
+      const errMsg =
+        status === 401
+          ? '휴대폰 번호 또는 비밀번호가 올바르지 않습니다.'
+          : status === 400
+            ? serverMsg ?? '요청 값이 올바르지 않습니다. (테넌트/입력값을 확인하세요)'
+            : serverMsg ?? e?.message ?? '로그인 실패'
+
+      setError(errMsg)
+      message.error(errMsg)
     } finally {
       setLoading(false)
     }
