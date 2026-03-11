@@ -1,5 +1,6 @@
 package com.innople.loyalty.controller.dto;
 
+import com.innople.loyalty.domain.user.AdminRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -23,6 +24,7 @@ public final class AdminAuthDtos {
             String phoneNumber,
             String email,
             String name,
+            AdminRole role,
             String accessToken
     ) {
     }
@@ -39,7 +41,8 @@ public final class AdminAuthDtos {
             UUID adminUserId,
             String phoneNumber,
             String email,
-            String name
+            String name,
+            AdminRole role
     ) {
     }
 }

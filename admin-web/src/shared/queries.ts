@@ -2,7 +2,18 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from './api'
 import type { MemberDetail, MemberLedger, MemberSummary, PagedResponse } from './types'
 
-export function useMemberList(params: { keyword?: string; statusCode?: string; page: number; size: number }) {
+export function useMemberList(params: {
+  keyword?: string
+  statusCode?: string
+  memberNo?: string
+  phoneNumber?: string
+  name?: string
+  webId?: string
+  joinedFrom?: string
+  joinedTo?: string
+  page: number
+  size: number
+}) {
   return useQuery({
     queryKey: ['members', 'list', params],
     queryFn: async () => {

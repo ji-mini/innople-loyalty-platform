@@ -10,12 +10,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,6 +33,12 @@ public class MemberQueryController {
     public MemberQueryDtos.PagedResponse<MemberQueryDtos.MemberSummaryResponse> search(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String statusCode,
+            @RequestParam(required = false) String memberNo,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String webId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate joinedFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate joinedTo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
@@ -41,12 +49,31 @@ public class MemberQueryController {
                 Sort.by(Sort.Direction.DESC, "joinedAt").and(Sort.by(Sort.Direction.DESC, "createdAt"))
         );
 
-        Page<Member> result = memberRepository.search(tenantId, normalize(keyword), normalize(statusCode), pageable);
-        List<MemberQueryDtos.MemberSummaryResponse> items = result
-                .getContent()
-                .stream()
-                .map(this::toSummary)
-                .toList();
+        Page<MemberRepository.MemberSummaryView> result = memberRepository.searchSummary(
+                tenantId,
+                normalize(keyword),
+                normalize(statusCode),
+                normalize(memberNo),
+                normalize(phoneNumber),
+                normalize(name),
+                normalize(webId),
+                joinedFrom,
+                joinedTo,
+                pageable
+        );
+
+        List<MemberQueryDtos.MemberSummaryResponse> items = result.getContent().stream().map(v -> new MemberQueryDtos.MemberSummaryResponse(
+                v.getId(),
+                v.getMemberNo(),
+                v.getName(),
+                v.getPointBalance(),
+                v.getStatusCode(),
+                v.getPhoneNumber(),
+                v.getWebId(),
+                v.getJoinedAt(),
+                v.getDormantAt(),
+                v.getWithdrawnAt()
+        )).toList();
 
         return new MemberQueryDtos.PagedResponse<>(
                 items,
@@ -87,20 +114,6 @@ public class MemberQueryController {
                 l.getStatusCodeAfter(),
                 l.getCreatedAt()
         )).toList();
-    }
-
-    private MemberQueryDtos.MemberSummaryResponse toSummary(Member m) {
-        return new MemberQueryDtos.MemberSummaryResponse(
-                m.getId(),
-                m.getMemberNo(),
-                m.getName(),
-                m.getStatusCode(),
-                m.getPhoneNumber(),
-                m.getWebId(),
-                m.getJoinedAt(),
-                m.getDormantAt(),
-                m.getWithdrawnAt()
-        );
     }
 
     private MemberQueryDtos.MemberDetailResponse toDetail(Member m) {

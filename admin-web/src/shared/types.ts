@@ -3,11 +3,14 @@ export type AdminLoginRequest = {
   password: string
 }
 
+export type AdminRole = 'OPERATOR' | 'ADMIN' | 'SUPER_ADMIN'
+
 export type AdminLoginResponse = {
   adminUserId: string
   phoneNumber: string
   email: string | null
   name: string
+  role: AdminRole
   accessToken: string
 }
 
@@ -23,6 +26,7 @@ export type AdminRegisterResponse = {
   phoneNumber: string
   email: string | null
   name: string
+  role: AdminRole
 }
 
 export type TenantPublicItem = {
@@ -46,6 +50,7 @@ export type MemberSummary = {
   id: string
   memberNo: string
   name: string
+  pointBalance: number
   statusCode: string
   phoneNumber: string | null
   webId: string | null

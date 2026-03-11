@@ -3,7 +3,10 @@ package com.innople.loyalty.domain.user;
 import com.innople.loyalty.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Index;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -34,6 +37,10 @@ public class AdminUser extends BaseEntity {
     @Column(nullable = false, length = 200)
     private String passwordHash;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true, length = 30)
+    private AdminRole role;
+
     public AdminUser(String phoneNumber, String email, String name, String passwordHash) {
         this.phoneNumber = phoneNumber;
         this.email = email;
@@ -41,8 +48,19 @@ public class AdminUser extends BaseEntity {
         this.passwordHash = passwordHash;
     }
 
+    @PrePersist
+    void prePersistAdminUser() {
+        if (role == null) {
+            role = AdminRole.OPERATOR;
+        }
+    }
+
     public void changePasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public void changeRole(AdminRole role) {
+        this.role = role;
     }
 }
 

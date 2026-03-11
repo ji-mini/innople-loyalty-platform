@@ -1,6 +1,7 @@
 package com.innople.loyalty.service.admin;
 
 import com.innople.loyalty.config.TenantContext;
+import com.innople.loyalty.domain.user.AdminRole;
 import com.innople.loyalty.domain.user.AdminUser;
 import com.innople.loyalty.repository.AdminUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +49,8 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
         // NOTE: Security is not implemented yet. This token is for UI session only.
         String token = UUID.randomUUID().toString();
-        return new AdminLoginResult(admin.getId(), admin.getPhoneNumber(), admin.getEmail(), admin.getName(), token);
+        AdminRole role = admin.getRole() != null ? admin.getRole() : AdminRole.OPERATOR;
+        return new AdminLoginResult(admin.getId(), admin.getPhoneNumber(), admin.getEmail(), admin.getName(), role, token);
     }
 
     @Override
@@ -80,7 +82,8 @@ public class AdminAuthServiceImpl implements AdminAuthService {
         AdminUser admin = new AdminUser(normalizedPhoneNumber, normalizedEmail, name.trim(), passwordHash);
         try {
             AdminUser saved = adminUserRepository.save(admin);
-            return new AdminRegisterResult(saved.getId(), saved.getPhoneNumber(), saved.getEmail(), saved.getName());
+            AdminRole role = saved.getRole() != null ? saved.getRole() : AdminRole.OPERATOR;
+            return new AdminRegisterResult(saved.getId(), saved.getPhoneNumber(), saved.getEmail(), saved.getName(), role);
         } catch (DataIntegrityViolationException e) {
             throw new AdminUserAlreadyExistsException("admin user already exists");
         }

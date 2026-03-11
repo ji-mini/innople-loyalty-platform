@@ -1,5 +1,6 @@
 import { Navigate, Outlet, createBrowserRouter, useLocation } from 'react-router-dom'
 import { getSession } from '../shared/storage'
+import { canAccessPath } from '../shared/roles'
 import { AdminLayout } from '../pages/layout/AdminLayout'
 import { LoginPage } from '../pages/login/LoginPage'
 import { AdminSignUpPage } from '../pages/signup/AdminSignUpPage'
@@ -23,17 +24,17 @@ import { LogsPage } from '../pages/system/LogsPage'
 import { BrandHeader } from './BrandHeader'
 
 function RequireAuth() {
+  const loc = useLocation()
   const session = getSession()
   if (!session) return <Navigate to="/login" replace />
+  if (!canAccessPath(session.role, loc.pathname)) return <Navigate to="/dashboard" replace />
   return <Outlet />
 }
 
 function RootLayout() {
-  const loc = useLocation()
-  const showBrandHeader = loc.pathname.startsWith('/login') || loc.pathname.startsWith('/signup')
   return (
     <>
-      {showBrandHeader && <BrandHeader />}
+      <BrandHeader />
       <Outlet />
     </>
   )

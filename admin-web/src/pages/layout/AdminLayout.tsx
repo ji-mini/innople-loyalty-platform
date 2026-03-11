@@ -1,9 +1,12 @@
 import { BarChartOutlined, DashboardOutlined, GiftOutlined, LogoutOutlined, SettingOutlined, ShopOutlined, TeamOutlined } from '@ant-design/icons'
-import { Button, Layout, Menu, Typography } from 'antd'
+import { Button, Layout, Menu, Select, Space, Typography } from 'antd'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import React from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { getSession } from '../../shared/storage'
+import { getSession, setSession } from '../../shared/storage'
 import { logout } from '../../shared/auth'
+import { atLeast } from '../../shared/roles'
+import { listPublicTenants } from '../../shared/tenants'
 
 type MenuKey =
   | 'dashboard'
@@ -73,7 +76,21 @@ function pickSelectedKey(pathname: string): MenuKey {
 export function AdminLayout() {
   const nav = useNavigate()
   const loc = useLocation()
-  const session = getSession()
+  const qc = useQueryClient()
+  const [session, setSessionState] = React.useState(() => getSession())
+  const role = session?.role ?? 'OPERATOR'
+
+  const tenantsQuery = useQuery({
+    queryKey: ['public', 'tenants'],
+    queryFn: listPublicTenants,
+  })
+
+  const tenantName = React.useMemo(() => {
+    const id = session?.tenantId
+    if (!id) return '-'
+    const hit = tenantsQuery.data?.items?.find((t) => t.tenantId === id)
+    return hit?.name ?? id
+  }, [session?.tenantId, tenantsQuery.data?.items])
 
   const selectedKey = React.useMemo<MenuKey>(() => pickSelectedKey(loc.pathname), [loc.pathname])
   const groupKey = selectedKey.includes('.') ? selectedKey.split('.')[0] : undefined
@@ -87,6 +104,18 @@ export function AdminLayout() {
   const onLogout = () => {
     logout()
     nav('/login', { replace: true })
+  }
+
+  const onChangeTenant = (tenantId: string) => {
+    if (!session) return
+    if (!atLeast(role, 'SUPER_ADMIN')) return
+    if (!tenantId || tenantId === session.tenantId) return
+
+    const next = { ...session, tenantId }
+    setSession(next)
+    setSessionState(next)
+    qc.clear()
+    nav('/dashboard', { replace: true })
   }
 
   return (
@@ -119,11 +148,15 @@ export function AdminLayout() {
                   label: '회원조회',
                   onClick: () => nav(KEY_TO_PATH['members.list']),
                 },
-                {
-                  key: 'members.grades',
-                  label: '회원등급관리',
-                  onClick: () => nav(KEY_TO_PATH['members.grades']),
-                },
+                ...(atLeast(role, 'ADMIN')
+                  ? [
+                      {
+                        key: 'members.grades',
+                        label: '회원등급관리',
+                        onClick: () => nav(KEY_TO_PATH['members.grades']),
+                      },
+                    ]
+                  : []),
               ],
             },
             {
@@ -131,10 +164,16 @@ export function AdminLayout() {
               icon: <ShopOutlined />,
               label: '포인트관리',
               children: [
-                { key: 'points.policies', label: '포인트 정책관리', onClick: () => nav(KEY_TO_PATH['points.policies']) },
-                { key: 'points.manual', label: '포인트 수기등록', onClick: () => nav(KEY_TO_PATH['points.manual']) },
+                ...(atLeast(role, 'ADMIN')
+                  ? [{ key: 'points.policies', label: '포인트 정책관리', onClick: () => nav(KEY_TO_PATH['points.policies']) }]
+                  : []),
+                ...(atLeast(role, 'SUPER_ADMIN')
+                  ? [{ key: 'points.manual', label: '포인트 수기등록', onClick: () => nav(KEY_TO_PATH['points.manual']) }]
+                  : []),
                 { key: 'points.history', label: '포인트 이력조회', onClick: () => nav(KEY_TO_PATH['points.history']) },
-                { key: 'points.expiry', label: '포인트 소멸관리', onClick: () => nav(KEY_TO_PATH['points.expiry']) },
+                ...(atLeast(role, 'ADMIN')
+                  ? [{ key: 'points.expiry', label: '포인트 소멸관리', onClick: () => nav(KEY_TO_PATH['points.expiry']) }]
+                  : []),
               ],
             },
             {
@@ -142,7 +181,9 @@ export function AdminLayout() {
               icon: <GiftOutlined />,
               label: '쿠폰관리',
               children: [
-                { key: 'coupons.issue', label: '쿠폰 발행', onClick: () => nav(KEY_TO_PATH['coupons.issue']) },
+                ...(atLeast(role, 'SUPER_ADMIN')
+                  ? [{ key: 'coupons.issue', label: '쿠폰 발행', onClick: () => nav(KEY_TO_PATH['coupons.issue']) }]
+                  : []),
                 { key: 'coupons.history', label: '쿠폰 이력', onClick: () => nav(KEY_TO_PATH['coupons.history']) },
               ],
             },
@@ -155,25 +196,29 @@ export function AdminLayout() {
                 { key: 'reports.members', label: '회원 리포트', onClick: () => nav(KEY_TO_PATH['reports.members']) },
               ],
             },
-            {
-              key: 'tenants',
-              icon: <ShopOutlined />,
-              label: '테넌트관리',
-              children: [
-                { key: 'tenants.list', label: '테넌트 목록', onClick: () => nav(KEY_TO_PATH['tenants.list']) },
-                { key: 'tenants.admins', label: '테넌트 관리자', onClick: () => nav(KEY_TO_PATH['tenants.admins']) },
-              ],
-            },
-            {
-              key: 'system',
-              icon: <SettingOutlined />,
-              label: '시스템관리',
-              children: [
-                { key: 'system.admins', label: '관리자 계정', onClick: () => nav(KEY_TO_PATH['system.admins']) },
-                { key: 'system.permissions', label: '권한관리', onClick: () => nav(KEY_TO_PATH['system.permissions']) },
-                { key: 'system.logs', label: '로그조회', onClick: () => nav(KEY_TO_PATH['system.logs']) },
-              ],
-            },
+            ...(atLeast(role, 'ADMIN')
+              ? [
+                  {
+                    key: 'tenants',
+                    icon: <ShopOutlined />,
+                    label: '테넌트관리',
+                    children: [
+                      { key: 'tenants.list', label: '테넌트 목록', onClick: () => nav(KEY_TO_PATH['tenants.list']) },
+                      { key: 'tenants.admins', label: '테넌트 관리자', onClick: () => nav(KEY_TO_PATH['tenants.admins']) },
+                    ],
+                  },
+                  {
+                    key: 'system',
+                    icon: <SettingOutlined />,
+                    label: '시스템관리',
+                    children: [
+                      { key: 'system.admins', label: '관리자 계정', onClick: () => nav(KEY_TO_PATH['system.admins']) },
+                      { key: 'system.permissions', label: '권한관리', onClick: () => nav(KEY_TO_PATH['system.permissions']) },
+                      { key: 'system.logs', label: '로그조회', onClick: () => nav(KEY_TO_PATH['system.logs']) },
+                    ],
+                  },
+                ]
+              : []),
           ]}
         />
       </Layout.Sider>
@@ -181,10 +226,31 @@ export function AdminLayout() {
       <Layout>
         <Layout.Header style={{ background: '#fff', borderBottom: '1px solid #f0f0f0', paddingInline: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography.Text strong>관리자</Typography.Text>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Space size={12} wrap>
+              <Typography.Text strong>관리자</Typography.Text>
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                Tenant:
+              </Typography.Text>
+              {atLeast(role, 'SUPER_ADMIN') ? (
+                <Select
+                  value={session?.tenantId}
+                  onChange={onChangeTenant}
+                  loading={tenantsQuery.isLoading}
+                  options={(tenantsQuery.data?.items ?? []).map((t) => ({ value: t.tenantId, label: t.name }))}
+                  placeholder="테넌트 선택"
+                  style={{ width: 220 }}
+                  size="small"
+                  showSearch
+                  optionFilterProp="label"
+                />
+              ) : (
+                <Typography.Text style={{ fontSize: 12, fontWeight: 700 }}>{tenantName}</Typography.Text>
+              )}
+            </Space>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                {session?.name ?? '-'} / {session?.tenantId ?? '-'}
+                {session?.name ?? '-'} / {session?.role ?? 'OPERATOR'}
               </Typography.Text>
               <Button icon={<LogoutOutlined />} onClick={onLogout}>
                 로그아웃

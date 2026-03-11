@@ -1,12 +1,15 @@
 package com.innople.loyalty.service.admin;
 
+import com.innople.loyalty.domain.user.AdminRole;
+
 import java.util.UUID;
 
 public record AdminRegisterResult(
         UUID adminUserId,
         String phoneNumber,
         String email,
-        String name
+        String name,
+        AdminRole role
 ) {
 }
 

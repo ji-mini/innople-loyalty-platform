@@ -26,6 +26,7 @@ public class AdminAuthController {
                 result.phoneNumber(),
                 result.email(),
                 result.name(),
+                result.role(),
                 result.accessToken()
         );
     }
@@ -37,7 +38,8 @@ public class AdminAuthController {
                 result.adminUserId(),
                 result.phoneNumber(),
                 result.email(),
-                result.name()
+                result.name(),
+                result.role()
         );
     }
 }

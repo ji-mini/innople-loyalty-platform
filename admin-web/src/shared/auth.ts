@@ -14,6 +14,7 @@ export async function login(tenantId: string, req: AdminLoginRequest): Promise<A
     phoneNumber: res.data.phoneNumber,
     email: res.data.email,
     name: res.data.name,
+    role: res.data.role ?? 'OPERATOR',
   }
 
   setSession(session)

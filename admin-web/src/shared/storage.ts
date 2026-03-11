@@ -1,3 +1,5 @@
+import type { AdminRole } from './types'
+
 export type AdminSession = {
   tenantId: string
   accessToken: string
@@ -5,6 +7,7 @@ export type AdminSession = {
   phoneNumber: string
   email: string | null
   name: string
+  role: AdminRole
 }
 
 type AdminLoginRemember = {
@@ -20,7 +23,17 @@ export function getSession(): AdminSession | null {
   const raw = localStorage.getItem(KEY)
   if (!raw) return null
   try {
-    return JSON.parse(raw) as AdminSession
+    const v = JSON.parse(raw) as Partial<AdminSession>
+    if (!v?.tenantId || !v.accessToken || !v.adminUserId) return null
+    return {
+      tenantId: v.tenantId,
+      accessToken: v.accessToken,
+      adminUserId: v.adminUserId,
+      phoneNumber: v.phoneNumber ?? '',
+      email: v.email ?? null,
+      name: v.name ?? '',
+      role: (v.role as AdminRole) ?? 'OPERATOR',
+    }
   } catch {
     return null
   }

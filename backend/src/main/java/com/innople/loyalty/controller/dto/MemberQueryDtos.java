@@ -16,6 +16,7 @@ public final class MemberQueryDtos {
             UUID id,
             String memberNo,
             String name,
+            long pointBalance,
             String statusCode,
             String phoneNumber,
             String webId,
