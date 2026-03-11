@@ -94,7 +94,7 @@ export function AdminLayout() {
       <Layout.Sider width={240} theme="light">
         <div style={{ padding: 16 }}>
           <Typography.Title level={5} style={{ margin: 0 }}>
-            INNOPLE Admin
+            INNO MEMBERSHIP ADMIN
           </Typography.Title>
         </div>
         <Menu

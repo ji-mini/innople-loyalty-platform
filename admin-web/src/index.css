@@ -31,7 +31,7 @@ a {
 }
 
 .innople-app-shell {
-  padding-top: 64px;
+  padding-top: 48px;
 }
 
 .innople-brand-header {
@@ -57,7 +57,7 @@ a {
 
 @media (max-width: 480px) {
   .innople-app-shell {
-    padding-top: 56px;
+    padding-top: 44px;
   }
   .innople-brand-header {
     top: 12px;

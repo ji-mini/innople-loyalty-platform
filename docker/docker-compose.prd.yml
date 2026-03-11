@@ -19,7 +19,7 @@ services:
   nginx:
     build:
       context: ..
-      dockerfile: nginx/Dockerfile.prd
+      dockerfile: nginx/Dockerfile
     ports:
       - "8090:8090"
     depends_on:

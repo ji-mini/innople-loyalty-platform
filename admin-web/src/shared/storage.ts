@@ -7,7 +7,14 @@ export type AdminSession = {
   name: string
 }
 
+type AdminLoginRemember = {
+  tenantId: string
+  phoneNumber: string
+  remember: boolean
+}
+
 const KEY = 'admin_session_v1'
+const REMEMBER_KEY = 'admin_login_remember_v1'
 
 export function getSession(): AdminSession | null {
   const raw = localStorage.getItem(KEY)
@@ -25,5 +32,26 @@ export function setSession(session: AdminSession): void {
 
 export function clearSession(): void {
   localStorage.removeItem(KEY)
+}
+
+export function getLoginRemember(): AdminLoginRemember | null {
+  const raw = localStorage.getItem(REMEMBER_KEY)
+  if (!raw) return null
+  try {
+    const v = JSON.parse(raw) as AdminLoginRemember
+    if (!v?.remember) return null
+    if (!v.tenantId || !v.phoneNumber) return null
+    return v
+  } catch {
+    return null
+  }
+}
+
+export function setLoginRemember(value: AdminLoginRemember | null): void {
+  if (!value || !value.remember) {
+    localStorage.removeItem(REMEMBER_KEY)
+    return
+  }
+  localStorage.setItem(REMEMBER_KEY, JSON.stringify(value))
 }
 

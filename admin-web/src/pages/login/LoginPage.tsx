@@ -5,6 +5,7 @@ import { LockOutlined, PhoneOutlined } from '@ant-design/icons'
 import { login } from '../../shared/auth'
 import { listPublicTenants } from '../../shared/tenants'
 import type { TenantPublicItem } from '../../shared/types'
+import { getLoginRemember, setLoginRemember } from '../../shared/storage'
 import styles from './LoginPage.module.css'
 
 type FormValues = {
@@ -21,6 +22,18 @@ export function LoginPage() {
   const [tenantsLoading, setTenantsLoading] = React.useState(false)
   const [tenants, setTenants] = React.useState<TenantPublicItem[]>([])
   const [tenantsNotice, setTenantsNotice] = React.useState<string | null>(null)
+  const [form] = Form.useForm<FormValues>()
+
+  const remembered = React.useMemo(() => getLoginRemember(), [])
+
+  React.useEffect(() => {
+    if (!remembered) return
+    form.setFieldsValue({
+      tenantId: remembered.tenantId,
+      phoneNumber: remembered.phoneNumber,
+      remember: true,
+    })
+  }, [form, remembered])
 
   React.useEffect(() => {
     let cancelled = false
@@ -68,7 +81,8 @@ export function LoginPage() {
     setLoading(true)
     try {
       await login(v.tenantId, { phoneNumber: v.phoneNumber, password: v.password })
-      nav('/members', { replace: true })
+      setLoginRemember(v.remember ? { tenantId: v.tenantId, phoneNumber: v.phoneNumber, remember: true } : null)
+      nav('/dashboard', { replace: true })
     } catch (e: any) {
       const status = e?.response?.status as number | undefined
       const serverMsg = e?.response?.data?.message as string | undefined
@@ -133,8 +147,23 @@ export function LoginPage() {
 
           <Form<FormValues>
             layout="vertical"
+            form={form}
             onFinish={onFinish}
-            initialValues={{ tenantId: '', phoneNumber: '', password: '', remember: true }}
+            onValuesChange={(_, all) => {
+              if (!all.remember) {
+                setLoginRemember(null)
+                return
+              }
+              if (all.tenantId?.trim() && all.phoneNumber?.trim()) {
+                setLoginRemember({ tenantId: all.tenantId, phoneNumber: all.phoneNumber, remember: true })
+              }
+            }}
+            initialValues={{
+              tenantId: remembered?.tenantId ?? '',
+              phoneNumber: remembered?.phoneNumber ?? '',
+              password: '',
+              remember: remembered?.remember ?? true,
+            }}
             requiredMark={false}
             size="large"
           >
