@@ -30,10 +30,6 @@ a {
   color: inherit;
 }
 
-.innople-app-shell {
-  padding-top: 48px;
-}
-
 .innople-brand-header {
   position: fixed;
   top: 16px;
@@ -56,9 +52,6 @@ a {
 }
 
 @media (max-width: 480px) {
-  .innople-app-shell {
-    padding-top: 44px;
-  }
   .innople-brand-header {
     top: 12px;
     left: 12px;

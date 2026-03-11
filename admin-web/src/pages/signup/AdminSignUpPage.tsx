@@ -134,8 +134,13 @@ export function AdminSignUpPage() {
             <Input placeholder="홍길동" prefix={<UserOutlined />} />
           </Form.Item>
 
-          <Form.Item label="휴대폰 번호" name="phoneNumber" rules={[{ required: true, message: '휴대폰 번호를 입력하세요' }]}>
-            <Input placeholder="예: 010-1234-5678" prefix={<PhoneOutlined />} />
+          <Form.Item
+            label="휴대폰 번호"
+            name="phoneNumber"
+            rules={[{ required: true, message: '휴대폰 번호를 입력하세요' }]}
+            getValueFromEvent={(e) => String(e?.target?.value ?? '').replace(/\D/g, '')}
+          >
+            <Input placeholder="예: 01000000000" prefix={<PhoneOutlined />} inputMode="numeric" />
           </Form.Item>
 
           <Form.Item label="이메일(선택)" name="email" rules={[{ type: 'email' }]}>

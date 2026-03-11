@@ -127,7 +127,7 @@ export function LoginPage() {
 
       <div className={styles.wrap}>
         <section className={styles.hero}>
-          <h1 className={styles.brand}>INNOPLE Membership &amp; Point</h1>
+          <h1 className={styles.brand}>INNOPLE LOYALTY PLATFORM</h1>
           <p className={styles.tagline}>테넌트 기반 멀티테넌시로, 더 안전하고 유연한 운영을 지원합니다.</p>
           <div className={styles.chips}>
             <div className={styles.chip}>테넌트 기반 멀티테넌시</div>
@@ -185,8 +185,13 @@ export function LoginPage() {
               )}
             </Form.Item>
 
-            <Form.Item label="휴대폰 번호" name="phoneNumber" rules={[{ required: true, message: '휴대폰 번호를 입력하세요' }]}>
-              <Input placeholder="예: 010-1234-5678" prefix={<PhoneOutlined style={{ opacity: 0.55 }} />} />
+            <Form.Item
+              label="휴대폰 번호"
+              name="phoneNumber"
+              rules={[{ required: true, message: '휴대폰 번호를 입력하세요' }]}
+              getValueFromEvent={(e) => String(e?.target?.value ?? '').replace(/\D/g, '')}
+            >
+              <Input placeholder="예: 01000000000" prefix={<PhoneOutlined style={{ opacity: 0.55 }} />} inputMode="numeric" />
             </Form.Item>
 
             <Form.Item label="Password" name="password" rules={[{ required: true }]}>

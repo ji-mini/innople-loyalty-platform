@@ -1,4 +1,4 @@
-import { Navigate, Outlet, createBrowserRouter } from 'react-router-dom'
+import { Navigate, Outlet, createBrowserRouter, useLocation } from 'react-router-dom'
 import { getSession } from '../shared/storage'
 import { AdminLayout } from '../pages/layout/AdminLayout'
 import { LoginPage } from '../pages/login/LoginPage'
@@ -29,12 +29,12 @@ function RequireAuth() {
 }
 
 function RootLayout() {
+  const loc = useLocation()
+  const showBrandHeader = loc.pathname.startsWith('/login') || loc.pathname.startsWith('/signup')
   return (
     <>
-      <BrandHeader />
-      <div className="innople-app-shell">
-        <Outlet />
-      </div>
+      {showBrandHeader && <BrandHeader />}
+      <Outlet />
     </>
   )
 }
