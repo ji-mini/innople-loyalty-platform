@@ -3,6 +3,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { MemberSummary } from '../../shared/types'
 import { useMemberList } from '../../shared/queries'
+import { getSession } from '../../shared/storage'
 
 const STATUS_OPTIONS = [
   { value: undefined, label: '전체' },
@@ -14,6 +15,7 @@ const STATUS_OPTIONS = [
 
 export function MembersPage() {
   const nav = useNavigate()
+  const role = getSession()?.role ?? 'OPERATOR'
   const [form] = Form.useForm()
   const [filters, setFilters] = React.useState<{
     memberNo?: string
@@ -64,6 +66,32 @@ export function MembersPage() {
     { title: '휴대폰', dataIndex: 'phoneNumber' },
     { title: 'Web ID', dataIndex: 'webId' },
     { title: '가입일', dataIndex: 'joinedAt' },
+    ...(role === 'SUPER_ADMIN'
+      ? [
+          {
+            title: '작업',
+            key: 'actions',
+            width: 210,
+            render: (_: any, r: MemberSummary) => (
+              <Space>
+                <Button
+                  size="small"
+                  onClick={() => nav(`/points/manual/earn?memberNo=${encodeURIComponent(r.memberNo)}`)}
+                >
+                  적립
+                </Button>
+                <Button
+                  size="small"
+                  danger
+                  onClick={() => nav(`/points/manual/deduct?memberNo=${encodeURIComponent(r.memberNo)}`)}
+                >
+                  차감
+                </Button>
+              </Space>
+            ),
+          },
+        ]
+      : []),
   ]
 
   return (

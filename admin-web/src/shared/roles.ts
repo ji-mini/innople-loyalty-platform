@@ -13,6 +13,11 @@ export function atLeast(role: AdminRole, required: AdminRole): boolean {
 export function canAccessPath(role: AdminRole, pathname: string): boolean {
   if (pathname === '/' || pathname.startsWith('/dashboard')) return true
 
+  // Modifying features: SUPER_ADMIN
+  if (pathname.startsWith('/members/register')) return atLeast(role, 'SUPER_ADMIN')
+  if (pathname.startsWith('/points/manual/earn')) return atLeast(role, 'SUPER_ADMIN')
+  if (pathname.startsWith('/points/manual/deduct')) return atLeast(role, 'SUPER_ADMIN')
+
   // Read-only: OPERATOR
   if (pathname === '/members' || pathname.startsWith('/members/')) return true
   if (pathname.startsWith('/points/history')) return true

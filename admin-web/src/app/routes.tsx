@@ -6,10 +6,12 @@ import { LoginPage } from '../pages/login/LoginPage'
 import { AdminSignUpPage } from '../pages/signup/AdminSignUpPage'
 import { MembersPage } from '../pages/members/MembersPage'
 import { MemberDetailPage } from '../pages/members/MemberDetailPage'
+import { MemberCreatePage } from '../pages/members/MemberCreatePage'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { MemberGradesPage } from '../pages/members/MemberGradesPage'
 import { PointPoliciesPage } from '../pages/points/PointPoliciesPage'
-import { PointManualPage } from '../pages/points/PointManualPage'
+import { PointManualEarnPage } from '../pages/points/PointManualEarnPage'
+import { PointManualDeductPage } from '../pages/points/PointManualDeductPage'
 import { PointHistoryPage } from '../pages/points/PointHistoryPage'
 import { PointExpiryPage } from '../pages/points/PointExpiryPage'
 import { CouponIssuePage } from '../pages/coupons/CouponIssuePage'
@@ -67,12 +69,15 @@ export const router = createBrowserRouter([
 
               // Member management
               { path: '/members', element: <MembersPage /> },
+              { path: '/members/register', element: <MemberCreatePage /> },
               { path: '/members/:memberNo', element: <MemberDetailPage /> },
               { path: '/member-grades', element: <MemberGradesPage /> },
 
               // Point management
               { path: '/points/policies', element: <PointPoliciesPage /> },
-              { path: '/points/manual', element: <PointManualPage /> },
+              { path: '/points/manual', element: <Navigate to="/points/manual/earn" replace /> },
+              { path: '/points/manual/earn', element: <PointManualEarnPage /> },
+              { path: '/points/manual/deduct', element: <PointManualDeductPage /> },
               { path: '/points/history', element: <PointHistoryPage /> },
               { path: '/points/expiry', element: <PointExpiryPage /> },
 
@@ -89,7 +94,8 @@ export const router = createBrowserRouter([
               { path: '/tenants/admins', element: <TenantAdminsPage /> },
 
               // System management
-              { path: '/system/admins', element: <AdminAccountsPage /> },
+              { path: '/system/users', element: <AdminAccountsPage /> },
+              { path: '/system/admins', element: <Navigate to="/system/users" replace /> },
               { path: '/system/permissions', element: <PermissionsPage /> },
               { path: '/system/logs', element: <LogsPage /> },
             ],

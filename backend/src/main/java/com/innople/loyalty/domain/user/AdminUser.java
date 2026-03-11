@@ -59,6 +59,18 @@ public class AdminUser extends BaseEntity {
         this.passwordHash = passwordHash;
     }
 
+    public void changeProfile(String phoneNumber, String email, String name) {
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            throw new IllegalArgumentException("phoneNumber must not be blank");
+        }
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("name must not be blank");
+        }
+        this.phoneNumber = phoneNumber.trim();
+        this.email = (email == null || email.isBlank()) ? null : email.trim();
+        this.name = name.trim();
+    }
+
     public void changeRole(AdminRole role) {
         this.role = role;
     }

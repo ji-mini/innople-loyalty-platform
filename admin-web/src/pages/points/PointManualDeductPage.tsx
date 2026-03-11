@@ -1,0 +1,118 @@
+import { Button, Card, Form, Input, InputNumber, Space, Typography, message } from 'antd'
+import React from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { api } from '../../shared/api'
+import { PageShell } from '../common/PageShell'
+
+type FormValues = {
+  memberNo: string
+  amount: number
+  reason: string
+}
+
+export function PointManualDeductPage() {
+  const [loading, setLoading] = React.useState(false)
+  const [lookupLoading, setLookupLoading] = React.useState(false)
+  const [member, setMember] = React.useState<{ id: string; memberNo: string; name: string } | null>(null)
+  const [form] = Form.useForm<FormValues>()
+  const [sp] = useSearchParams()
+
+  const onLookup = async () => {
+    const memberNo = String(form.getFieldValue('memberNo') ?? '').trim()
+    if (!memberNo) {
+      message.error('회원번호를 입력하세요.')
+      return
+    }
+    setLookupLoading(true)
+    try {
+      const res = await api.get(`/api/v1/members/${encodeURIComponent(memberNo)}`)
+      const d = res.data as any
+      setMember({ id: d.id, memberNo: d.memberNo, name: d.name })
+      message.success(`회원 조회 완료: ${d.name} (${d.memberNo})`)
+    } catch (e: any) {
+      setMember(null)
+      message.error(e?.response?.data?.message ?? e?.message ?? '회원 조회 실패')
+    } finally {
+      setLookupLoading(false)
+    }
+  }
+
+  React.useEffect(() => {
+    const m = sp.get('memberNo')
+    if (!m) return
+    form.setFieldsValue({ memberNo: m })
+    onLookup()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const onFinish = async (v: FormValues) => {
+    if (!member?.id) {
+      message.error('먼저 회원번호를 조회하세요.')
+      return
+    }
+    setLoading(true)
+    try {
+      await api.post('/api/v1/points/use', {
+        memberId: member.id,
+        amount: v.amount,
+        reason: v.reason,
+      })
+      message.success('수기 차감(사용)이 완료되었습니다.')
+    } catch (e: any) {
+      message.error(e?.response?.data?.message ?? e?.message ?? '처리 실패')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <PageShell
+      title="수기 차감"
+      extra={
+        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          회원 선택 후 포인트를 수기로 차감합니다.
+        </Typography.Text>
+      }
+    >
+      <Card>
+        <Form<FormValues>
+          layout="vertical"
+          form={form}
+          onFinish={onFinish}
+          initialValues={{ memberNo: '', amount: 0, reason: '' }}
+          requiredMark={false}
+        >
+          <Space size={16} wrap align="start">
+            <Form.Item label="회원번호" name="memberNo" rules={[{ required: true, message: '회원번호를 입력하세요' }]}>
+              <Input placeholder="예: 10000001" style={{ width: 260 }} />
+            </Form.Item>
+            <Form.Item label=" " colon={false}>
+              <Button onClick={onLookup} loading={lookupLoading}>
+                조회
+              </Button>
+            </Form.Item>
+            <Form.Item label="회원" colon={false}>
+              <Typography.Text type={member ? undefined : 'secondary'} style={{ display: 'block', minWidth: 220 }}>
+                {member ? `${member.name} (${member.memberNo})` : '조회 필요'}
+              </Typography.Text>
+            </Form.Item>
+          </Space>
+
+          <Space size={16} wrap align="start">
+            <Form.Item label="차감 포인트" name="amount" rules={[{ required: true, message: '차감 포인트를 입력하세요' }]}>
+              <InputNumber min={1} step={1} style={{ width: 220 }} addonAfter="P" />
+            </Form.Item>
+            <Form.Item label="처리사유" name="reason" rules={[{ required: true, message: '처리사유를 입력하세요' }]}>
+              <Input placeholder="예: 오등록 정정 차감" style={{ width: 460, maxWidth: '100%' }} />
+            </Form.Item>
+          </Space>
+
+          <Button type="primary" htmlType="submit" loading={loading} danger>
+            차감
+          </Button>
+        </Form>
+      </Card>
+    </PageShell>
+  )
+}
+

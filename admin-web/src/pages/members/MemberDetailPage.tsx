@@ -1,11 +1,14 @@
-import { Card, Descriptions, Space, Table, Tabs, Tag, Typography } from 'antd'
-import { useParams } from 'react-router-dom'
+import { Button, Card, Descriptions, Space, Table, Tabs, Tag, Typography } from 'antd'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useMemberDetail, useMemberLedgers } from '../../shared/queries'
 import type { MemberLedger } from '../../shared/types'
+import { getSession } from '../../shared/storage'
 
 export function MemberDetailPage() {
+  const nav = useNavigate()
   const params = useParams()
   const memberNo = params.memberNo ?? ''
+  const role = getSession()?.role ?? 'OPERATOR'
 
   const detail = useMemberDetail(memberNo)
   const ledgers = useMemberLedgers(memberNo, 100)
@@ -19,9 +22,19 @@ export function MemberDetailPage() {
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={16}>
-      <Typography.Title level={4} style={{ margin: 0 }}>
-        회원 상세
-      </Typography.Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <Typography.Title level={4} style={{ margin: 0 }}>
+          회원 상세
+        </Typography.Title>
+        {role === 'SUPER_ADMIN' ? (
+          <Space>
+            <Button onClick={() => nav(`/points/manual/earn?memberNo=${encodeURIComponent(memberNo)}`)}>포인트 적립</Button>
+            <Button danger onClick={() => nav(`/points/manual/deduct?memberNo=${encodeURIComponent(memberNo)}`)}>
+              포인트 차감
+            </Button>
+          </Space>
+        ) : null}
+      </div>
 
       <Tabs
         items={[

@@ -11,9 +11,11 @@ import { listPublicTenants } from '../../shared/tenants'
 type MenuKey =
   | 'dashboard'
   | 'members.list'
+  | 'members.register'
   | 'members.grades'
   | 'points.policies'
-  | 'points.manual'
+  | 'points.manualEarn'
+  | 'points.manualDeduct'
   | 'points.history'
   | 'points.expiry'
   | 'coupons.issue'
@@ -22,16 +24,18 @@ type MenuKey =
   | 'reports.members'
   | 'tenants.list'
   | 'tenants.admins'
-  | 'system.admins'
+  | 'system.users'
   | 'system.permissions'
   | 'system.logs'
 
 const KEY_TO_PATH: Record<MenuKey, string> = {
   dashboard: '/dashboard',
   'members.list': '/members',
+  'members.register': '/members/register',
   'members.grades': '/member-grades',
   'points.policies': '/points/policies',
-  'points.manual': '/points/manual',
+  'points.manualEarn': '/points/manual/earn',
+  'points.manualDeduct': '/points/manual/deduct',
   'points.history': '/points/history',
   'points.expiry': '/points/expiry',
   'coupons.issue': '/coupons/issue',
@@ -40,18 +44,21 @@ const KEY_TO_PATH: Record<MenuKey, string> = {
   'reports.members': '/reports/members',
   'tenants.list': '/tenants',
   'tenants.admins': '/tenants/admins',
-  'system.admins': '/system/admins',
+  'system.users': '/system/users',
   'system.permissions': '/system/permissions',
   'system.logs': '/system/logs',
 }
 
 function pickSelectedKey(pathname: string): MenuKey {
   if (pathname === '/' || pathname.startsWith('/dashboard')) return 'dashboard'
+  if (pathname.startsWith('/members/register')) return 'members.register'
   if (pathname === '/members' || pathname.startsWith('/members/')) return 'members.list'
   if (pathname.startsWith('/member-grades')) return 'members.grades'
 
   if (pathname.startsWith('/points/policies')) return 'points.policies'
-  if (pathname.startsWith('/points/manual')) return 'points.manual'
+  if (pathname.startsWith('/points/manual/earn')) return 'points.manualEarn'
+  if (pathname.startsWith('/points/manual/deduct')) return 'points.manualDeduct'
+  if (pathname.startsWith('/points/manual')) return 'points.manualEarn'
   if (pathname.startsWith('/points/history')) return 'points.history'
   if (pathname.startsWith('/points/expiry')) return 'points.expiry'
 
@@ -66,7 +73,7 @@ function pickSelectedKey(pathname: string): MenuKey {
     return 'tenants.list'
   }
 
-  if (pathname.startsWith('/system/admins')) return 'system.admins'
+  if (pathname.startsWith('/system/users') || pathname.startsWith('/system/admins')) return 'system.users'
   if (pathname.startsWith('/system/permissions')) return 'system.permissions'
   if (pathname.startsWith('/system/logs')) return 'system.logs'
 
@@ -131,6 +138,7 @@ export function AdminLayout() {
           selectedKeys={[selectedKey]}
           openKeys={openKeys}
           onOpenChange={(keys) => setOpenKeys(keys as string[])}
+          style={{ paddingTop: 44 }}
           items={[
             {
               key: 'dashboard',
@@ -148,6 +156,15 @@ export function AdminLayout() {
                   label: '회원조회',
                   onClick: () => nav(KEY_TO_PATH['members.list']),
                 },
+                ...(atLeast(role, 'SUPER_ADMIN')
+                  ? [
+                      {
+                        key: 'members.register',
+                        label: '회원등록',
+                        onClick: () => nav(KEY_TO_PATH['members.register']),
+                      },
+                    ]
+                  : []),
                 ...(atLeast(role, 'ADMIN')
                   ? [
                       {
@@ -164,16 +181,14 @@ export function AdminLayout() {
               icon: <ShopOutlined />,
               label: '포인트관리',
               children: [
-                ...(atLeast(role, 'ADMIN')
-                  ? [{ key: 'points.policies', label: '포인트 정책관리', onClick: () => nav(KEY_TO_PATH['points.policies']) }]
-                  : []),
+                ...(atLeast(role, 'ADMIN') ? [{ key: 'points.policies', label: '정책관리', onClick: () => nav(KEY_TO_PATH['points.policies']) }] : []),
                 ...(atLeast(role, 'SUPER_ADMIN')
-                  ? [{ key: 'points.manual', label: '포인트 수기등록', onClick: () => nav(KEY_TO_PATH['points.manual']) }]
+                  ? [
+                      { key: 'points.manualEarn', label: '포인트 수기 등록', onClick: () => nav(KEY_TO_PATH['points.manualEarn']) },
+                      { key: 'points.manualDeduct', label: '수기 차감', onClick: () => nav(KEY_TO_PATH['points.manualDeduct']) },
+                    ]
                   : []),
                 { key: 'points.history', label: '포인트 이력조회', onClick: () => nav(KEY_TO_PATH['points.history']) },
-                ...(atLeast(role, 'ADMIN')
-                  ? [{ key: 'points.expiry', label: '포인트 소멸관리', onClick: () => nav(KEY_TO_PATH['points.expiry']) }]
-                  : []),
               ],
             },
             {
@@ -199,22 +214,26 @@ export function AdminLayout() {
             ...(atLeast(role, 'ADMIN')
               ? [
                   {
+                    key: 'system',
+                    icon: <SettingOutlined />,
+                    label: '시스템',
+                    children: [
+                      { key: 'system.users', label: '사용자 관리', onClick: () => nav(KEY_TO_PATH['system.users']) },
+                      { key: 'system.permissions', label: '권한관리', onClick: () => nav(KEY_TO_PATH['system.permissions']) },
+                      { key: 'system.logs', label: '로그조회', onClick: () => nav(KEY_TO_PATH['system.logs']) },
+                    ],
+                  },
+                ]
+              : []),
+            ...(atLeast(role, 'ADMIN')
+              ? [
+                  {
                     key: 'tenants',
                     icon: <ShopOutlined />,
                     label: '테넌트관리',
                     children: [
                       { key: 'tenants.list', label: '테넌트 목록', onClick: () => nav(KEY_TO_PATH['tenants.list']) },
                       { key: 'tenants.admins', label: '테넌트 관리자', onClick: () => nav(KEY_TO_PATH['tenants.admins']) },
-                    ],
-                  },
-                  {
-                    key: 'system',
-                    icon: <SettingOutlined />,
-                    label: '시스템관리',
-                    children: [
-                      { key: 'system.admins', label: '관리자 계정', onClick: () => nav(KEY_TO_PATH['system.admins']) },
-                      { key: 'system.permissions', label: '권한관리', onClick: () => nav(KEY_TO_PATH['system.permissions']) },
-                      { key: 'system.logs', label: '로그조회', onClick: () => nav(KEY_TO_PATH['system.logs']) },
                     ],
                   },
                 ]
