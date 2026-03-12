@@ -130,8 +130,8 @@ export function AdminLayout() {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Layout.Sider width={240} theme="light">
+    <Layout style={{ height: '100vh', overflow: 'hidden' }}>
+      <Layout.Sider width={240} theme="light" style={{ height: '100vh', overflow: 'auto' }}>
         <Menu
           mode="inline"
           selectedKeys={[selectedKey]}
@@ -243,8 +243,8 @@ export function AdminLayout() {
         />
       </Layout.Sider>
 
-      <Layout>
-        <Layout.Header style={{ background: '#fff', borderBottom: '1px solid #f0f0f0', paddingInline: 16 }}>
+      <Layout style={{ height: '100vh', overflow: 'hidden' }}>
+        <Layout.Header style={{ background: '#fff', borderBottom: '1px solid #f0f0f0', paddingInline: 16, flex: '0 0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Space size={12} wrap>
               <Typography.Text strong>관리자</Typography.Text>
@@ -278,7 +278,7 @@ export function AdminLayout() {
             </div>
           </div>
         </Layout.Header>
-        <Layout.Content style={{ padding: 16 }}>
+        <Layout.Content style={{ padding: 16, overflow: 'auto', flex: '1 1 auto' }}>
           <AdminBreadcrumbs />
           <Outlet />
         </Layout.Content>
