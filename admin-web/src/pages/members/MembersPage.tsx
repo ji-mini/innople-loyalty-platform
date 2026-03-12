@@ -2,20 +2,13 @@ import { Button, Card, DatePicker, Form, Input, Select, Space, Table, Tag, Typog
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { MemberSummary } from '../../shared/types'
-import { useMemberList } from '../../shared/queries'
+import { useCommonCodes, useMemberList } from '../../shared/queries'
 import { getSession } from '../../shared/storage'
-
-const STATUS_OPTIONS = [
-  { value: undefined, label: '전체' },
-  { value: 'NORMAL', label: '정상' },
-  { value: 'DORMANT', label: '휴면' },
-  { value: 'WITHDRAW_REQUESTED', label: '탈퇴요청' },
-  { value: 'WITHDRAWN', label: '탈퇴' },
-]
 
 export function MembersPage() {
   const nav = useNavigate()
   const role = getSession()?.role ?? 'OPERATOR'
+  const statusCodes = useCommonCodes('MEMBER_STATUS')
   const [form] = Form.useForm()
   const [filters, setFilters] = React.useState<{
     memberNo?: string
@@ -139,7 +132,13 @@ export function MembersPage() {
               <DatePicker.RangePicker />
             </Form.Item>
             <Form.Item label="상태" name="statusCode">
-              <Select style={{ width: 160 }} options={STATUS_OPTIONS as any} />
+              <Select
+                style={{ width: 200 }}
+                allowClear
+                placeholder="전체"
+                loading={statusCodes.isLoading}
+                options={(statusCodes.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
+              />
             </Form.Item>
             <Form.Item label=" " colon={false}>
               <Space>

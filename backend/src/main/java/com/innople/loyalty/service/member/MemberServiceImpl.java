@@ -39,7 +39,7 @@ public class MemberServiceImpl implements MemberService {
         UUID tenantId = TenantContext.requireTenantId();
 
         String statusCode = (command.statusCode() == null || command.statusCode().isBlank())
-                ? MemberStatusCodes.NORMAL
+                ? MemberStatusCodes.ACTIVE
                 : command.statusCode().trim();
 
         validateStatusCode(tenantId, statusCode);

@@ -6,6 +6,7 @@ import { api } from '../../shared/api'
 import type { AdminRole } from '../../shared/types'
 import { atLeast } from '../../shared/roles'
 import { getSession } from '../../shared/storage'
+import { useCommonCodes } from '../../shared/queries'
 
 type Row = {
   id: string
@@ -21,6 +22,12 @@ export function AdminAccountsPage() {
   const [keyword, setKeyword] = React.useState('')
   const role = getSession()?.role ?? 'OPERATOR'
   const canEdit = atLeast(role, 'SUPER_ADMIN')
+  const roleCodes = useCommonCodes('ADMIN_ROLE')
+  const roleName = React.useMemo(() => {
+    const map = new Map<string, string>()
+    for (const c of roleCodes.data ?? []) map.set(c.code, c.name)
+    return map
+  }, [roleCodes.data])
 
   const q = useQuery({
     queryKey: ['admin', 'admin-users', keyword],
@@ -137,7 +144,7 @@ export function AdminAccountsPage() {
               title: '권한',
               dataIndex: 'role',
               width: 140,
-              render: (v: Row['role']) => <Tag>{v}</Tag>,
+              render: (v: Row['role']) => <Tag>{roleName.get(v) ?? v}</Tag>,
             },
             { title: '수정일시', dataIndex: 'updatedAt', width: 190 },
             ...(canEdit
@@ -202,11 +209,8 @@ export function AdminAccountsPage() {
           ) : null}
           <Form.Item label="권한" name="role" rules={[{ required: true, message: '권한을 선택하세요' }]}>
             <Select
-              options={[
-                { value: 'OPERATOR', label: 'OPERATOR(조회 전용)' },
-                { value: 'ADMIN', label: 'ADMIN(관리 메뉴 접근)' },
-                { value: 'SUPER_ADMIN', label: 'SUPER_ADMIN(수정/등록 가능)' },
-              ]}
+              loading={roleCodes.isLoading}
+              options={(roleCodes.data ?? []).map((c) => ({ value: c.code, label: `${c.name} (${c.code})` }))}
             />
           </Form.Item>
         </Form>

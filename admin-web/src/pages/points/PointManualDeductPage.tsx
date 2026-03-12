@@ -1,13 +1,15 @@
-import { Button, Card, Form, Input, InputNumber, Space, Typography, message } from 'antd'
+import { Button, Card, Form, Input, InputNumber, Select, Space, Typography, message } from 'antd'
 import React from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../../shared/api'
+import { useCommonCodes } from '../../shared/queries'
 import { PageShell } from '../common/PageShell'
 
 type FormValues = {
   memberNo: string
   amount: number
-  reason: string
+  reasonCode: string
+  reasonDetail?: string
 }
 
 export function PointManualDeductPage() {
@@ -16,6 +18,7 @@ export function PointManualDeductPage() {
   const [member, setMember] = React.useState<{ id: string; memberNo: string; name: string } | null>(null)
   const [form] = Form.useForm<FormValues>()
   const [sp] = useSearchParams()
+  const reasons = useCommonCodes('POINT_REASON')
 
   const onLookup = async () => {
     const memberNo = String(form.getFieldValue('memberNo') ?? '').trim()
@@ -52,10 +55,12 @@ export function PointManualDeductPage() {
     }
     setLoading(true)
     try {
+      const hit = (reasons.data ?? []).find((r) => r.code === v.reasonCode)
+      const reason = hit ? `[${hit.code}] ${hit.name}${v.reasonDetail?.trim() ? ` - ${v.reasonDetail.trim()}` : ''}` : v.reasonCode
       await api.post('/api/v1/points/use', {
         memberId: member.id,
         amount: v.amount,
-        reason: v.reason,
+        reason,
       })
       message.success('수기 차감(사용)이 완료되었습니다.')
     } catch (e: any) {
@@ -79,7 +84,7 @@ export function PointManualDeductPage() {
           layout="vertical"
           form={form}
           onFinish={onFinish}
-          initialValues={{ memberNo: '', amount: 0, reason: '' }}
+          initialValues={{ memberNo: '', amount: 0, reasonCode: 'ADJ_FIX', reasonDetail: '' }}
           requiredMark={false}
         >
           <Space size={16} wrap align="start">
@@ -102,8 +107,16 @@ export function PointManualDeductPage() {
             <Form.Item label="차감 포인트" name="amount" rules={[{ required: true, message: '차감 포인트를 입력하세요' }]}>
               <InputNumber min={1} step={1} style={{ width: 220 }} addonAfter="P" />
             </Form.Item>
-            <Form.Item label="처리사유" name="reason" rules={[{ required: true, message: '처리사유를 입력하세요' }]}>
-              <Input placeholder="예: 오등록 정정 차감" style={{ width: 460, maxWidth: '100%' }} />
+            <Form.Item label="사유 템플릿" name="reasonCode" rules={[{ required: true, message: '사유 템플릿을 선택하세요' }]}>
+              <Select
+                placeholder="선택"
+                loading={reasons.isLoading}
+                style={{ width: 260 }}
+                options={(reasons.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
+              />
+            </Form.Item>
+            <Form.Item label="상세 사유(선택)" name="reasonDetail">
+              <Input placeholder="예: 오등록 정정 차감" style={{ width: 360, maxWidth: '100%' }} />
             </Form.Item>
           </Space>
 

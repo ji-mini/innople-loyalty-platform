@@ -1,14 +1,16 @@
-import { Button, Card, DatePicker, Form, Input, InputNumber, Space, Typography, message } from 'antd'
+import { Button, Card, DatePicker, Form, Input, InputNumber, Select, Space, Typography, message } from 'antd'
 import React from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../../shared/api'
+import { useCommonCodes } from '../../shared/queries'
 import { PageShell } from '../common/PageShell'
 
 type FormValues = {
   memberNo: string
   amount: number
   expiresAt: any
-  reason: string
+  reasonCode: string
+  reasonDetail?: string
 }
 
 export function PointManualEarnPage() {
@@ -17,6 +19,7 @@ export function PointManualEarnPage() {
   const [member, setMember] = React.useState<{ id: string; memberNo: string; name: string } | null>(null)
   const [form] = Form.useForm<FormValues>()
   const [sp] = useSearchParams()
+  const reasons = useCommonCodes('POINT_REASON')
 
   const onLookup = async () => {
     const memberNo = String(form.getFieldValue('memberNo') ?? '').trim()
@@ -58,11 +61,13 @@ export function PointManualEarnPage() {
     }
     setLoading(true)
     try {
+      const hit = (reasons.data ?? []).find((r) => r.code === v.reasonCode)
+      const reason = hit ? `[${hit.code}] ${hit.name}${v.reasonDetail?.trim() ? ` - ${v.reasonDetail.trim()}` : ''}` : v.reasonCode
       await api.post('/api/v1/points/earn', {
         memberId: member.id,
         amount: v.amount,
         expiresAt: expiresAtIso,
-        reason: v.reason,
+        reason,
       })
       message.success('포인트 수기 등록(적립)이 완료되었습니다.')
     } catch (e: any) {
@@ -86,7 +91,7 @@ export function PointManualEarnPage() {
           layout="vertical"
           form={form}
           onFinish={onFinish}
-          initialValues={{ memberNo: '', amount: 0, expiresAt: null, reason: '' }}
+          initialValues={{ memberNo: '', amount: 0, expiresAt: null, reasonCode: 'CS_COMP', reasonDetail: '' }}
           requiredMark={false}
         >
           <Space size={16} wrap align="start">
@@ -114,8 +119,17 @@ export function PointManualEarnPage() {
               <DatePicker showTime style={{ width: 240 }} />
             </Form.Item>
 
-            <Form.Item label="처리사유" name="reason" rules={[{ required: true, message: '처리사유를 입력하세요' }]}>
-              <Input placeholder="예: 고객 CS 보상 적립" style={{ width: 460, maxWidth: '100%' }} />
+            <Form.Item label="사유 템플릿" name="reasonCode" rules={[{ required: true, message: '사유 템플릿을 선택하세요' }]}>
+              <Select
+                placeholder="선택"
+                loading={reasons.isLoading}
+                style={{ width: 260 }}
+                options={(reasons.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
+              />
+            </Form.Item>
+
+            <Form.Item label="상세 사유(선택)" name="reasonDetail">
+              <Input placeholder="예: 고객 CS 보상 적립" style={{ width: 360, maxWidth: '100%' }} />
             </Form.Item>
           </Space>
 

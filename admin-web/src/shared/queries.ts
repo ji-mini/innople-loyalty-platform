@@ -2,6 +2,31 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from './api'
 import type { MemberDetail, MemberLedger, MemberSummary, PagedResponse } from './types'
 
+export type CommonCodeItem = {
+  id: string
+  codeGroup: string
+  code: string
+  name: string
+  active: boolean
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
+export function useCommonCodes(codeGroup: string) {
+  return useQuery({
+    queryKey: ['admin', 'common-codes', codeGroup],
+    queryFn: async () => {
+      const res = await api.get<CommonCodeItem[]>('/api/v1/admin/common-codes', {
+        params: { codeGroup, active: true },
+      })
+      const items = res.data ?? []
+      return [...items].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.code.localeCompare(b.code))
+    },
+    enabled: !!codeGroup,
+  })
+}
+
 export function useMemberList(params: {
   keyword?: string
   statusCode?: string

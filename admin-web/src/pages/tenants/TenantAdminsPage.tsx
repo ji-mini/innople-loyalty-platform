@@ -7,6 +7,7 @@ import type { AdminRole } from '../../shared/types'
 import { atLeast } from '../../shared/roles'
 import { getSession } from '../../shared/storage'
 import { listPublicTenants } from '../../shared/tenants'
+import { useCommonCodes } from '../../shared/queries'
 
 type Row = {
   id: string
@@ -19,12 +20,9 @@ type Row = {
   updatedAt: string
 }
 
-const ROLE_OPTIONS = [
-  { value: undefined, label: '전체' },
-  { value: 'SUPER_ADMIN', label: 'SUPER ADMIN' },
-  { value: 'ADMIN', label: 'ADMIN' },
-  { value: 'OPERATOR', label: 'OPERATOR' },
-]
+function buildRoleOptions(items: { code: string; name: string }[]) {
+  return [{ value: undefined, label: '전체' } as any].concat(items.map((c) => ({ value: c.code, label: `${c.name} (${c.code})` })))
+}
 
 export function TenantAdminsPage() {
   const session = getSession()
@@ -39,6 +37,12 @@ export function TenantAdminsPage() {
   const [tenantId, setTenantId] = React.useState<string>(() => session?.tenantId ?? '')
   const [keyword, setKeyword] = React.useState('')
   const [role, setRole] = React.useState<Row['role'] | undefined>(undefined)
+  const roleCodes = useCommonCodes('ADMIN_ROLE')
+  const roleName = React.useMemo(() => {
+    const map = new Map<string, string>()
+    for (const c of roleCodes.data ?? []) map.set(c.code, c.name)
+    return map
+  }, [roleCodes.data])
 
   const q = useQuery({
     queryKey: ['admin', 'admin-users', tenantId, keyword],
@@ -130,7 +134,13 @@ export function TenantAdminsPage() {
             allowClear
             style={{ width: 280 }}
           />
-          <Select value={role} onChange={setRole} style={{ width: 200 }} options={ROLE_OPTIONS as any} />
+          <Select
+            value={role}
+            onChange={setRole}
+            style={{ width: 220 }}
+            loading={roleCodes.isLoading}
+            options={buildRoleOptions((roleCodes.data ?? []).map((c) => ({ code: c.code, name: c.name })) as any) as any}
+          />
           <Button onClick={() => q.refetch()} loading={q.isFetching} disabled={!tenantId}>
             새로고침
           </Button>
@@ -158,7 +168,7 @@ export function TenantAdminsPage() {
             { title: '이름', dataIndex: 'name', width: 180 },
             { title: '휴대폰', dataIndex: 'phoneNumber', width: 180 },
             { title: '이메일', dataIndex: 'email', render: (v: string | null) => v ?? '-' },
-            { title: '권한', dataIndex: 'role', width: 180, render: (v: Row['role']) => <Tag>{v}</Tag> },
+            { title: '권한', dataIndex: 'role', width: 180, render: (v: Row['role']) => <Tag>{roleName.get(v) ?? v}</Tag> },
             {
               title: '수정일시',
               dataIndex: 'updatedAt',

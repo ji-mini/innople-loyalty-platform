@@ -2,6 +2,7 @@ import { Button, Card, DatePicker, Form, Input, Select, Space, Typography, messa
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../shared/api'
+import { useCommonCodes } from '../../shared/queries'
 import { PageShell } from '../common/PageShell'
 
 type FormValues = {
@@ -14,17 +15,13 @@ type FormValues = {
   address?: string
 }
 
-const STATUS_OPTIONS = [
-  { value: 'NORMAL', label: '정상' },
-  { value: 'DORMANT', label: '휴면' },
-  { value: 'WITHDRAW_REQUESTED', label: '탈퇴요청' },
-  { value: 'WITHDRAWN', label: '탈퇴' },
-]
+const DEFAULT_STATUS = 'ACTIVE'
 
 export function MemberCreatePage() {
   const nav = useNavigate()
   const [loading, setLoading] = React.useState(false)
   const [form] = Form.useForm<FormValues>()
+  const statusCodes = useCommonCodes('MEMBER_STATUS')
 
   const onFinish = async (v: FormValues) => {
     setLoading(true)
@@ -36,7 +33,7 @@ export function MemberCreatePage() {
         phoneNumber: v.phoneNumber?.trim() ? v.phoneNumber.trim() : null,
         webId: v.webId?.trim() ? v.webId.trim() : null,
         joinedAt: joinedAt ?? null,
-        statusCode: v.statusCode ?? 'NORMAL',
+        statusCode: v.statusCode ?? DEFAULT_STATUS,
         address: v.address?.trim() ? v.address.trim() : null,
       })
       message.success('회원이 등록되었습니다.')
@@ -62,7 +59,7 @@ export function MemberCreatePage() {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{ memberNo: '', name: '', phoneNumber: '', webId: '', joinedAt: null, statusCode: 'NORMAL', address: '' }}
+          initialValues={{ memberNo: '', name: '', phoneNumber: '', webId: '', joinedAt: null, statusCode: DEFAULT_STATUS, address: '' }}
           requiredMark={false}
         >
           <Space wrap size={16} align="start">
@@ -91,7 +88,11 @@ export function MemberCreatePage() {
             </Form.Item>
 
             <Form.Item label="상태" name="statusCode">
-              <Select style={{ width: 160 }} options={STATUS_OPTIONS as any} />
+              <Select
+                style={{ width: 200 }}
+                loading={statusCodes.isLoading}
+                options={(statusCodes.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
+              />
             </Form.Item>
           </Space>
 
