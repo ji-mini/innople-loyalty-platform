@@ -20,6 +20,13 @@ public class Tenant extends BaseEntity {
         this.name = name;
     }
 
+    public void changeName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("name must not be blank");
+        }
+        this.name = name.trim();
+    }
+
     @Override
     protected boolean allowSelfTenantIdWhenContextMissing() {
         return true;

@@ -87,6 +87,7 @@ public class AdminUserManagementServiceImpl implements AdminUserManagementServic
     private AdminUserItem toItem(AdminUser a) {
         return new AdminUserItem(
                 a.getId(),
+                a.getTenantId(),
                 a.getPhoneNumber(),
                 a.getEmail(),
                 a.getName(),

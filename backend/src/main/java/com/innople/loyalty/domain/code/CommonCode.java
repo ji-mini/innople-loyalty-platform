@@ -45,5 +45,14 @@ public class CommonCode extends BaseEntity {
         cc.sortOrder = sortOrder;
         return cc;
     }
+
+    public void change(String name, boolean active, int sortOrder) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("name must not be blank");
+        }
+        this.name = name.trim();
+        this.active = active;
+        this.sortOrder = sortOrder;
+    }
 }
 

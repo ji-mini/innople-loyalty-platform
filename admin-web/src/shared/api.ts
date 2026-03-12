@@ -36,8 +36,16 @@ api.interceptors.request.use((config) => {
   const session = getSession()
   if (session) {
     config.headers = config.headers ?? {}
-    config.headers['X-Tenant-Id'] = session.tenantId
-    config.headers['Authorization'] = `Bearer ${session.accessToken}`
+    const h = config.headers as any
+    if (h['X-Tenant-Id'] == null && h['x-tenant-id'] == null) {
+      h['X-Tenant-Id'] = session.tenantId
+    }
+    if (h['Authorization'] == null && h['authorization'] == null) {
+      h['Authorization'] = `Bearer ${session.accessToken}`
+    }
+    if (h['X-Admin-User-Id'] == null && h['x-admin-user-id'] == null) {
+      h['X-Admin-User-Id'] = session.adminUserId
+    }
   }
   return config
 })

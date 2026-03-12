@@ -28,7 +28,7 @@ export function canAccessPath(role: AdminRole, pathname: string): boolean {
   if (pathname.startsWith('/member-grades')) return atLeast(role, 'ADMIN')
   if (pathname.startsWith('/points/policies')) return atLeast(role, 'ADMIN')
   if (pathname.startsWith('/points/expiry')) return atLeast(role, 'ADMIN')
-  if (pathname === '/tenants' || pathname.startsWith('/tenants/')) return atLeast(role, 'ADMIN')
+  if (pathname === '/tenants' || pathname.startsWith('/tenants/')) return atLeast(role, 'SUPER_ADMIN')
   if (pathname.startsWith('/system/')) return atLeast(role, 'ADMIN')
 
   // Modifying features: SUPER_ADMIN

@@ -30,6 +30,7 @@ public final class AdminUserManagementDtos {
 
     public record AdminUserResponse(
             UUID id,
+            UUID tenantId,
             String phoneNumber,
             String email,
             String name,

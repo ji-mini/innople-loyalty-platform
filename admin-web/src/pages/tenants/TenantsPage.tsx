@@ -1,6 +1,7 @@
 import { Card, Input, Space, Table, Typography } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageShell } from '../common/PageShell'
 import { listPublicTenants } from '../../shared/tenants'
 
@@ -10,6 +11,7 @@ type Row = {
 }
 
 export function TenantsPage() {
+  const nav = useNavigate()
   const [keyword, setKeyword] = React.useState('')
 
   const q = useQuery({
@@ -51,6 +53,10 @@ export function TenantsPage() {
           dataSource={rows}
           loading={q.isLoading}
           pagination={{ pageSize: 20 }}
+          onRow={(r) => ({
+            onClick: () => nav(`/tenants/${encodeURIComponent(r.tenantId)}`),
+            style: { cursor: 'pointer' },
+          })}
           columns={[
             { title: '테넌트ID', dataIndex: 'tenantId', width: 260 },
             { title: '테넌트명', dataIndex: 'name' },

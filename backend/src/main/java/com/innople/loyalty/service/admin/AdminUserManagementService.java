@@ -16,6 +16,7 @@ public interface AdminUserManagementService {
 
     record AdminUserItem(
             UUID id,
+            UUID tenantId,
             String phoneNumber,
             String email,
             String name,

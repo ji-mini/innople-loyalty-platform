@@ -20,7 +20,9 @@ import { PointReportPage } from '../pages/reports/PointReportPage'
 import { MemberReportPage } from '../pages/reports/MemberReportPage'
 import { TenantsPage } from '../pages/tenants/TenantsPage'
 import { TenantAdminsPage } from '../pages/tenants/TenantAdminsPage'
+import { TenantDetailPage } from '../pages/tenants/TenantDetailPage'
 import { AdminAccountsPage } from '../pages/system/AdminAccountsPage'
+import { CommonCodesPage } from '../pages/system/CommonCodesPage'
 import { PermissionsPage } from '../pages/system/PermissionsPage'
 import { LogsPage } from '../pages/system/LogsPage'
 import { BrandHeader } from './BrandHeader'
@@ -92,10 +94,12 @@ export const router = createBrowserRouter([
               // Tenant management
               { path: '/tenants', element: <TenantsPage /> },
               { path: '/tenants/admins', element: <TenantAdminsPage /> },
+              { path: '/tenants/:tenantId', element: <TenantDetailPage /> },
 
               // System management
               { path: '/system/users', element: <AdminAccountsPage /> },
               { path: '/system/admins', element: <Navigate to="/system/users" replace /> },
+              { path: '/system/common-codes', element: <CommonCodesPage /> },
               { path: '/system/permissions', element: <PermissionsPage /> },
               { path: '/system/logs', element: <LogsPage /> },
             ],

@@ -25,6 +25,7 @@ type MenuKey =
   | 'tenants.list'
   | 'tenants.admins'
   | 'system.users'
+  | 'system.commonCodes'
   | 'system.permissions'
   | 'system.logs'
 
@@ -45,6 +46,7 @@ const KEY_TO_PATH: Record<MenuKey, string> = {
   'tenants.list': '/tenants',
   'tenants.admins': '/tenants/admins',
   'system.users': '/system/users',
+  'system.commonCodes': '/system/common-codes',
   'system.permissions': '/system/permissions',
   'system.logs': '/system/logs',
 }
@@ -74,6 +76,7 @@ function pickSelectedKey(pathname: string): MenuKey {
   }
 
   if (pathname.startsWith('/system/users') || pathname.startsWith('/system/admins')) return 'system.users'
+  if (pathname.startsWith('/system/common-codes')) return 'system.commonCodes'
   if (pathname.startsWith('/system/permissions')) return 'system.permissions'
   if (pathname.startsWith('/system/logs')) return 'system.logs'
 
@@ -219,13 +222,14 @@ export function AdminLayout() {
                     label: '시스템',
                     children: [
                       { key: 'system.users', label: '사용자 관리', onClick: () => nav(KEY_TO_PATH['system.users']) },
+                      { key: 'system.commonCodes', label: '공통코드 관리', onClick: () => nav(KEY_TO_PATH['system.commonCodes']) },
                       { key: 'system.permissions', label: '권한관리', onClick: () => nav(KEY_TO_PATH['system.permissions']) },
                       { key: 'system.logs', label: '로그조회', onClick: () => nav(KEY_TO_PATH['system.logs']) },
                     ],
                   },
                 ]
               : []),
-            ...(atLeast(role, 'ADMIN')
+            ...(atLeast(role, 'SUPER_ADMIN')
               ? [
                   {
                     key: 'tenants',

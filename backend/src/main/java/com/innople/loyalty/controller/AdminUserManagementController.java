@@ -58,6 +58,7 @@ public class AdminUserManagementController {
     private AdminUserManagementDtos.AdminUserResponse toResponse(AdminUserManagementService.AdminUserItem i) {
         return new AdminUserManagementDtos.AdminUserResponse(
                 i.id(),
+                i.tenantId(),
                 i.phoneNumber(),
                 i.email(),
                 i.name(),
