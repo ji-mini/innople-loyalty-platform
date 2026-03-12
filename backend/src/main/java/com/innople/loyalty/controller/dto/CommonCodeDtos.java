@@ -36,5 +36,10 @@ public final class CommonCodeDtos {
             Instant updatedAt
     ) {
     }
+
+    public record SeedResponse(
+            int createdCount
+    ) {
+    }
 }
 

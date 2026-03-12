@@ -20,6 +20,7 @@ type Row = {
 export function CommonCodesPage() {
   const role = getSession()?.role ?? 'OPERATOR'
   const canEdit = atLeast(role, 'SUPER_ADMIN')
+  const [seeding, setSeeding] = React.useState(false)
 
   const [filters, setFilters] = React.useState<{ codeGroup: string; active: '' | 'true' | 'false'; keyword: string }>({
     codeGroup: '',
@@ -103,9 +104,30 @@ export function CommonCodesPage() {
             테넌트별 공통코드를 조회/등록/수정합니다.
           </Typography.Text>
           {canEdit ? (
-            <Button size="small" type="primary" onClick={openCreate}>
-              공통코드 등록
-            </Button>
+            <>
+              <Button
+                size="small"
+                onClick={async () => {
+                  setSeeding(true)
+                  try {
+                    const res = await api.post('/api/v1/admin/common-codes/seed')
+                    const n = (res.data as any)?.createdCount ?? 0
+                    message.success(`기본 공통코드를 생성했습니다. (+${n})`)
+                    await q.refetch()
+                  } catch (e: any) {
+                    message.error(e?.response?.data?.message ?? e?.message ?? '기본 공통코드 생성 실패')
+                  } finally {
+                    setSeeding(false)
+                  }
+                }}
+                loading={seeding}
+              >
+                기본 공통코드 생성
+              </Button>
+              <Button size="small" type="primary" onClick={openCreate}>
+                공통코드 등록
+              </Button>
+            </>
           ) : null}
         </Space>
       }

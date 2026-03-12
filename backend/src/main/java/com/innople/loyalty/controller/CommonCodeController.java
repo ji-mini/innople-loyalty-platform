@@ -1,6 +1,7 @@
 package com.innople.loyalty.controller;
 
 import com.innople.loyalty.controller.dto.CommonCodeDtos;
+import com.innople.loyalty.service.code.CommonCodeSeedService;
 import com.innople.loyalty.service.code.CommonCodeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.util.UUID;
 public class CommonCodeController {
 
     private final CommonCodeService commonCodeService;
+    private final CommonCodeSeedService commonCodeSeedService;
 
     @GetMapping
     public List<CommonCodeDtos.CommonCodeResponse> list(
@@ -43,6 +45,12 @@ public class CommonCodeController {
                 request.active(),
                 request.sortOrder()
         ));
+    }
+
+    @PostMapping("/seed")
+    public CommonCodeDtos.SeedResponse seedDefaults() {
+        CommonCodeSeedService.SeedResult r = commonCodeSeedService.seedDefaultsForCurrentTenant();
+        return new CommonCodeDtos.SeedResponse(r.createdCount());
     }
 
     @PutMapping("/{commonCodeId}")

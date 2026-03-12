@@ -6,6 +6,7 @@ export function BrandHeader() {
     <div className="innople-brand-header">
       <Link to="/dashboard" className="innople-brand-link" aria-label="INNOPLE">
         <img className="innople-brand-logo" src={innopleLogo} alt="INNOPLE" />
+        <span className="innople-brand-title">INNO MEMBERSHIP ADMIN</span>
       </Link>
     </div>
   )

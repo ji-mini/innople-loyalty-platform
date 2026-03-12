@@ -7,6 +7,7 @@ import { getSession, setSession } from '../../shared/storage'
 import { logout } from '../../shared/auth'
 import { atLeast } from '../../shared/roles'
 import { listPublicTenants } from '../../shared/tenants'
+import { AdminBreadcrumbs } from './AdminBreadcrumbs'
 
 type MenuKey =
   | 'dashboard'
@@ -131,17 +132,13 @@ export function AdminLayout() {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Layout.Sider width={240} theme="light">
-        <div style={{ paddingInline: 16, paddingTop: 60, paddingBottom: 8 }}>
-          <Typography.Title level={5} style={{ margin: 0 }}>
-            INNO MEMBERSHIP ADMIN
-          </Typography.Title>
-        </div>
         <Menu
           mode="inline"
           selectedKeys={[selectedKey]}
           openKeys={openKeys}
           onOpenChange={(keys) => setOpenKeys(keys as string[])}
-          style={{ paddingTop: 12 }}
+          // fixed BrandHeader(로고/타이틀)와 겹치지 않도록 최소 여백
+          style={{ paddingTop: 72 }}
           items={[
             {
               key: 'dashboard',
@@ -282,6 +279,7 @@ export function AdminLayout() {
           </div>
         </Layout.Header>
         <Layout.Content style={{ padding: 16 }}>
+          <AdminBreadcrumbs />
           <Outlet />
         </Layout.Content>
       </Layout>
