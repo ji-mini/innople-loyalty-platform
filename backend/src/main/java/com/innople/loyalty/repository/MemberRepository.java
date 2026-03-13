@@ -3,6 +3,7 @@ package com.innople.loyalty.repository;
 import com.innople.loyalty.domain.member.Member;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +15,8 @@ import java.util.UUID;
 
 public interface MemberRepository extends JpaRepository<Member, UUID> {
     Optional<Member> findByTenantIdAndId(UUID tenantId, UUID id);
+
+    @EntityGraph(attributePaths = {"address"})
     Optional<Member> findByTenantIdAndMemberNo(UUID tenantId, String memberNo);
 
     long countByTenantId(UUID tenantId);

@@ -4,15 +4,19 @@ import com.innople.loyalty.config.TenantContext;
 import com.innople.loyalty.domain.log.ApiAuditCategory;
 import com.innople.loyalty.domain.log.ApiAuditLog;
 import com.innople.loyalty.repository.ApiAuditLogRepository;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -29,14 +33,8 @@ public class ApiAuditLogServiceImpl implements ApiAuditLogService {
         int s = Math.min(Math.max(size, 1), 200);
         PageRequest pageable = PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        Page<ApiAuditLog> result = apiAuditLogRepository.search(
-                tenantId,
-                category,
-                fromAt,
-                toAt,
-                normalize(keyword),
-                pageable
-        );
+        Specification<ApiAuditLog> spec = buildSearchSpec(tenantId, category, fromAt, toAt, normalize(keyword));
+        Page<ApiAuditLog> result = apiAuditLogRepository.findAll(spec, pageable);
 
         return new PagedResult(
                 result.getContent().stream().map(this::toItem).toList(),
@@ -45,6 +43,32 @@ public class ApiAuditLogServiceImpl implements ApiAuditLogService {
                 result.getTotalElements(),
                 result.getTotalPages()
         );
+    }
+
+    @SuppressWarnings("java:S4276")
+    private Specification<ApiAuditLog> buildSearchSpec(UUID tenantId, ApiAuditCategory category, Instant fromAt, Instant toAt, String keyword) {
+        return (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("tenantId"), tenantId));
+            if (category != null) {
+                predicates.add(cb.equal(root.get("category"), category));
+            }
+            if (fromAt != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), fromAt));
+            }
+            if (toAt != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), toAt));
+            }
+            if (keyword != null && !keyword.isBlank()) {
+                String pattern = "%" + keyword.toLowerCase() + "%";
+                predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("path")), pattern),
+                        cb.like(cb.lower(cb.coalesce(root.get("message"), "")), pattern),
+                        cb.like(cb.lower(cb.coalesce(root.get("userAgent"), "")), pattern)
+                ));
+            }
+            return cb.and(predicates.toArray(Predicate[]::new));
+        };
     }
 
     @Override

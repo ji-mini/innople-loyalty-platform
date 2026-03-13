@@ -30,39 +30,38 @@ export function MembersPage() {
 
   const centerTitle = (text: string) => <div style={{ textAlign: 'center' }}>{text}</div>
 
+  const col = (title: string, extra?: object) => ({ title: centerTitle(title), align: 'center' as const, ...extra })
+
   const columns = [
     {
-      title: centerTitle('회원번호'),
+      ...col('회원번호'),
       dataIndex: 'memberNo',
       render: (v: string, r: MemberSummary) => (
         <Link to={`/members/${encodeURIComponent(r.memberNo)}`}>{v}</Link>
       ),
     },
-    { title: centerTitle('이름'), dataIndex: 'name' },
+    { ...col('이름'), dataIndex: 'name' },
     {
-      title: centerTitle('포인트잔액'),
-      dataIndex: 'pointBalance',
-      width: 140,
-      align: 'right' as const,
-      render: (v: number) => `${Number(v ?? 0).toLocaleString('ko-KR')} P`,
-    },
-    {
-      title: centerTitle('상태'),
+      ...col('상태'),
       dataIndex: 'statusCode',
       render: (v: string) => {
         const name = statusCodes.data?.find((c) => c.code === v)?.name ?? v
         return <Tag>{name}</Tag>
       },
     },
-    { title: centerTitle('휴대폰'), dataIndex: 'phoneNumber' },
-    { title: centerTitle('Web ID'), dataIndex: 'webId' },
-    { title: centerTitle('가입일'), dataIndex: 'joinedAt' },
+    { ...col('휴대폰'), dataIndex: 'phoneNumber' },
+    { ...col('Web ID'), dataIndex: 'webId' },
+    { ...col('가입일'), dataIndex: 'joinedAt' },
+    {
+      ...col('포인트 잔액', { width: 140 }),
+      dataIndex: 'pointBalance',
+      render: (v: number) => `${Number(v ?? 0).toLocaleString('ko-KR')} P`,
+    },
     ...(role === 'SUPER_ADMIN'
       ? [
           {
-            title: centerTitle('작업'),
+            ...col('포인트 작업', { width: 210 }),
             key: 'actions',
-            width: 210,
             render: (_: any, r: MemberSummary) => (
               <Space>
                 <Button

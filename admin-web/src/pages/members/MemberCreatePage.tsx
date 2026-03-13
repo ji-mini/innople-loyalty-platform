@@ -44,7 +44,7 @@ type FormValues = {
   birthDate?: any
   calendarType?: 'SOLAR' | 'LUNAR'
   gender?: 'MALE' | 'FEMALE' | 'UNKNOWN'
-  anniversaries?: string
+  anniversaries?: any
   phoneNumber?: string
   ci?: string
   email?: string
@@ -214,6 +214,7 @@ export function MemberCreatePage() {
     try {
       const joinedAt = v.joinedAt?.format?.('YYYY-MM-DD')
       const birthDate = v.birthDate?.format?.('YYYY-MM-DD')
+      const anniversaries = v.anniversaries?.format?.('YYYY-MM-DD')
       const addr = v.address
       const hasAddress = addr?.zipCode?.trim() && addr?.roadAddress?.trim()
       await api.post('/api/v1/members', {
@@ -222,7 +223,7 @@ export function MemberCreatePage() {
         birthDate: birthDate ?? null,
         calendarType: v.calendarType ?? null,
         gender: v.gender ?? null,
-        anniversaries: v.anniversaries?.trim() ? v.anniversaries.trim() : null,
+        anniversaries: anniversaries ?? null,
         phoneNumber: v.phoneNumber?.trim() ? v.phoneNumber.trim() : null,
         ci: v.ci?.trim() ? v.ci.trim() : null,
         email: v.email?.trim() ? v.email.trim() : null,
@@ -311,9 +312,9 @@ export function MemberCreatePage() {
                 <DatePicker style={{ width: 180 }} placeholder="선택" />
               </Form.Item>
 
-              <Form.Item label="기념일(선택)" name="anniversaries">
-                <Input placeholder="예: 01-01, 12-25" style={{ width: 200 }} allowClear maxLength={1000} showCount />
-              </Form.Item>
+            <Form.Item label="기념일(선택)" name="anniversaries">
+              <DatePicker style={{ width: 180 }} placeholder="선택" />
+            </Form.Item>
 
               <Form.Item label="양/음력" name="calendarType">
                 <Select
@@ -351,8 +352,15 @@ export function MemberCreatePage() {
                 <Input placeholder="01000000000" style={{ width: 220 }} allowClear inputMode="numeric" suffix={memberNoLoading ? '...' : undefined} />
               </Form.Item>
 
-              <Form.Item label="휴대폰번호 인증(선택)" name="ci">
-                <Input placeholder="CI 인증값 입력" style={{ width: 220 }} allowClear maxLength={200} showCount />
+              <Form.Item label="휴대폰번호 인증(선택)">
+                <Space>
+                  <Form.Item name="ci" noStyle>
+                    <Input style={{ display: 'none' }} />
+                  </Form.Item>
+                  <Button type="default" onClick={() => message.info('휴대폰번호 인증 기능은 준비 중입니다.')}>
+                    인증하기
+                  </Button>
+                </Space>
               </Form.Item>
 
               <Form.Item

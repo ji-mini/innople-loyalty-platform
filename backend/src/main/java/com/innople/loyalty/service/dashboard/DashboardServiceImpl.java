@@ -13,8 +13,6 @@ import com.innople.loyalty.repository.PointAccountRepository;
 import com.innople.loyalty.repository.PointLedgerRepository;
 import com.innople.loyalty.service.tenant.TenantQueryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,14 +74,7 @@ public class DashboardServiceImpl implements DashboardService {
                 ))
                 .toList();
 
-        List<ApiAuditLog> recentLogs = apiAuditLogRepository.search(
-                tenantId,
-                null,
-                null,
-                null,
-                null,
-                PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"))
-        ).getContent();
+        List<ApiAuditLog> recentLogs = apiAuditLogRepository.findTop20ByTenantIdOrderByCreatedAtDesc(tenantId);
 
         List<UUID> adminIds = recentLogs.stream()
                 .map(ApiAuditLog::getAdminUserId)

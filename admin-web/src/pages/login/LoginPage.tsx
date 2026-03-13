@@ -129,10 +129,39 @@ export function LoginPage() {
         <section className={styles.hero}>
           <h1 className={styles.brand}>INNOPLE LOYALTY PLATFORM</h1>
           <p className={styles.tagline}>테넌트 기반 멀티테넌시로, 더 안전하고 유연한 운영을 지원합니다.</p>
-          <div className={styles.chips}>
-            <div className={styles.chip}>테넌트 기반 멀티테넌시</div>
-            <div className={styles.chip}>회원 조회 · 관리</div>
-            <div className={styles.chip}>포인트/거래 이력</div>
+          <div className={styles.featureCards}>
+            <div className={styles.featureCard}>
+              <div className={styles.featureCardImg}>
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="8" y="12" width="20" height="20" rx="4" fill="rgba(255,139,122,0.9)" />
+                  <rect x="36" y="12" width="20" height="20" rx="4" fill="rgba(139,216,194,0.9)" />
+                  <rect x="8" y="36" width="20" height="20" rx="4" fill="rgba(155,225,255,0.9)" />
+                  <rect x="36" y="36" width="20" height="20" rx="4" fill="rgba(255,180,210,0.9)" />
+                </svg>
+              </div>
+              <span className={styles.featureCardLabel}>테넌트 기반 멀티테넌시</span>
+            </div>
+            <div className={styles.featureCard}>
+              <div className={styles.featureCardImg}>
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="32" cy="20" r="10" fill="rgba(139,216,194,0.9)" />
+                  <path d="M12 52c0-11 8.95-20 20-20s20 9 20 20" stroke="rgba(139,216,194,0.9)" strokeWidth="6" fill="none" strokeLinecap="round" />
+                  <circle cx="48" cy="28" r="6" fill="rgba(255,139,122,0.9)" />
+                  <path d="M36 48c0-6.6 5.4-12 12-12" stroke="rgba(255,139,122,0.9)" strokeWidth="4" fill="none" strokeLinecap="round" />
+                </svg>
+              </div>
+              <span className={styles.featureCardLabel}>회원 조회 · 관리</span>
+            </div>
+            <div className={styles.featureCard}>
+              <div className={styles.featureCardImg}>
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="32" cy="28" r="14" fill="rgba(155,225,255,0.9)" />
+                  <path d="M32 18v20M24 28h16" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                  <rect x="14" y="44" width="36" height="8" rx="2" fill="rgba(255,180,210,0.9)" />
+                </svg>
+              </div>
+              <span className={styles.featureCardLabel}>포인트/거래 이력</span>
+            </div>
           </div>
         </section>
 
