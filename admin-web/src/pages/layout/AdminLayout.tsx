@@ -111,17 +111,16 @@ export function AdminLayout() {
   const tenantByIdQuery = useQuery({
     queryKey: ['public', 'tenants', tenantId],
     queryFn: () => getTenantById(tenantId!),
-    enabled: !!tenantId && !tenantsQuery.isLoading && !tenantInList,
+    enabled: !!tenantId && !tenantInList,
   })
 
   const tenantName = React.useMemo(() => {
     if (!tenantId) return '-'
-    if (tenantsQuery.isLoading) return '로딩 중...'
     if (tenantInList) return tenantInList.name
-    if (tenantByIdQuery.isLoading) return '로딩 중...'
     if (tenantByIdQuery.data?.name) return tenantByIdQuery.data.name
-    return tenantId
-  }, [tenantId, tenantsQuery.isLoading, tenantInList, tenantByIdQuery.isLoading, tenantByIdQuery.data?.name])
+    if (tenantsQuery.isLoading || tenantByIdQuery.isLoading) return '로딩 중...'
+    return '테넌트'
+  }, [tenantId, tenantInList, tenantByIdQuery.data?.name, tenantByIdQuery.isLoading, tenantsQuery.isLoading])
 
   const tenantSelectOptions = React.useMemo(() => {
     const items = tenantsQuery.data?.items ?? []

@@ -167,12 +167,12 @@ export function TenantAdminsPage() {
             },
             { title: '이름', dataIndex: 'name', width: 180 },
             { title: '휴대폰', dataIndex: 'phoneNumber', width: 180 },
-            { title: '이메일', dataIndex: 'email', render: (v: string | null) => v ?? '-' },
+            { title: '이메일', dataIndex: 'email', width: 120, render: (v: string | null) => v ?? '-' },
             { title: '권한', dataIndex: 'role', width: 180, render: (v: Row['role']) => <Tag>{roleName.get(v) ?? v}</Tag> },
             {
               title: '수정일시',
               dataIndex: 'updatedAt',
-              width: 190,
+              width: 260,
             },
             ...(canEdit
               ? [

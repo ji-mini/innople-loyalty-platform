@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 @RestController
 @RequestMapping("/api/v1/reports/members")
@@ -20,9 +21,22 @@ public class MemberReportController {
 
     @GetMapping
     public MemberReportDtos.MemberReportResponse get(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate totalAsOfDate
     ) {
-        LocalDate targetDate = date != null ? date : LocalDate.now();
-        return memberReportService.getReport(targetDate);
+        YearMonth now = YearMonth.now();
+        LocalDate from = fromDate != null ? fromDate : now.atDay(1);
+        LocalDate to = toDate != null ? toDate : now.atEndOfMonth();
+        LocalDate totalDate = totalAsOfDate != null ? totalAsOfDate : LocalDate.now();
+        return memberReportService.getReport(from, to, totalDate);
+    }
+
+    @GetMapping("/monthly-totals")
+    public MemberReportDtos.MonthlyTotalsResponse getMonthlyTotals(
+            @RequestParam(required = false) Integer year
+    ) {
+        int targetYear = year != null ? year : LocalDate.now().getYear();
+        return memberReportService.getMonthlyTotals(targetYear);
     }
 }

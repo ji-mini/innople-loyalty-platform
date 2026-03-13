@@ -33,6 +33,17 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
 
     long countByTenantIdAndWithdrawnAtBetween(UUID tenantId, LocalDate from, LocalDate to);
 
+    @Query("select count(m) from Member m where m.tenantId = :tenantId and m.statusCode <> :excludeStatus")
+    long countByTenantIdAndStatusCodeNot(@Param("tenantId") UUID tenantId, @Param("excludeStatus") String excludeStatus);
+
+    @Query("""
+            select count(m) from Member m
+            where m.tenantId = :tenantId
+              and m.joinedAt <= :asOfDate
+              and (m.withdrawnAt is null or m.withdrawnAt > :asOfDate)
+            """)
+    long countActiveMembersAsOf(@Param("tenantId") UUID tenantId, @Param("asOfDate") LocalDate asOfDate);
+
     List<Member> findByTenantIdAndIdIn(UUID tenantId, List<UUID> ids);
 
     boolean existsByTenantIdAndMemberNo(UUID tenantId, String memberNo);

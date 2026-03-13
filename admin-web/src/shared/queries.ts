@@ -132,24 +132,43 @@ export function useMemberGrades() {
 }
 
 export type MemberReportResponse = {
-  date: string
+  fromDate: string
+  toDate: string
+  totalAsOfDate: string
   newSignups: number
   dormant: number
   withdrawRequested: number
   withdrawn: number
-  totalSignups: number
+  totalMembers: number
 }
 
-export function useMemberReport(params: { date: string }) {
+export function useMemberReport(params: { fromDate: string; toDate: string; totalAsOfDate: string }) {
   return useQuery({
-    queryKey: ['reports', 'members', params.date],
+    queryKey: ['reports', 'members', params.fromDate, params.toDate, params.totalAsOfDate],
     queryFn: async () => {
       const res = await api.get<MemberReportResponse>('/api/v1/reports/members', {
-        params: { date: params.date },
+        params: { fromDate: params.fromDate, toDate: params.toDate, totalAsOfDate: params.totalAsOfDate },
       })
       return res.data
     },
-    enabled: !!params.date,
+    enabled: !!params.fromDate && !!params.toDate && !!params.totalAsOfDate,
+  })
+}
+
+export type MonthlyTotalItem = { month: number; totalMembers: number }
+
+export type MonthlyTotalsResponse = { year: number; items: MonthlyTotalItem[] }
+
+export function useMemberReportMonthlyTotals(year: number) {
+  return useQuery({
+    queryKey: ['reports', 'members', 'monthly-totals', year],
+    queryFn: async () => {
+      const res = await api.get<MonthlyTotalsResponse>('/api/v1/reports/members/monthly-totals', {
+        params: { year },
+      })
+      return res.data
+    },
+    enabled: !!year,
   })
 }
 

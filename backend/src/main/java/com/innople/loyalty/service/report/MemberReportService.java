@@ -6,5 +6,7 @@ import java.time.LocalDate;
 
 public interface MemberReportService {
 
-    MemberReportDtos.MemberReportResponse getReport(LocalDate date);
+    MemberReportDtos.MemberReportResponse getReport(LocalDate fromDate, LocalDate toDate, LocalDate totalAsOfDate);
+
+    MemberReportDtos.MonthlyTotalsResponse getMonthlyTotals(int year);
 }
