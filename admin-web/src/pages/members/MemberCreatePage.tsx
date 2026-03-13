@@ -1,4 +1,4 @@
-import { Button, Card, DatePicker, Form, Input, List, Modal, Select, Space, Typography, message } from 'antd'
+import { Button, Card, DatePicker, Form, Input, Modal, Select, Space, Typography, message } from 'antd'
 import dayjs from 'dayjs'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -235,7 +235,8 @@ export function MemberCreatePage() {
       message.success('회원이 등록되었습니다.')
       nav(`/members/${encodeURIComponent(v.memberNo.trim())}`, { replace: true })
     } catch (e: any) {
-      const msg = e?.response?.data?.message ?? e?.message ?? '회원 등록 실패'
+      const data = e?.response?.data
+      const msg = data?.message ?? data?.detail ?? e?.message ?? '회원 등록 실패'
       message.error(msg)
       if (String(msg).toLowerCase().includes('memberno') && String(msg).toLowerCase().includes('exists')) {
         // 동시 등록으로 memberNo가 선점되면 자동으로 다시 제안 값을 받아서 갱신합니다.
@@ -334,7 +335,7 @@ export function MemberCreatePage() {
           </Space>
 
           <Form.Item label="주소(선택)">
-            <Space direction="vertical" style={{ width: '100%' }} size={8}>
+            <Space orientation="vertical" style={{ width: '100%' }} size={8}>
               <Space.Compact>
                 <Form.Item name={['address', 'zipCode']} noStyle>
                   <Input placeholder="우편번호" readOnly style={{ width: 140 }} />
@@ -361,9 +362,9 @@ export function MemberCreatePage() {
             onCancel={() => setAddressSearchOpen(false)}
             footer={null}
             width={560}
-            destroyOnClose
+            destroyOnHidden
           >
-            <Space direction="vertical" style={{ width: '100%' }} size={12}>
+            <Space orientation="vertical" style={{ width: '100%' }} size={12}>
               <Space.Compact style={{ width: '100%' }}>
                 <Input
                   placeholder="도로명, 지번, 건물명 검색 (2글자 이상)"
@@ -380,26 +381,30 @@ export function MemberCreatePage() {
               {addressSearchError && (
                 <Typography.Text type="danger">{addressSearchError}</Typography.Text>
               )}
-              <List
-                size="small"
-                loading={addressSearchLoading}
-                dataSource={addressSearchResults}
-                style={{ maxHeight: 320, overflow: 'auto' }}
-                locale={{ emptyText: '검색어를 입력하고 조회를 눌러주세요.' }}
-                renderItem={(item) => (
-                  <List.Item
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => selectAddress(item)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        selectAddress(item)
-                      }
-                    }}
-                  >
-                    <div>
+              <div style={{ maxHeight: 320, overflow: 'auto' }}>
+                {addressSearchLoading ? (
+                  <Typography.Text type="secondary">검색 중...</Typography.Text>
+                ) : addressSearchResults.length === 0 ? (
+                  <Typography.Text type="secondary">검색어를 입력하고 조회를 눌러주세요.</Typography.Text>
+                ) : (
+                  addressSearchResults.map((item, idx) => (
+                    <div
+                      key={idx}
+                      role="button"
+                      tabIndex={0}
+                      style={{
+                        padding: '10px 12px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #f0f0f0',
+                      }}
+                      onClick={() => selectAddress(item)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          selectAddress(item)
+                        }
+                      }}
+                    >
                       <div>
                         <Typography.Text strong>[{item.zipNo}]</Typography.Text>{' '}
                         {item.roadAddrPart1}
@@ -411,9 +416,9 @@ export function MemberCreatePage() {
                         </Typography.Text>
                       )}
                     </div>
-                  </List.Item>
+                  ))
                 )}
-              />
+              </div>
             </Space>
           </Modal>
 

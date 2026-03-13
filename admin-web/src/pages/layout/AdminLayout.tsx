@@ -294,6 +294,9 @@ export function AdminLayout() {
               ) : (
                 <Typography.Text style={{ fontSize: 12, fontWeight: 700 }}>{tenantName}</Typography.Text>
               )}
+              <Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                {session?.name ?? '-'} / {session?.role ?? 'OPERATOR'}
+              </Typography.Text>
             </Space>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -320,9 +323,6 @@ export function AdminLayout() {
                   </Button>
                 </Space>
               )}
-              <Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                {session?.name ?? '-'} / {session?.role ?? 'OPERATOR'}
-              </Typography.Text>
               <Button icon={<LogoutOutlined />} onClick={onLogout}>
                 로그아웃
               </Button>

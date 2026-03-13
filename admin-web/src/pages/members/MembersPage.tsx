@@ -28,9 +28,11 @@ export function MembersPage() {
     size,
   })
 
+  const centerTitle = (text: string) => <div style={{ textAlign: 'center' }}>{text}</div>
+
   const columns = [
     {
-      title: '회원번호',
+      title: centerTitle('회원번호'),
       dataIndex: 'memberNo',
       render: (v: string, r: MemberSummary) => (
         <a
@@ -43,29 +45,29 @@ export function MembersPage() {
         </a>
       ),
     },
-    { title: '이름', dataIndex: 'name' },
+    { title: centerTitle('이름'), dataIndex: 'name' },
     {
-      title: '포인트잔액',
+      title: centerTitle('포인트잔액'),
       dataIndex: 'pointBalance',
       width: 140,
       align: 'right' as const,
       render: (v: number) => `${Number(v ?? 0).toLocaleString('ko-KR')} P`,
     },
     {
-      title: '상태',
+      title: centerTitle('상태'),
       dataIndex: 'statusCode',
       render: (v: string) => {
         const name = statusCodes.data?.find((c) => c.code === v)?.name ?? v
         return <Tag>{name}</Tag>
       },
     },
-    { title: '휴대폰', dataIndex: 'phoneNumber' },
-    { title: 'Web ID', dataIndex: 'webId' },
-    { title: '가입일', dataIndex: 'joinedAt' },
+    { title: centerTitle('휴대폰'), dataIndex: 'phoneNumber' },
+    { title: centerTitle('Web ID'), dataIndex: 'webId' },
+    { title: centerTitle('가입일'), dataIndex: 'joinedAt' },
     ...(role === 'SUPER_ADMIN'
       ? [
           {
-            title: '작업',
+            title: centerTitle('작업'),
             key: 'actions',
             width: 210,
             render: (_: any, r: MemberSummary) => (
