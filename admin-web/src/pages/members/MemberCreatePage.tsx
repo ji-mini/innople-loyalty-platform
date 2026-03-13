@@ -41,6 +41,9 @@ type AddressForm = AddressState & {
 type FormValues = {
   memberNo: string
   name: string
+  birthDate?: any
+  calendarType?: 'SOLAR' | 'LUNAR'
+  gender?: 'MALE' | 'FEMALE' | 'UNKNOWN'
   phoneNumber?: string
   email?: string
   webId?: string
@@ -208,11 +211,15 @@ export function MemberCreatePage() {
     setLoading(true)
     try {
       const joinedAt = v.joinedAt?.format?.('YYYY-MM-DD')
+      const birthDate = v.birthDate?.format?.('YYYY-MM-DD')
       const addr = v.address
       const hasAddress = addr?.zipCode?.trim() && addr?.roadAddress?.trim()
       await api.post('/api/v1/members', {
         memberNo: v.memberNo.trim(),
         name: v.name.trim(),
+        birthDate: birthDate ?? null,
+        calendarType: v.calendarType ?? null,
+        gender: v.gender ?? null,
         phoneNumber: v.phoneNumber?.trim() ? v.phoneNumber.trim() : null,
         email: v.email?.trim() ? v.email.trim() : null,
         webId: v.webId?.trim() ? v.webId.trim() : null,
@@ -272,6 +279,9 @@ export function MemberCreatePage() {
           initialValues={{
             memberNo: '',
             name: '',
+            birthDate: undefined,
+            calendarType: undefined,
+            gender: undefined,
             phoneNumber: '',
             email: '',
             webId: '',
@@ -288,6 +298,35 @@ export function MemberCreatePage() {
 
             <Form.Item label="이름" name="name" rules={[{ required: true, message: '이름을 입력하세요' }]}>
               <Input placeholder="예: 홍길동" style={{ width: 220 }} />
+            </Form.Item>
+
+            <Form.Item label="생년월일" name="birthDate">
+              <DatePicker style={{ width: 180 }} placeholder="선택" />
+            </Form.Item>
+
+            <Form.Item label="양/음력" name="calendarType">
+              <Select
+                style={{ width: 120 }}
+                placeholder="선택"
+                allowClear
+                options={[
+                  { value: 'SOLAR', label: '양력' },
+                  { value: 'LUNAR', label: '음력' },
+                ]}
+              />
+            </Form.Item>
+
+            <Form.Item label="성별" name="gender">
+              <Select
+                style={{ width: 120 }}
+                placeholder="선택"
+                allowClear
+                options={[
+                  { value: 'MALE', label: '남성' },
+                  { value: 'FEMALE', label: '여성' },
+                  { value: 'UNKNOWN', label: '미선택' },
+                ]}
+              />
             </Form.Item>
 
             <Form.Item

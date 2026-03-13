@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.UUID;
@@ -313,23 +314,22 @@ public class MemberServiceImpl implements MemberService {
                 ).toString()
                 : null;
 
-        Map<String, Object> snapshot = Map.ofEntries(
-                Map.entry("memberNo", member.getMemberNo()),
-                Map.entry("name", member.getName()),
-                Map.entry("birthDate", member.getBirthDate()),
-                Map.entry("calendarType", member.getCalendarType()),
-                Map.entry("gender", member.getGender()),
-                Map.entry("phoneNumber", member.getPhoneNumber()),
-                Map.entry("email", member.getEmail()),
-                Map.entry("address", addressSnapshot),
-                Map.entry("webId", member.getWebId()),
-                Map.entry("statusCode", member.getStatusCode()),
-                Map.entry("joinedAt", member.getJoinedAt()),
-                Map.entry("dormantAt", member.getDormantAt()),
-                Map.entry("withdrawnAt", member.getWithdrawnAt()),
-                Map.entry("ci", member.getCi()),
-                Map.entry("anniversaries", member.getAnniversaries())
-        );
+        Map<String, Object> snapshot = new HashMap<>();
+        snapshot.put("memberNo", member.getMemberNo());
+        snapshot.put("name", member.getName());
+        snapshot.put("birthDate", member.getBirthDate());
+        snapshot.put("calendarType", member.getCalendarType());
+        snapshot.put("gender", member.getGender());
+        snapshot.put("phoneNumber", member.getPhoneNumber());
+        snapshot.put("email", member.getEmail());
+        snapshot.put("address", addressSnapshot);
+        snapshot.put("webId", member.getWebId());
+        snapshot.put("statusCode", member.getStatusCode());
+        snapshot.put("joinedAt", member.getJoinedAt());
+        snapshot.put("dormantAt", member.getDormantAt());
+        snapshot.put("withdrawnAt", member.getWithdrawnAt());
+        snapshot.put("ci", member.getCi());
+        snapshot.put("anniversaries", member.getAnniversaries());
         try {
             return objectMapper.writeValueAsString(snapshot);
         } catch (JsonProcessingException e) {
