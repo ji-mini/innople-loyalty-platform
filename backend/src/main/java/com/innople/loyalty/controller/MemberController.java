@@ -1,15 +1,20 @@
 package com.innople.loyalty.controller;
 
 import com.innople.loyalty.controller.dto.MemberDtos;
+import com.innople.loyalty.service.member.MemberDuplicationService;
+import com.innople.loyalty.service.member.MemberNumberService;
 import com.innople.loyalty.service.member.MemberResult;
 import com.innople.loyalty.service.member.MemberService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -18,6 +23,24 @@ import org.springframework.web.bind.annotation.RestController;
 public class MemberController {
 
     private final MemberService memberService;
+    private final MemberNumberService memberNumberService;
+    private final MemberDuplicationService memberDuplicationService;
+
+    @GetMapping("/member-no/suggest")
+    public MemberDtos.SuggestMemberNoResponse suggestMemberNo(@RequestParam @NotBlank String phoneNumber) {
+        MemberNumberService.SuggestedMemberNo r = memberNumberService.suggestForPhoneNumber(phoneNumber);
+        return new MemberDtos.SuggestMemberNoResponse(r.memberNo());
+    }
+
+    @GetMapping("/duplicate-check")
+    public MemberDtos.DuplicationCheckResponse checkDuplicate(
+            @RequestParam(required = false) String memberNo,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String webId
+    ) {
+        MemberDuplicationService.DuplicationResult r = memberDuplicationService.check(memberNo, phoneNumber, webId);
+        return new MemberDtos.DuplicationCheckResponse(r.memberNoDuplicated(), r.phoneNumberDuplicated(), r.webIdDuplicated());
+    }
 
     @PostMapping
     public MemberDtos.MemberResponse register(@Valid @RequestBody MemberDtos.RegisterRequest request) {
@@ -28,6 +51,7 @@ public class MemberController {
                 request.calendarType(),
                 request.gender(),
                 request.phoneNumber(),
+                request.email(),
                 request.address(),
                 request.webId(),
                 request.statusCode(),
@@ -49,6 +73,7 @@ public class MemberController {
                 request.calendarType(),
                 request.gender(),
                 request.phoneNumber(),
+                request.email(),
                 request.address(),
                 request.webId(),
                 request.ci(),
@@ -90,6 +115,7 @@ public class MemberController {
                 r.calendarType(),
                 r.gender(),
                 r.phoneNumber(),
+                r.email(),
                 r.address(),
                 r.webId(),
                 r.statusCode(),

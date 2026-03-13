@@ -1,7 +1,9 @@
 package com.innople.loyalty.controller;
 
 import com.innople.loyalty.config.TenantContext;
+import com.innople.loyalty.controller.dto.MemberDtos;
 import com.innople.loyalty.controller.dto.MemberQueryDtos;
+import com.innople.loyalty.domain.member.Address;
 import com.innople.loyalty.domain.member.Member;
 import com.innople.loyalty.domain.member.MemberLedger;
 import com.innople.loyalty.repository.MemberLedgerRepository;
@@ -69,6 +71,7 @@ public class MemberQueryController {
                 v.getPointBalance(),
                 v.getStatusCode(),
                 v.getPhoneNumber(),
+                v.getEmail(),
                 v.getWebId(),
                 v.getJoinedAt(),
                 v.getDormantAt(),
@@ -117,6 +120,21 @@ public class MemberQueryController {
     }
 
     private MemberQueryDtos.MemberDetailResponse toDetail(Member m) {
+        Address addr = m.getAddress();
+        MemberDtos.AddressResponse addressResponse = addr != null
+                ? new MemberDtos.AddressResponse(
+                        addr.getId(),
+                        addr.getZipCode(),
+                        addr.getRoadAddress(),
+                        addr.getJibunAddress(),
+                        addr.getDetailAddress(),
+                        addr.getBuildingName(),
+                        addr.getSiDo(),
+                        addr.getSiGunGu(),
+                        addr.getEupMyeonDong(),
+                        addr.getLegalDongCode())
+                : null;
+
         return new MemberQueryDtos.MemberDetailResponse(
                 m.getId(),
                 m.getMemberNo(),
@@ -125,7 +143,8 @@ public class MemberQueryController {
                 m.getCalendarType(),
                 m.getGender(),
                 m.getPhoneNumber(),
-                m.getAddress(),
+                m.getEmail(),
+                addressResponse,
                 m.getWebId(),
                 m.getStatusCode(),
                 m.getJoinedAt(),

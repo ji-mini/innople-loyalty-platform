@@ -1,5 +1,5 @@
 import { api } from './api'
-import { clearSession, setSession, type AdminSession } from './storage'
+import { clearSession, setSession, SESSION_TTL_MS, type AdminSession } from './storage'
 import type { AdminLoginRequest, AdminLoginResponse, AdminRegisterRequest, AdminRegisterResponse } from './types'
 
 export async function login(tenantId: string, req: AdminLoginRequest): Promise<AdminSession> {
@@ -7,6 +7,7 @@ export async function login(tenantId: string, req: AdminLoginRequest): Promise<A
     headers: { 'X-Tenant-Id': tenantId },
   })
 
+  const now = Date.now()
   const session: AdminSession = {
     tenantId,
     accessToken: res.data.accessToken,
@@ -15,6 +16,7 @@ export async function login(tenantId: string, req: AdminLoginRequest): Promise<A
     email: res.data.email,
     name: res.data.name,
     role: res.data.role ?? 'OPERATOR',
+    expiresAt: now + SESSION_TTL_MS,
   }
 
   setSession(session)

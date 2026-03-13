@@ -11,6 +11,7 @@ public interface TenantAdminService {
     record TenantDetail(
             UUID tenantId,
             String name,
+            String representativeCode,
             Instant createdAt,
             Instant updatedAt
     ) {

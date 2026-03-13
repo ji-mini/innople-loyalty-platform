@@ -1,3 +1,4 @@
+import React from 'react'
 import { Navigate, Outlet, createBrowserRouter, useLocation } from 'react-router-dom'
 import { getSession } from '../shared/storage'
 import { canAccessPath } from '../shared/roles'
@@ -36,9 +37,23 @@ function RequireAuth() {
 }
 
 function RootLayout() {
+  const loc = useLocation()
+  const showFixedBrand = loc.pathname === '/login' || loc.pathname === '/signup'
+
+  // 사용자가 아무 요청 없이 오래 머물러도 5분 뒤 자동 로그아웃되도록 주기적으로 세션 만료를 확인합니다.
+  React.useEffect(() => {
+    const id = window.setInterval(() => {
+      const s = getSession()
+      if (!s && location.pathname !== '/login' && location.pathname !== '/signup') {
+        location.replace('/login')
+      }
+    }, 5000)
+    return () => window.clearInterval(id)
+  }, [])
+
   return (
     <>
-      <BrandHeader />
+      {showFixedBrand ? <BrandHeader variant="fixed" /> : null}
       <Outlet />
     </>
   )

@@ -5,7 +5,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -49,8 +52,12 @@ public class Member extends BaseEntity {
     @Column(nullable = true, length = 30)
     private String phoneNumber;
 
-    @Column(nullable = true, length = 500)
-    private String address;
+    @Column(nullable = true, length = 255)
+    private String email;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "address_id")
+    private Address address;
 
     @Column(nullable = true, length = 100)
     private String webId;
@@ -83,7 +90,8 @@ public class Member extends BaseEntity {
             CalendarType calendarType,
             Gender gender,
             String phoneNumber,
-            String address,
+            String email,
+            Address address,
             String webId,
             String statusCode,
             LocalDate joinedAt,
@@ -99,6 +107,7 @@ public class Member extends BaseEntity {
         member.calendarType = calendarType;
         member.gender = (gender != null) ? gender : Gender.UNKNOWN;
         member.phoneNumber = phoneNumber;
+        member.email = email;
         member.address = address;
         member.webId = webId;
         member.statusCode = requireText(statusCode, "statusCode");
@@ -116,7 +125,8 @@ public class Member extends BaseEntity {
             CalendarType calendarType,
             Gender gender,
             String phoneNumber,
-            String address,
+            String email,
+            Address address,
             String webId,
             String ci,
             String anniversaries
@@ -126,6 +136,7 @@ public class Member extends BaseEntity {
         this.calendarType = calendarType;
         this.gender = (gender != null) ? gender : Gender.UNKNOWN;
         this.phoneNumber = phoneNumber;
+        this.email = email;
         this.address = address;
         this.webId = webId;
         this.ci = ci;

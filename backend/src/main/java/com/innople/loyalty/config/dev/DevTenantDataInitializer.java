@@ -26,9 +26,9 @@ public class DevTenantDataInitializer implements ApplicationRunner {
         }
 
         tenantRepository.saveAll(List.of(
-                new Tenant("INNOPLE 데모 테넌트 A"),
-                new Tenant("INNOPLE 데모 테넌트 B"),
-                new Tenant("INNOPLE 데모 테넌트 C")
+                new Tenant("INNOPLE 데모 테넌트 A", "AA"),
+                new Tenant("INNOPLE 데모 테넌트 B", "BB"),
+                new Tenant("INNOPLE 데모 테넌트 C", "CC")
         ));
     }
 }

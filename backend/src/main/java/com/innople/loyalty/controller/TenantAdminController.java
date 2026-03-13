@@ -34,7 +34,7 @@ public class TenantAdminController {
     }
 
     private TenantAdminDtos.TenantResponse toResponse(TenantAdminService.TenantDetail d) {
-        return new TenantAdminDtos.TenantResponse(d.tenantId(), d.name(), d.createdAt(), d.updatedAt());
+        return new TenantAdminDtos.TenantResponse(d.tenantId(), d.name(), d.representativeCode(), d.createdAt(), d.updatedAt());
     }
 }
 

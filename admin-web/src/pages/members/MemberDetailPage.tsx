@@ -1,8 +1,15 @@
 import { Button, Card, Descriptions, Space, Table, Tabs, Tag, Typography } from 'antd'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useMemberDetail, useMemberLedgers } from '../../shared/queries'
-import type { MemberLedger } from '../../shared/types'
+import type { MemberAddress, MemberLedger } from '../../shared/types'
 import { getSession } from '../../shared/storage'
+
+function formatAddress(addr: MemberAddress | null | undefined): string {
+  if (!addr) return '-'
+  const base = addr.roadAddress ?? addr.jibunAddress ?? ''
+  const detail = addr.detailAddress?.trim()
+  return detail ? `${base} ${detail}` : base || '-'
+}
 
 export function MemberDetailPage() {
   const nav = useNavigate()
@@ -52,8 +59,9 @@ export function MemberDetailPage() {
                   <Descriptions.Item label="양/음력">{detail.data?.calendarType ?? '-'}</Descriptions.Item>
                   <Descriptions.Item label="성별">{detail.data?.gender ?? '-'}</Descriptions.Item>
                   <Descriptions.Item label="휴대폰">{detail.data?.phoneNumber ?? '-'}</Descriptions.Item>
+                  <Descriptions.Item label="이메일">{detail.data?.email ?? '-'}</Descriptions.Item>
                   <Descriptions.Item label="주소" span={2}>
-                    {detail.data?.address ?? '-'}
+                    {formatAddress(detail.data?.address)}
                   </Descriptions.Item>
                   <Descriptions.Item label="Web ID">{detail.data?.webId ?? '-'}</Descriptions.Item>
                   <Descriptions.Item label="CI">{detail.data?.ci ?? '-'}</Descriptions.Item>

@@ -32,6 +32,7 @@ export type AdminRegisterResponse = {
 export type TenantPublicItem = {
   tenantId: string
   name: string
+  representativeCode: string
 }
 
 export type TenantPublicListResponse = {
@@ -53,10 +54,24 @@ export type MemberSummary = {
   pointBalance: number
   statusCode: string
   phoneNumber: string | null
+  email: string | null
   webId: string | null
   joinedAt: string
   dormantAt: string | null
   withdrawnAt: string | null
+}
+
+export type MemberAddress = {
+  id: string
+  zipCode: string
+  roadAddress: string
+  jibunAddress: string | null
+  detailAddress: string | null
+  buildingName: string | null
+  siDo: string | null
+  siGunGu: string | null
+  eupMyeonDong: string | null
+  legalDongCode: string | null
 }
 
 export type MemberDetail = {
@@ -67,7 +82,8 @@ export type MemberDetail = {
   calendarType: 'SOLAR' | 'LUNAR' | null
   gender: 'MALE' | 'FEMALE' | 'UNKNOWN' | null
   phoneNumber: string | null
-  address: string | null
+  email: string | null
+  address: MemberAddress | null
   webId: string | null
   statusCode: string
   joinedAt: string

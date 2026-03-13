@@ -1,5 +1,6 @@
 package com.innople.loyalty.service.member;
 
+import com.innople.loyalty.controller.dto.MemberDtos.AddressResponse;
 import com.innople.loyalty.domain.member.CalendarType;
 import com.innople.loyalty.domain.member.Gender;
 
@@ -14,7 +15,8 @@ public record MemberResult(
         CalendarType calendarType,
         Gender gender,
         String phoneNumber,
-        String address,
+        String email,
+        AddressResponse address,
         String webId,
         String statusCode,
         LocalDate joinedAt,

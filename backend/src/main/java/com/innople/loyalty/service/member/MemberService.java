@@ -1,5 +1,6 @@
 package com.innople.loyalty.service.member;
 
+import com.innople.loyalty.controller.dto.MemberDtos.AddressRequest;
 import com.innople.loyalty.domain.member.CalendarType;
 import com.innople.loyalty.domain.member.Gender;
 
@@ -21,7 +22,8 @@ public interface MemberService {
             CalendarType calendarType,
             Gender gender,
             String phoneNumber,
-            String address,
+            String email,
+            AddressRequest address,
             String webId,
             String statusCode,
             LocalDate joinedAt,
@@ -36,7 +38,8 @@ public interface MemberService {
             CalendarType calendarType,
             Gender gender,
             String phoneNumber,
-            String address,
+            String email,
+            AddressRequest address,
             String webId,
             String ci,
             String anniversaries

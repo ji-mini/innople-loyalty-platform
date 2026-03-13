@@ -3,11 +3,15 @@ package com.innople.loyalty.service.member;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innople.loyalty.config.TenantContext;
+import com.innople.loyalty.controller.dto.MemberDtos.AddressRequest;
+import com.innople.loyalty.controller.dto.MemberDtos.AddressResponse;
 import com.innople.loyalty.domain.code.CommonCode;
+import com.innople.loyalty.domain.member.Address;
 import com.innople.loyalty.domain.member.Member;
 import com.innople.loyalty.domain.member.MemberLedger;
 import com.innople.loyalty.domain.member.MemberLedgerEventType;
 import com.innople.loyalty.domain.member.MemberStatusCodes;
+import com.innople.loyalty.repository.AddressRepository;
 import com.innople.loyalty.repository.CommonCodeRepository;
 import com.innople.loyalty.repository.MemberLedgerRepository;
 import com.innople.loyalty.repository.MemberRepository;
@@ -18,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.UUID;
 
 import static com.innople.loyalty.service.member.MemberExceptions.InvalidMemberStatusException;
@@ -29,9 +34,11 @@ import static com.innople.loyalty.service.member.MemberExceptions.MemberNotFound
 public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
+    private final AddressRepository addressRepository;
     private final MemberLedgerRepository memberLedgerRepository;
     private final CommonCodeRepository commonCodeRepository;
     private final ObjectMapper objectMapper;
+    private static final Pattern WEB_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
 
     @Override
     @Transactional
@@ -43,9 +50,34 @@ public class MemberServiceImpl implements MemberService {
                 : command.statusCode().trim();
 
         validateStatusCode(tenantId, statusCode);
+        validateWebId(command.webId());
 
         if (memberRepository.existsByTenantIdAndMemberNo(tenantId, command.memberNo())) {
             throw new MemberAlreadyExistsException("memberNo already exists");
+        }
+        String normalizedPhone = normalizePhoneOrNull(command.phoneNumber());
+        if (normalizedPhone != null && memberRepository.existsByTenantIdAndPhoneNumber(tenantId, normalizedPhone)) {
+            throw new MemberAlreadyExistsException("phoneNumber already exists");
+        }
+        String normalizedWebId = normalizeWebIdOrNull(command.webId());
+        if (normalizedWebId != null && memberRepository.existsByTenantIdAndWebId(tenantId, normalizedWebId)) {
+            throw new MemberAlreadyExistsException("webId already exists");
+        }
+
+        Address savedAddress = null;
+        if (command.address() != null) {
+            Address address = Address.of(
+                    command.address().zipCode(),
+                    command.address().roadAddress(),
+                    command.address().jibunAddress(),
+                    command.address().detailAddress(),
+                    command.address().buildingName(),
+                    command.address().siDo(),
+                    command.address().siGunGu(),
+                    command.address().eupMyeonDong(),
+                    command.address().legalDongCode()
+            );
+            savedAddress = addressRepository.save(address);
         }
 
         Member member = Member.register(
@@ -54,9 +86,10 @@ public class MemberServiceImpl implements MemberService {
                 command.birthDate(),
                 command.calendarType(),
                 command.gender(),
-                command.phoneNumber(),
-                command.address(),
-                command.webId(),
+                normalizedPhone,
+                command.email(),
+                savedAddress,
+                normalizedWebId,
                 statusCode,
                 (command.joinedAt() != null) ? command.joinedAt() : LocalDate.now(),
                 null,
@@ -88,13 +121,31 @@ public class MemberServiceImpl implements MemberService {
                 .orElseThrow(() -> new MemberNotFoundException("member not found"));
 
         String beforeStatus = member.getStatusCode();
+
+        Address savedAddress = null;
+        if (command.address() != null) {
+            Address address = Address.of(
+                    command.address().zipCode(),
+                    command.address().roadAddress(),
+                    command.address().jibunAddress(),
+                    command.address().detailAddress(),
+                    command.address().buildingName(),
+                    command.address().siDo(),
+                    command.address().siGunGu(),
+                    command.address().eupMyeonDong(),
+                    command.address().legalDongCode()
+            );
+            savedAddress = addressRepository.save(address);
+        }
+
         member.updateInfo(
                 command.name(),
                 command.birthDate(),
                 command.calendarType(),
                 command.gender(),
                 command.phoneNumber(),
-                command.address(),
+                command.email(),
+                savedAddress,
                 command.webId(),
                 command.ci(),
                 command.anniversaries()
@@ -189,6 +240,26 @@ public class MemberServiceImpl implements MemberService {
         }
     }
 
+    private void validateWebId(String webId) {
+        String v = normalizeWebIdOrNull(webId);
+        if (v == null) return;
+        if (!WEB_ID_PATTERN.matcher(v).matches()) {
+            throw new IllegalArgumentException("webId must match ^[A-Za-z0-9_-]+$");
+        }
+    }
+
+    private String normalizeWebIdOrNull(String rawWebId) {
+        if (rawWebId == null) return null;
+        String trimmed = rawWebId.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizePhoneOrNull(String rawPhoneNumber) {
+        if (rawPhoneNumber == null) return null;
+        String digits = rawPhoneNumber.replaceAll("\\D", "");
+        return digits.isEmpty() ? null : digits;
+    }
+
     private MemberResult toResult(Member member) {
         return new MemberResult(
                 member.getId(),
@@ -198,7 +269,8 @@ public class MemberServiceImpl implements MemberService {
                 member.getCalendarType(),
                 member.getGender(),
                 member.getPhoneNumber(),
-                member.getAddress(),
+                member.getEmail(),
+                toAddressResponse(member.getAddress()),
                 member.getWebId(),
                 member.getStatusCode(),
                 member.getJoinedAt(),
@@ -209,7 +281,38 @@ public class MemberServiceImpl implements MemberService {
         );
     }
 
+    private AddressResponse toAddressResponse(Address address) {
+        if (address == null) return null;
+        return new AddressResponse(
+                address.getId(),
+                address.getZipCode(),
+                address.getRoadAddress(),
+                address.getJibunAddress(),
+                address.getDetailAddress(),
+                address.getBuildingName(),
+                address.getSiDo(),
+                address.getSiGunGu(),
+                address.getEupMyeonDong(),
+                address.getLegalDongCode()
+        );
+    }
+
     private String toSnapshotJson(Member member) {
+        Address addr = member.getAddress();
+        String addressSnapshot = addr != null
+                ? Map.of(
+                        "zipCode", addr.getZipCode(),
+                        "roadAddress", addr.getRoadAddress(),
+                        "jibunAddress", addr.getJibunAddress() != null ? addr.getJibunAddress() : "",
+                        "detailAddress", addr.getDetailAddress() != null ? addr.getDetailAddress() : "",
+                        "buildingName", addr.getBuildingName() != null ? addr.getBuildingName() : "",
+                        "siDo", addr.getSiDo() != null ? addr.getSiDo() : "",
+                        "siGunGu", addr.getSiGunGu() != null ? addr.getSiGunGu() : "",
+                        "eupMyeonDong", addr.getEupMyeonDong() != null ? addr.getEupMyeonDong() : "",
+                        "legalDongCode", addr.getLegalDongCode() != null ? addr.getLegalDongCode() : ""
+                ).toString()
+                : null;
+
         Map<String, Object> snapshot = Map.ofEntries(
                 Map.entry("memberNo", member.getMemberNo()),
                 Map.entry("name", member.getName()),
@@ -217,7 +320,8 @@ public class MemberServiceImpl implements MemberService {
                 Map.entry("calendarType", member.getCalendarType()),
                 Map.entry("gender", member.getGender()),
                 Map.entry("phoneNumber", member.getPhoneNumber()),
-                Map.entry("address", member.getAddress()),
+                Map.entry("email", member.getEmail()),
+                Map.entry("address", addressSnapshot),
                 Map.entry("webId", member.getWebId()),
                 Map.entry("statusCode", member.getStatusCode()),
                 Map.entry("joinedAt", member.getJoinedAt()),

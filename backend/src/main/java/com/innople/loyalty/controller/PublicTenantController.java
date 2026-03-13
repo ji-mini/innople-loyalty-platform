@@ -22,7 +22,7 @@ public class PublicTenantController {
         List<TenantListItem> items = tenantQueryService.listTenants();
         return new TenantPublicDtos.ListTenantsResponse(
                 items.stream()
-                        .map(i -> new TenantPublicDtos.TenantItem(i.tenantId(), i.name()))
+                        .map(i -> new TenantPublicDtos.TenantItem(i.tenantId(), i.name(), i.representativeCode()))
                         .toList()
         );
     }

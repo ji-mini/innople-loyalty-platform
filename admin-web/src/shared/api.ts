@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getSession } from './storage'
+import { clearSession, getSession, touchSession } from './storage'
 
 type RuntimeAppConfig = {
   API_BASE_URL?: string
@@ -35,18 +35,34 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const session = getSession()
   if (session) {
+    const s = touchSession(session)
     config.headers = config.headers ?? {}
     const h = config.headers as any
     if (h['X-Tenant-Id'] == null && h['x-tenant-id'] == null) {
-      h['X-Tenant-Id'] = session.tenantId
+      h['X-Tenant-Id'] = s.tenantId
     }
     if (h['Authorization'] == null && h['authorization'] == null) {
-      h['Authorization'] = `Bearer ${session.accessToken}`
+      h['Authorization'] = `Bearer ${s.accessToken}`
     }
     if (h['X-Admin-User-Id'] == null && h['x-admin-user-id'] == null) {
-      h['X-Admin-User-Id'] = session.adminUserId
+      h['X-Admin-User-Id'] = s.adminUserId
     }
   }
   return config
 })
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    const status = err?.response?.status as number | undefined
+    if (status === 401) {
+      clearSession()
+      // 라우터 컨텍스트 밖에서도 확실히 로그아웃시키기 위해 hard redirect 사용
+      if (location.pathname !== '/login') {
+        location.replace('/login')
+      }
+    }
+    return Promise.reject(err)
+  }
+)
 

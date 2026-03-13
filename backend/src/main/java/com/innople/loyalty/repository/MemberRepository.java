@@ -16,6 +16,19 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
     Optional<Member> findByTenantIdAndMemberNo(UUID tenantId, String memberNo);
 
     boolean existsByTenantIdAndMemberNo(UUID tenantId, String memberNo);
+    boolean existsByTenantIdAndPhoneNumber(UUID tenantId, String phoneNumber);
+    boolean existsByTenantIdAndWebId(UUID tenantId, String webId);
+
+    @Query("""
+            select max(m.memberNo)
+            from Member m
+            where m.tenantId = :tenantId
+              and m.memberNo like concat(:prefix, '%')
+            """)
+    String findMaxMemberNoByTenantIdAndPrefix(
+            @Param("tenantId") UUID tenantId,
+            @Param("prefix") String prefix
+    );
 
     interface MemberSummaryView {
         UUID getId();
@@ -27,6 +40,8 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
         String getStatusCode();
 
         String getPhoneNumber();
+
+        String getEmail();
 
         String getWebId();
 
@@ -49,6 +64,7 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
                  or lower(m.memberNo) like lower(concat('%', :keyword, '%'))
                  or lower(m.name) like lower(concat('%', :keyword, '%'))
                  or lower(m.phoneNumber) like lower(concat('%', :keyword, '%'))
+                 or lower(m.email) like lower(concat('%', :keyword, '%'))
                  or lower(m.webId) like lower(concat('%', :keyword, '%'))
                  or lower(m.ci) like lower(concat('%', :keyword, '%'))
               )
@@ -67,6 +83,7 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
               m.name as name,
               m.statusCode as statusCode,
               m.phoneNumber as phoneNumber,
+              m.email as email,
               m.webId as webId,
               m.joinedAt as joinedAt,
               m.dormantAt as dormantAt,
@@ -89,6 +106,7 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
                  or lower(m.memberNo) like lower(concat('%', :keyword, '%'))
                  or lower(m.name) like lower(concat('%', :keyword, '%'))
                  or lower(m.phoneNumber) like lower(concat('%', :keyword, '%'))
+                 or lower(m.email) like lower(concat('%', :keyword, '%'))
                  or lower(m.webId) like lower(concat('%', :keyword, '%'))
                  or lower(m.ci) like lower(concat('%', :keyword, '%'))
               )

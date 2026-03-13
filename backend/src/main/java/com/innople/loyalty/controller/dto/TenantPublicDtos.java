@@ -9,7 +9,8 @@ public final class TenantPublicDtos {
 
     public record TenantItem(
             UUID tenantId,
-            String name
+            String name,
+            String representativeCode
     ) {
     }
 

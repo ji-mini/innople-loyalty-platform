@@ -12,6 +12,7 @@ public final class TenantAdminDtos {
     public record TenantResponse(
             UUID tenantId,
             String name,
+            String representativeCode,
             Instant createdAt,
             Instant updatedAt
     ) {

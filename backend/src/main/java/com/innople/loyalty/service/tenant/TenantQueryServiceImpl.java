@@ -20,7 +20,7 @@ public class TenantQueryServiceImpl implements TenantQueryService {
     public List<TenantListItem> listTenants() {
         List<Tenant> tenants = tenantRepository.findAll(Sort.by(Sort.Order.asc("name"), Sort.Order.asc("id")));
         return tenants.stream()
-                .map(t -> new TenantListItem(t.getTenantId(), t.getName()))
+                .map(t -> new TenantListItem(t.getTenantId(), t.getName(), t.getRepresentativeCode()))
                 .toList();
     }
 }

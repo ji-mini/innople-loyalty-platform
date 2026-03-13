@@ -31,10 +31,24 @@ a {
 }
 
 .innople-brand-header {
+  z-index: 50;
+}
+
+.innople-brand-header--fixed {
   position: fixed;
   top: 16px;
   left: 16px;
   z-index: 9999;
+}
+
+.innople-brand-header--sider {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  background: #fff;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .innople-brand-link {
@@ -60,9 +74,12 @@ a {
 }
 
 @media (max-width: 480px) {
-  .innople-brand-header {
+  .innople-brand-header--fixed {
     top: 12px;
     left: 12px;
+  }
+  .innople-brand-header--sider {
+    padding: 12px 14px 9px;
   }
   .innople-brand-logo {
     height: 17px;

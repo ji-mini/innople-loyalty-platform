@@ -8,6 +8,7 @@ import { logout } from '../../shared/auth'
 import { atLeast } from '../../shared/roles'
 import { listPublicTenants } from '../../shared/tenants'
 import { AdminBreadcrumbs } from './AdminBreadcrumbs'
+import { BrandHeader } from '../../app/BrandHeader'
 
 type MenuKey =
   | 'dashboard'
@@ -132,13 +133,13 @@ export function AdminLayout() {
   return (
     <Layout style={{ height: '100vh', overflow: 'hidden' }}>
       <Layout.Sider width={240} theme="light" style={{ height: '100vh', overflow: 'auto' }}>
+        <BrandHeader variant="sider" />
         <Menu
           mode="inline"
           selectedKeys={[selectedKey]}
           openKeys={openKeys}
           onOpenChange={(keys) => setOpenKeys(keys as string[])}
-          // fixed BrandHeader(로고/타이틀)와 겹치지 않도록 최소 여백
-          style={{ paddingTop: 72 }}
+          style={{ paddingTop: 8 }}
           items={[
             {
               key: 'dashboard',

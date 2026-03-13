@@ -45,7 +45,7 @@ public class TenantAdminServiceImpl implements TenantAdminService {
     }
 
     private TenantDetail toDetail(Tenant t) {
-        return new TenantDetail(t.getTenantId(), t.getName(), t.getCreatedAt(), t.getUpdatedAt());
+        return new TenantDetail(t.getTenantId(), t.getName(), t.getRepresentativeCode(), t.getCreatedAt(), t.getUpdatedAt());
     }
 }
 

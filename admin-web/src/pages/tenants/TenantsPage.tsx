@@ -8,6 +8,7 @@ import { listPublicTenants } from '../../shared/tenants'
 type Row = {
   tenantId: string
   name: string
+  representativeCode: string
 }
 
 export function TenantsPage() {
@@ -21,9 +22,14 @@ export function TenantsPage() {
 
   const rows = React.useMemo<Row[]>(() => {
     const k = keyword.trim().toLowerCase()
-    const items = (q.data?.items ?? []).map((t) => ({ tenantId: t.tenantId, name: t.name }))
+    const items = (q.data?.items ?? []).map((t) => ({ tenantId: t.tenantId, name: t.name, representativeCode: t.representativeCode }))
     if (!k) return items
-    return items.filter((r) => r.tenantId.toLowerCase().includes(k) || r.name.toLowerCase().includes(k))
+    return items.filter(
+      (r) =>
+        r.tenantId.toLowerCase().includes(k) ||
+        r.name.toLowerCase().includes(k) ||
+        r.representativeCode.toLowerCase().includes(k)
+    )
   }, [keyword, q.data?.items])
 
   return (
@@ -59,6 +65,7 @@ export function TenantsPage() {
           })}
           columns={[
             { title: '테넌트ID', dataIndex: 'tenantId', width: 260 },
+            { title: '대표코드', dataIndex: 'representativeCode', width: 110 },
             { title: '테넌트명', dataIndex: 'name' },
           ]}
           locale={{ emptyText: q.isError ? '테넌트 목록 조회에 실패했습니다.' : '테넌트 데이터가 없습니다.' }}
