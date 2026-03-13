@@ -1,37 +1,38 @@
 import { Card, Col, Row, Space, Statistic, Table, Tag, Typography } from 'antd'
 import React from 'react'
+import { useDashboard } from '../../shared/queries'
+import type { RecentAdminAction, RecentPointActivity } from '../../shared/queries'
 import { PageShell } from '../common/PageShell'
-
-type RecentPointActivity = {
-  id: string
-  createdAt: string
-  memberNo: string
-  brand: string
-  type: 'EARN' | 'USE' | 'EXPIRE'
-  amount: number
-  reason: string
-}
-
-type RecentAdminAction = {
-  id: string
-  createdAt: string
-  adminName: string
-  action: string
-  target: string
-}
 
 const nf = new Intl.NumberFormat('ko-KR')
 
-export function DashboardPage() {
-  // TODO: connect to backend dashboard summary API
-  const todayNewMembers = 0
-  const todayEarn = 0
-  const todayUse = 0
-  const totalMembers = 0
-  const totalPointBalance = 0
+function formatInstant(iso: string): string {
+  if (!iso) return '-'
+  try {
+    const d = new Date(iso)
+    return d.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return iso
+  }
+}
 
-  const recentPoints = React.useMemo<RecentPointActivity[]>(() => [], [])
-  const recentAdmins = React.useMemo<RecentAdminAction[]>(() => [], [])
+export function DashboardPage() {
+  const dashboard = useDashboard()
+  const summary = dashboard.data?.summary
+  const todayNewMembers = summary?.todayNewMembers ?? 0
+  const todayEarn = summary?.todayEarn ?? 0
+  const todayUse = summary?.todayUse ?? 0
+  const totalMembers = summary?.totalMembers ?? 0
+  const totalPointBalance = summary?.totalPointBalance ?? 0
+
+  const recentPoints = dashboard.data?.recentPoints ?? []
+  const recentAdmins = dashboard.data?.recentAdmins ?? []
 
   return (
     <PageShell
@@ -44,22 +45,22 @@ export function DashboardPage() {
     >
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card loading={dashboard.isLoading}>
             <Statistic title="오늘 신규 회원" value={todayNewMembers} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card loading={dashboard.isLoading}>
             <Statistic title="오늘 포인트 적립" value={todayEarn} formatter={(v) => `${nf.format(Number(v))} P`} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card loading={dashboard.isLoading}>
             <Statistic title="오늘 포인트 사용" value={todayUse} formatter={(v) => `${nf.format(Number(v))} P`} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card loading={dashboard.isLoading}>
             <Statistic title="총 포인트 잔액" value={totalPointBalance} formatter={(v) => `${nf.format(Number(v))} P`} />
           </Card>
         </Col>
@@ -67,14 +68,14 @@ export function DashboardPage() {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
-          <Card title="최근 포인트 활동" extra={<Typography.Text type="secondary">최근 20건</Typography.Text>}>
+          <Card title="최근 포인트 활동" extra={<Typography.Text type="secondary">최근 20건</Typography.Text>} loading={dashboard.isLoading}>
             <Table<RecentPointActivity>
               size="small"
               rowKey={(r) => r.id}
               dataSource={recentPoints}
               pagination={false}
               columns={[
-                { title: '일시', dataIndex: 'createdAt', width: 160 },
+                { title: '일시', dataIndex: 'createdAt', width: 160, render: (v: string) => formatInstant(v) },
                 { title: '회원번호', dataIndex: 'memberNo', width: 140 },
                 { title: '브랜드', dataIndex: 'brand', width: 120 },
                 {
@@ -95,14 +96,14 @@ export function DashboardPage() {
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="최근 관리자 작업" extra={<Typography.Text type="secondary">최근 20건</Typography.Text>}>
+          <Card title="최근 관리자 작업" extra={<Typography.Text type="secondary">최근 20건</Typography.Text>} loading={dashboard.isLoading}>
             <Table<RecentAdminAction>
               size="small"
               rowKey={(r) => r.id}
               dataSource={recentAdmins}
               pagination={false}
               columns={[
-                { title: '일시', dataIndex: 'createdAt', width: 160 },
+                { title: '일시', dataIndex: 'createdAt', width: 160, render: (v: string) => formatInstant(v) },
                 { title: '관리자', dataIndex: 'adminName', width: 140 },
                 { title: '작업', dataIndex: 'action', width: 180 },
                 { title: '대상', dataIndex: 'target' },
@@ -113,7 +114,7 @@ export function DashboardPage() {
         </Col>
       </Row>
 
-      <Card>
+      <Card loading={dashboard.isLoading}>
         <Space wrap size={24}>
           <div>
             <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
@@ -125,7 +126,7 @@ export function DashboardPage() {
           </div>
           <div>
             <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
-              예시
+              오늘 현황
             </Typography.Text>
             <Typography.Text>
               오늘 적립 <b>{nf.format(todayEarn)}</b> P / 오늘 사용 <b>{nf.format(todayUse)}</b> P / 신규 회원{' '}

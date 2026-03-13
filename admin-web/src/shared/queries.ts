@@ -79,6 +79,48 @@ export type MemberGradeItem = {
   description: string | null
 }
 
+export type DashboardSummary = {
+  todayNewMembers: number
+  todayEarn: number
+  todayUse: number
+  totalMembers: number
+  totalPointBalance: number
+}
+
+export type RecentPointActivity = {
+  id: string
+  createdAt: string
+  memberNo: string
+  brand: string
+  type: 'EARN' | 'USE' | 'EXPIRE'
+  amount: number
+  reason: string
+}
+
+export type RecentAdminAction = {
+  id: string
+  createdAt: string
+  adminName: string
+  action: string
+  target: string
+}
+
+export type DashboardResponse = {
+  summary: DashboardSummary
+  recentPoints: RecentPointActivity[]
+  recentAdmins: RecentAdminAction[]
+}
+
+export function useDashboard() {
+  return useQuery({
+    queryKey: ['dashboard'],
+    queryFn: async () => {
+      const res = await api.get<DashboardResponse>('/api/v1/dashboard')
+      return res.data
+    },
+  })
+}
+
 export function useMemberGrades() {
   return useQuery({
     queryKey: ['member-grades'],

@@ -1,4 +1,4 @@
-import { Button, Card, Descriptions, Space, Table, Tabs, Tag, Typography } from 'antd'
+import { Alert, Button, Card, Descriptions, Space, Table, Tabs, Tag, Typography } from 'antd'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useCommonCodes, useMemberDetail, useMemberLedgers } from '../../shared/queries'
 import type { MemberAddress, MemberLedger } from '../../shared/types'
@@ -48,33 +48,48 @@ export function MemberDetailPage() {
       </div>
 
       <Tabs
+        defaultActiveKey="info"
         items={[
           {
             key: 'info',
             label: '회원정보',
             children: (
               <Card loading={detail.isLoading}>
-                <Descriptions bordered size="small" column={2}>
-                  <Descriptions.Item label="회원번호">{detail.data?.memberNo}</Descriptions.Item>
-                  <Descriptions.Item label="이름">{detail.data?.name}</Descriptions.Item>
-                  <Descriptions.Item label="상태">{getStatusName(detail.data?.statusCode)}</Descriptions.Item>
-                  <Descriptions.Item label="가입일">{detail.data?.joinedAt}</Descriptions.Item>
-                  <Descriptions.Item label="생년월일">{detail.data?.birthDate ?? '-'}</Descriptions.Item>
-                  <Descriptions.Item label="양/음력">{detail.data?.calendarType ?? '-'}</Descriptions.Item>
-                  <Descriptions.Item label="성별">{detail.data?.gender ?? '-'}</Descriptions.Item>
-                  <Descriptions.Item label="휴대폰">{detail.data?.phoneNumber ?? '-'}</Descriptions.Item>
-                  <Descriptions.Item label="이메일">{detail.data?.email ?? '-'}</Descriptions.Item>
-                  <Descriptions.Item label="주소" span={2}>
-                    {formatAddress(detail.data?.address)}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Web ID">{detail.data?.webId ?? '-'}</Descriptions.Item>
-                  <Descriptions.Item label="CI">{detail.data?.ci ?? '-'}</Descriptions.Item>
-                  <Descriptions.Item label="휴면일자">{detail.data?.dormantAt ?? '-'}</Descriptions.Item>
-                  <Descriptions.Item label="탈퇴일자">{detail.data?.withdrawnAt ?? '-'}</Descriptions.Item>
-                  <Descriptions.Item label="기념일" span={2}>
-                    {detail.data?.anniversaries ?? '-'}
-                  </Descriptions.Item>
-                </Descriptions>
+                {detail.isError && (
+                  <Alert
+                    type="error"
+                    message="회원 정보를 불러오지 못했습니다."
+                    description={String(detail.error ?? '')}
+                    showIcon
+                    style={{ marginBottom: 16 }}
+                  />
+                )}
+                {!detail.isLoading && !detail.data && !detail.isError && (
+                  <Typography.Text type="secondary">회원을 찾을 수 없습니다.</Typography.Text>
+                )}
+                {detail.data && (
+                  <Descriptions bordered size="small" column={2}>
+                    <Descriptions.Item label="회원번호">{detail.data.memberNo ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="이름">{detail.data.name ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="상태">{getStatusName(detail.data.statusCode)}</Descriptions.Item>
+                    <Descriptions.Item label="가입일">{detail.data.joinedAt ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="생년월일">{detail.data.birthDate ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="양/음력">{detail.data.calendarType ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="성별">{detail.data.gender ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="휴대폰">{detail.data.phoneNumber ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="이메일">{detail.data.email ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="주소" span={2}>
+                      {formatAddress(detail.data.address)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Web ID">{detail.data.webId ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="CI">{detail.data.ci ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="휴면일자">{detail.data.dormantAt ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="탈퇴일자">{detail.data.withdrawnAt ?? '-'}</Descriptions.Item>
+                    <Descriptions.Item label="기념일" span={2}>
+                      {detail.data.anniversaries ?? '-'}
+                    </Descriptions.Item>
+                  </Descriptions>
+                )}
               </Card>
             ),
           },

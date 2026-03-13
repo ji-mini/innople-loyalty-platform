@@ -8,12 +8,19 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface MemberRepository extends JpaRepository<Member, UUID> {
     Optional<Member> findByTenantIdAndId(UUID tenantId, UUID id);
     Optional<Member> findByTenantIdAndMemberNo(UUID tenantId, String memberNo);
+
+    long countByTenantId(UUID tenantId);
+
+    long countByTenantIdAndJoinedAt(UUID tenantId, LocalDate joinedAt);
+
+    List<Member> findByTenantIdAndIdIn(UUID tenantId, List<UUID> ids);
 
     boolean existsByTenantIdAndMemberNo(UUID tenantId, String memberNo);
     boolean existsByTenantIdAndPhoneNumber(UUID tenantId, String phoneNumber);
@@ -61,12 +68,11 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
               and (:statusCode is null or m.statusCode = :statusCode)
               and (
                     :keyword is null
-                 or lower(m.memberNo) like lower(concat('%', :keyword, '%'))
-                 or lower(m.name) like lower(concat('%', :keyword, '%'))
-                 or lower(m.phoneNumber) like lower(concat('%', :keyword, '%'))
-                 or lower(m.email) like lower(concat('%', :keyword, '%'))
-                 or lower(m.webId) like lower(concat('%', :keyword, '%'))
-                 or lower(m.ci) like lower(concat('%', :keyword, '%'))
+                 or lower(m.memberNo) like lower(concat('%', cast(:keyword as string), '%'))
+                 or lower(m.name) like lower(concat('%', cast(:keyword as string), '%'))
+                 or lower(m.phoneNumber) like lower(concat('%', cast(:keyword as string), '%'))
+                 or lower(m.email) like lower(concat('%', cast(:keyword as string), '%'))
+                 or lower(m.webId) like lower(concat('%', cast(:keyword as string), '%'))
               )
             """)
     Page<Member> search(
@@ -95,20 +101,19 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
              and pa.memberId = m.id
             where m.tenantId = :tenantId
               and (:statusCode is null or m.statusCode = :statusCode)
-              and (:memberNo is null or lower(m.memberNo) like lower(concat('%', :memberNo, '%')))
-              and (:phoneNumber is null or lower(m.phoneNumber) like lower(concat('%', :phoneNumber, '%')))
-              and (:name is null or lower(m.name) like lower(concat('%', :name, '%')))
-              and (:webId is null or lower(m.webId) like lower(concat('%', :webId, '%')))
+              and (:memberNo is null or lower(m.memberNo) like lower(concat('%', cast(:memberNo as string), '%')))
+              and (:phoneNumber is null or lower(m.phoneNumber) like lower(concat('%', cast(:phoneNumber as string), '%')))
+              and (:name is null or lower(m.name) like lower(concat('%', cast(:name as string), '%')))
+              and (:webId is null or lower(m.webId) like lower(concat('%', cast(:webId as string), '%')))
               and (:joinedFrom is null or m.joinedAt >= :joinedFrom)
               and (:joinedTo is null or m.joinedAt <= :joinedTo)
               and (
                     :keyword is null
-                 or lower(m.memberNo) like lower(concat('%', :keyword, '%'))
-                 or lower(m.name) like lower(concat('%', :keyword, '%'))
-                 or lower(m.phoneNumber) like lower(concat('%', :keyword, '%'))
-                 or lower(m.email) like lower(concat('%', :keyword, '%'))
-                 or lower(m.webId) like lower(concat('%', :keyword, '%'))
-                 or lower(m.ci) like lower(concat('%', :keyword, '%'))
+                 or lower(m.memberNo) like lower(concat('%', cast(:keyword as string), '%'))
+                 or lower(m.name) like lower(concat('%', cast(:keyword as string), '%'))
+                 or lower(m.phoneNumber) like lower(concat('%', cast(:keyword as string), '%'))
+                 or lower(m.email) like lower(concat('%', cast(:keyword as string), '%'))
+                 or lower(m.webId) like lower(concat('%', cast(:keyword as string), '%'))
               )
             """)
     Page<MemberSummaryView> searchSummary(

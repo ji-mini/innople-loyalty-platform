@@ -1,6 +1,6 @@
-import { Button, Card, DatePicker, Form, Input, Select, Space, Table, Tag, Typography } from 'antd'
+import { Alert, Button, Card, DatePicker, Form, Input, Select, Space, Table, Tag, Typography } from 'antd'
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import type { MemberSummary } from '../../shared/types'
 import { useCommonCodes, useMemberList } from '../../shared/queries'
 import { getSession } from '../../shared/storage'
@@ -35,14 +35,7 @@ export function MembersPage() {
       title: centerTitle('회원번호'),
       dataIndex: 'memberNo',
       render: (v: string, r: MemberSummary) => (
-        <a
-          onClick={(e) => {
-            e.preventDefault()
-            nav(`/members/${encodeURIComponent(r.memberNo)}`)
-          }}
-        >
-          {v}
-        </a>
+        <Link to={`/members/${encodeURIComponent(r.memberNo)}`}>{v}</Link>
       ),
     },
     { title: centerTitle('이름'), dataIndex: 'name' },
@@ -166,6 +159,29 @@ export function MembersPage() {
       </Card>
 
       <Card>
+        {query.isError && (
+          <Alert
+            type="error"
+            message="회원 목록을 불러오지 못했습니다."
+            description={
+              (() => {
+                const err = query.error as any
+                if (err?.response?.data?.message) return err.response.data.message
+                if (err?.response?.status === 400) return '요청 형식이 올바르지 않습니다. (테넌트 정보 확인)'
+                if (err?.response?.status === 401) return '로그인이 필요합니다.'
+                if (err?.message) return err.message
+                return String(query.error)
+              })()
+            }
+            showIcon
+            action={
+              <Button size="small" onClick={() => query.refetch()}>
+                다시 시도
+              </Button>
+            }
+            style={{ marginBottom: 16 }}
+          />
+        )}
         <Table<MemberSummary>
           rowKey={(r) => r.id}
           columns={columns as any}
