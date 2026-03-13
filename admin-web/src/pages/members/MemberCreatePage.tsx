@@ -1,4 +1,4 @@
-import { Button, Card, DatePicker, Form, Input, Select, Space, Typography, message } from 'antd'
+import { Button, Card, DatePicker, Form, Input, List, Modal, Select, Space, Typography, message } from 'antd'
 import dayjs from 'dayjs'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -6,7 +6,14 @@ import { api } from '../../shared/api'
 import { useCommonCodes } from '../../shared/queries'
 import { PageShell } from '../common/PageShell'
 
-const JUSO_CONFIRM_KEY = 'U01TX0FVVEgyMDI2MDMxMzEzMDQzNTExNzcyNTI='
+type JusoSearchItem = {
+  roadAddr: string
+  roadAddrPart1: string
+  roadAddrPart2?: string
+  jibunAddr: string
+  zipNo: string
+  bdNm?: string
+}
 
 type AddressState = {
   zipCode: string
@@ -42,12 +49,6 @@ type FormValues = {
   address?: AddressForm
 }
 
-declare global {
-  interface Window {
-    jusoCallBack?: (data: AddressState) => void
-  }
-}
-
 const DEFAULT_STATUS = 'ACTIVE'
 
 export function MemberCreatePage() {
@@ -55,7 +56,6 @@ export function MemberCreatePage() {
   const [loading, setLoading] = React.useState(false)
   const [memberNoLoading, setMemberNoLoading] = React.useState(false)
   const [address, setAddress] = React.useState<AddressState>(INITIAL_ADDRESS)
-  const addressCallbackRef = React.useRef<((data: AddressState) => void) | null>(null)
   const [form] = Form.useForm<FormValues>()
   const statusCodes = useCommonCodes('MEMBER_STATUS')
   const phone = Form.useWatch('phoneNumber', form)
@@ -74,48 +74,6 @@ export function MemberCreatePage() {
     },
     [form]
   )
-
-  React.useEffect(() => {
-    addressCallbackRef.current = applyAddressData
-    window.jusoCallBack = (data: AddressState) => {
-      addressCallbackRef.current?.(data)
-    }
-    const onMessage = (e: MessageEvent) => {
-      if (e.data?.type === 'JUSO_CALLBACK' && e.data?.data) {
-        applyAddressData(e.data.data)
-      }
-    }
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'juso_callback_data' && e.newValue) {
-        try {
-          const data = JSON.parse(e.newValue) as AddressState
-          applyAddressData(data)
-          localStorage.removeItem('juso_callback_data')
-          localStorage.removeItem('juso_callback_ts')
-        } catch (_) {}
-      }
-    }
-    const checkPendingJuso = () => {
-      try {
-        const raw = localStorage.getItem('juso_callback_data')
-        if (raw) {
-          const data = JSON.parse(raw) as AddressState
-          applyAddressData(data)
-          localStorage.removeItem('juso_callback_data')
-          localStorage.removeItem('juso_callback_ts')
-        }
-      } catch (_) {}
-    }
-    window.addEventListener('message', onMessage)
-    window.addEventListener('storage', onStorage)
-    window.addEventListener('focus', checkPendingJuso)
-    return () => {
-      delete window.jusoCallBack
-      window.removeEventListener('message', onMessage)
-      window.removeEventListener('storage', onStorage)
-      window.removeEventListener('focus', checkPendingJuso)
-    }
-  }, [applyAddressData])
 
   React.useEffect(() => {
     const digits = String(phone ?? '').replace(/\D/g, '')
@@ -187,38 +145,63 @@ export function MemberCreatePage() {
     }
   }, [phone, memberNo, webId, form])
 
+  const [addressSearchOpen, setAddressSearchOpen] = React.useState(false)
+  const [addressKeyword, setAddressKeyword] = React.useState('')
+  const [addressSearchLoading, setAddressSearchLoading] = React.useState(false)
+  const [addressSearchResults, setAddressSearchResults] = React.useState<JusoSearchItem[]>([])
+  const [addressSearchError, setAddressSearchError] = React.useState<string | null>(null)
+
   const openAddressSearch = () => {
-    window.name = 'jusoOpener'
-    const formEl = document.createElement('form')
-    formEl.method = 'post'
-    formEl.action = 'https://business.juso.go.kr/addrlink/addrLinkUrl.do'
-    formEl.target = 'jusoPopup'
-    formEl.style.display = 'none'
+    setAddressSearchOpen(true)
+    setAddressKeyword('')
+    setAddressSearchResults([])
+    setAddressSearchError(null)
+  }
 
-    const confmKeyInput = document.createElement('input')
-    confmKeyInput.name = 'confmKey'
-    confmKeyInput.value = JUSO_CONFIRM_KEY
-    formEl.appendChild(confmKeyInput)
+  const searchAddress = async () => {
+    const k = addressKeyword.trim()
+    if (k.length < 2) {
+      message.warning('검색어는 두 글자 이상 입력해주세요.')
+      return
+    }
+    setAddressSearchLoading(true)
+    setAddressSearchError(null)
+    try {
+      const res = await api.get<{
+        results?: {
+          common?: { errorCode?: string; errorMessage?: string }
+          juso?: JusoSearchItem | JusoSearchItem[]
+        }
+      }>('/api/v1/public/juso/search', { params: { keyword: k, currentPage: 1, countPerPage: 20 } })
+      const common = res.data?.results?.common
+      const errCode = common?.errorCode
+      if (errCode && errCode !== '0') {
+        setAddressSearchError(common?.errorMessage ?? '검색 실패')
+        setAddressSearchResults([])
+        return
+      }
+      const juso = res.data?.results?.juso
+      const list = Array.isArray(juso) ? juso : juso ? [juso] : []
+      setAddressSearchResults(list)
+      if (list.length === 0) setAddressSearchError('검색 결과가 없습니다.')
+    } catch (e: any) {
+      setAddressSearchError(e?.response?.data?.message ?? e?.message ?? '주소 검색 실패')
+      setAddressSearchResults([])
+    } finally {
+      setAddressSearchLoading(false)
+    }
+  }
 
-    const returnUrlInput = document.createElement('input')
-    returnUrlInput.name = 'returnUrl'
-    returnUrlInput.value = `${window.location.origin}/juso-callback.html`
-    formEl.appendChild(returnUrlInput)
-
-    const resultTypeInput = document.createElement('input')
-    resultTypeInput.name = 'resultType'
-    resultTypeInput.value = '4'
-    formEl.appendChild(resultTypeInput)
-
-    const useDetailAddrInput = document.createElement('input')
-    useDetailAddrInput.name = 'useDetailAddr'
-    useDetailAddrInput.value = 'N'
-    formEl.appendChild(useDetailAddrInput)
-
-    document.body.appendChild(formEl)
-    window.open('', 'jusoPopup', 'width=570,height=420,scrollbars=yes')
-    formEl.submit()
-    document.body.removeChild(formEl)
+  const selectAddress = (item: JusoSearchItem) => {
+    applyAddressData({
+      zipCode: item.zipNo ?? '',
+      roadAddress: item.roadAddrPart1 ?? item.roadAddr ?? '',
+      jibunAddress: item.jibunAddr ?? '',
+      buildingName: item.bdNm ?? '',
+      detailAddress: form.getFieldValue(['address', 'detailAddress']) ?? '',
+    })
+    setAddressSearchOpen(false)
+    message.success('주소가 적용되었습니다.')
   }
 
   const onFinish = async (v: FormValues) => {
@@ -371,6 +354,68 @@ export function MemberCreatePage() {
               </Form.Item>
             </Space>
           </Form.Item>
+
+          <Modal
+            title="주소 검색"
+            open={addressSearchOpen}
+            onCancel={() => setAddressSearchOpen(false)}
+            footer={null}
+            width={560}
+            destroyOnClose
+          >
+            <Space direction="vertical" style={{ width: '100%' }} size={12}>
+              <Space.Compact style={{ width: '100%' }}>
+                <Input
+                  placeholder="도로명, 지번, 건물명 검색 (2글자 이상)"
+                  value={addressKeyword}
+                  onChange={(e) => setAddressKeyword(e.target.value)}
+                  onPressEnter={searchAddress}
+                  allowClear
+                  style={{ flex: 1 }}
+                />
+                <Button type="primary" onClick={searchAddress} loading={addressSearchLoading}>
+                  조회
+                </Button>
+              </Space.Compact>
+              {addressSearchError && (
+                <Typography.Text type="danger">{addressSearchError}</Typography.Text>
+              )}
+              <List
+                size="small"
+                loading={addressSearchLoading}
+                dataSource={addressSearchResults}
+                style={{ maxHeight: 320, overflow: 'auto' }}
+                locale={{ emptyText: '검색어를 입력하고 조회를 눌러주세요.' }}
+                renderItem={(item) => (
+                  <List.Item
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => selectAddress(item)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        selectAddress(item)
+                      }
+                    }}
+                  >
+                    <div>
+                      <div>
+                        <Typography.Text strong>[{item.zipNo}]</Typography.Text>{' '}
+                        {item.roadAddrPart1}
+                        {item.roadAddrPart2 ? ` ${item.roadAddrPart2}` : ''}
+                      </div>
+                      {item.jibunAddr && (
+                        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                          지번: {item.jibunAddr}
+                        </Typography.Text>
+                      )}
+                    </div>
+                  </List.Item>
+                )}
+              />
+            </Space>
+          </Modal>
 
           <Space>
             <Button type="primary" htmlType="submit" loading={loading}>

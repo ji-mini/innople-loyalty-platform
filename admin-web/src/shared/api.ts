@@ -66,3 +66,11 @@ api.interceptors.response.use(
   }
 )
 
+/** Juso 콜백 URL (백엔드 엔드포인트). HTTPS/HTTP 혼용 경고 회피. */
+export function getJusoCallbackUrl(): string {
+  const base = api.defaults.baseURL
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const root = (base && typeof base === 'string' && base.startsWith('http')) ? base.replace(/\/$/, '') : origin
+  return `${root}/api/v1/public/juso-callback`
+}
+

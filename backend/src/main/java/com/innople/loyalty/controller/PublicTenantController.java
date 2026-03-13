@@ -4,11 +4,14 @@ import com.innople.loyalty.controller.dto.TenantPublicDtos;
 import com.innople.loyalty.service.tenant.TenantListItem;
 import com.innople.loyalty.service.tenant.TenantQueryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/public/tenants")
@@ -25,6 +28,13 @@ public class PublicTenantController {
                         .map(i -> new TenantPublicDtos.TenantItem(i.tenantId(), i.name(), i.representativeCode()))
                         .toList()
         );
+    }
+
+    @GetMapping("/{tenantId}")
+    public ResponseEntity<TenantPublicDtos.TenantItem> getTenant(@PathVariable UUID tenantId) {
+        return tenantQueryService.findByTenantId(tenantId)
+                .map(i -> ResponseEntity.ok(new TenantPublicDtos.TenantItem(i.tenantId(), i.name(), i.representativeCode())))
+                .orElse(ResponseEntity.notFound().build());
     }
 }
 

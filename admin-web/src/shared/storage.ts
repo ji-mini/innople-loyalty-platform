@@ -1,8 +1,8 @@
 import type { AdminRole } from './types'
 
-export const SESSION_TTL_MS = 5 * 60 * 1000
-/** 만료 이전 이 시간 이내면 touch 시 연장 (2분) */
-const TOUCH_THRESHOLD_MS = 2 * 60 * 1000
+export const SESSION_TTL_MS = 30 * 60 * 1000
+/** 만료 이전 이 시간 이내면 touch 시 연장 (5분) */
+const TOUCH_THRESHOLD_MS = 5 * 60 * 1000
 
 export type AdminSession = {
   tenantId: string
@@ -67,13 +67,20 @@ export function clearSession(): void {
 }
 
 /**
- * 사용자 활동 또는 API 요청 시 TTL을 5분으로 연장(슬라이딩)합니다.
+ * 사용자 활동 또는 API 요청 시 TTL을 30분으로 연장(슬라이딩)합니다.
  * 임박했을 때만 갱신하여 localStorage write를 줄입니다.
  */
 export function touchSession(session: AdminSession): AdminSession {
   const now = Date.now()
   if (session.expiresAt - now > TOUCH_THRESHOLD_MS) return session
   const next: AdminSession = { ...session, expiresAt: now + SESSION_TTL_MS }
+  setSession(next)
+  return next
+}
+
+/** 세션 연장하기 버튼 등으로 수동 연장 시 항상 TTL을 30분으로 갱신합니다. */
+export function extendSession(session: AdminSession): AdminSession {
+  const next: AdminSession = { ...session, expiresAt: Date.now() + SESSION_TTL_MS }
   setSession(next)
   return next
 }

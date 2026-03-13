@@ -1,14 +1,14 @@
 import { BarChartOutlined, DashboardOutlined, GiftOutlined, LogoutOutlined, SettingOutlined, ShopOutlined, TeamOutlined } from '@ant-design/icons'
-import { Button, Layout, Menu, Select, Space, Tooltip, Typography } from 'antd'
+import { Button, Layout, Menu, message, Select, Space, Tooltip, Typography } from 'antd'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import React from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { getSession, setSession } from '../../shared/storage'
+import { extendSession, getSession, setSession } from '../../shared/storage'
 import { useSessionActivity } from '../../shared/useSessionActivity'
 import { useSessionRemaining } from '../../shared/useSessionRemaining'
 import { logout } from '../../shared/auth'
 import { atLeast } from '../../shared/roles'
-import { listPublicTenants } from '../../shared/tenants'
+import { getTenantById, listPublicTenants } from '../../shared/tenants'
 import { AdminBreadcrumbs } from './AdminBreadcrumbs'
 import { BrandHeader } from '../../app/BrandHeader'
 
@@ -102,12 +102,34 @@ export function AdminLayout() {
     queryFn: listPublicTenants,
   })
 
+  const tenantId = session?.tenantId
+  const tenantInList = React.useMemo(
+    () => tenantsQuery.data?.items?.find((t) => t.tenantId === tenantId),
+    [tenantsQuery.data?.items, tenantId]
+  )
+
+  const tenantByIdQuery = useQuery({
+    queryKey: ['public', 'tenants', tenantId],
+    queryFn: () => getTenantById(tenantId!),
+    enabled: !!tenantId && !tenantsQuery.isLoading && !tenantInList,
+  })
+
   const tenantName = React.useMemo(() => {
-    const id = session?.tenantId
-    if (!id) return '-'
-    const hit = tenantsQuery.data?.items?.find((t) => t.tenantId === id)
-    return hit?.name ?? id
-  }, [session?.tenantId, tenantsQuery.data?.items])
+    if (!tenantId) return '-'
+    if (tenantsQuery.isLoading) return '로딩 중...'
+    if (tenantInList) return tenantInList.name
+    if (tenantByIdQuery.isLoading) return '로딩 중...'
+    if (tenantByIdQuery.data?.name) return tenantByIdQuery.data.name
+    return tenantId
+  }, [tenantId, tenantsQuery.isLoading, tenantInList, tenantByIdQuery.isLoading, tenantByIdQuery.data?.name])
+
+  const tenantSelectOptions = React.useMemo(() => {
+    const items = tenantsQuery.data?.items ?? []
+    const base = items.map((t) => ({ value: t.tenantId, label: t.name }))
+    const hasCurrent = session?.tenantId && base.some((o) => o.value === session.tenantId)
+    if (hasCurrent || !session?.tenantId) return base
+    return [...base, { value: session.tenantId, label: tenantName }]
+  }, [tenantsQuery.data?.items, session?.tenantId, tenantName])
 
   const selectedKey = React.useMemo<MenuKey>(() => pickSelectedKey(loc.pathname), [loc.pathname])
   const groupKey = selectedKey.includes('.') ? selectedKey.split('.')[0] : undefined
@@ -262,7 +284,7 @@ export function AdminLayout() {
                   value={session?.tenantId}
                   onChange={onChangeTenant}
                   loading={tenantsQuery.isLoading}
-                  options={(tenantsQuery.data?.items ?? []).map((t) => ({ value: t.tenantId, label: t.name }))}
+                  options={tenantSelectOptions}
                   placeholder="테넌트 선택"
                   style={{ width: 220 }}
                   size="small"
@@ -276,11 +298,27 @@ export function AdminLayout() {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               {sessionRemaining != null && (
-                <Tooltip title="활동 시 자동 연장됩니다">
-                  <Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
-                    세션 {sessionRemaining}
-                  </Typography.Text>
-                </Tooltip>
+                <Space size={8}>
+                  <Tooltip title="활동 시 자동 연장됩니다">
+                    <Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                      세션 {sessionRemaining}
+                    </Typography.Text>
+                  </Tooltip>
+                  <Button
+                    size="small"
+                    type="link"
+                    style={{ padding: 0, height: 'auto', fontSize: 12 }}
+                    onClick={() => {
+                      if (session) {
+                        const next = extendSession(session)
+                        setSessionState(next)
+                        message.success('세션이 30분 연장되었습니다.')
+                      }
+                    }}
+                  >
+                    세션 연장하기
+                  </Button>
+                </Space>
               )}
               <Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
                 {session?.name ?? '-'} / {session?.role ?? 'OPERATOR'}

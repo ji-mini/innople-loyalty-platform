@@ -10,6 +10,8 @@ server:
 app:
   tenant:
     header-name: ${APP_TENANT_HEADER_NAME:X-Tenant-Id}
+  juso:
+    search-confm-key: ${APP_JUSO_SEARCH_CONFM_KEY:U01TX0FVVEgyMDI2MDMxMzEzNTcyNzExNzcyNTY=}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3200,http://127.0.0.1:3200,http://localhost:5173,http://127.0.0.1:5173,http://52.79.229.236:8090}
     allow-credentials: ${APP_CORS_ALLOW_CREDENTIALS:false}
