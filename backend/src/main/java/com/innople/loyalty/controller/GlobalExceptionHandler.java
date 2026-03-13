@@ -1,10 +1,12 @@
 package com.innople.loyalty.controller;
 
+import com.innople.loyalty.config.AdminRoleResolver;
 import com.innople.loyalty.domain.common.TenantMismatchException;
 import com.innople.loyalty.service.admin.AdminAuthExceptions;
 import com.innople.loyalty.service.admin.AdminUserManagementExceptions;
 import com.innople.loyalty.service.code.CommonCodeExceptions;
 import com.innople.loyalty.service.member.MemberExceptions;
+import com.innople.loyalty.service.member.MembershipGradeExceptions;
 import com.innople.loyalty.service.points.PointExceptions;
 import com.innople.loyalty.service.points.PointPolicyExceptions;
 import com.innople.loyalty.service.tenant.TenantAdminExceptions;
@@ -61,6 +63,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AdminAuthExceptions.InvalidCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleUnauthorized(AdminAuthExceptions.InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiErrorResponse.of(ex.getMessage()));
+    }
+
+    @ExceptionHandler(AdminRoleResolver.AdminAccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleForbidden(AdminRoleResolver.AdminAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiErrorResponse.of(ex.getMessage()));
+    }
+
+    @ExceptionHandler({
+            MembershipGradeExceptions.MembershipGradeNotFoundException.class,
+            MembershipGradeExceptions.LevelAlreadyExistsException.class
+    })
+    public ResponseEntity<ApiErrorResponse> handleMembershipGrade(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(ex.getMessage()));
     }
 
     private String formatFieldError(FieldError error) {

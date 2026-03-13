@@ -8,7 +8,8 @@
   <p>주소를 불러오는 중...</p>
   <script>
     (function() {
-      var p = new URLSearchParams(window.location.search);
+      var qs = window.location.search || (window.location.hash ? window.location.hash.slice(1) : '');
+      var p = new URLSearchParams(qs);
       var data = {
         zipCode: p.get('zipNo') || '',
         roadAddress: p.get('roadAddrPart1') || p.get('roadFullAddr') || '',
@@ -16,8 +17,27 @@
         buildingName: p.get('bdNm') || '',
         detailAddress: p.get('addrDetail') || ''
       };
-      if (window.opener && typeof window.opener.jusoCallBack === 'function') {
-        window.opener.jusoCallBack(data);
+      var sent = false;
+      var target = window.opener;
+      if (!target) {
+        try { target = window.open('', 'jusoOpener'); } catch (e) {}
+      }
+      if (target) {
+        try {
+          if (typeof target.jusoCallBack === 'function') {
+            target.jusoCallBack(data);
+            sent = true;
+          } else {
+            target.postMessage({ type: 'JUSO_CALLBACK', data: data }, '*');
+            sent = true;
+          }
+        } catch (e) {}
+      }
+      if (!sent) {
+        try {
+          localStorage.setItem('juso_callback_data', JSON.stringify(data));
+          localStorage.setItem('juso_callback_ts', String(Date.now()));
+        } catch (e) {}
       }
       window.close();
     })();

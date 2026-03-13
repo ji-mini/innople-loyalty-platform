@@ -54,7 +54,10 @@ export function MembersPage() {
     {
       title: '상태',
       dataIndex: 'statusCode',
-      render: (v: string) => <Tag>{v}</Tag>,
+      render: (v: string) => {
+        const name = statusCodes.data?.find((c) => c.code === v)?.name ?? v
+        return <Tag>{name}</Tag>
+      },
     },
     { title: '휴대폰', dataIndex: 'phoneNumber' },
     { title: 'Web ID', dataIndex: 'webId' },
@@ -137,7 +140,7 @@ export function MembersPage() {
                 allowClear
                 placeholder="전체"
                 loading={statusCodes.isLoading}
-                options={(statusCodes.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
+                options={(statusCodes.data ?? []).map((c) => ({ value: c.code, label: c.name }))}
               />
             </Form.Item>
             <Form.Item label=" " colon={false}>

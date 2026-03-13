@@ -1,6 +1,6 @@
 import { Button, Card, Descriptions, Space, Table, Tabs, Tag, Typography } from 'antd'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useMemberDetail, useMemberLedgers } from '../../shared/queries'
+import { useCommonCodes, useMemberDetail, useMemberLedgers } from '../../shared/queries'
 import type { MemberAddress, MemberLedger } from '../../shared/types'
 import { getSession } from '../../shared/storage'
 
@@ -19,12 +19,16 @@ export function MemberDetailPage() {
 
   const detail = useMemberDetail(memberNo)
   const ledgers = useMemberLedgers(memberNo, 100)
+  const statusCodes = useCommonCodes('MEMBER_STATUS')
+
+  const getStatusName = (code: string | null | undefined) =>
+    code ? (statusCodes.data?.find((c) => c.code === code)?.name ?? code) : '-'
 
   const ledgerCols = [
     { title: '일시', dataIndex: 'createdAt' },
     { title: '이벤트', dataIndex: 'eventType', render: (v: string) => <Tag>{v}</Tag> },
-    { title: '상태(전)', dataIndex: 'statusCodeBefore' },
-    { title: '상태(후)', dataIndex: 'statusCodeAfter' },
+    { title: '상태(전)', dataIndex: 'statusCodeBefore', render: getStatusName },
+    { title: '상태(후)', dataIndex: 'statusCodeAfter', render: getStatusName },
   ]
 
   return (
@@ -53,7 +57,7 @@ export function MemberDetailPage() {
                 <Descriptions bordered size="small" column={2}>
                   <Descriptions.Item label="회원번호">{detail.data?.memberNo}</Descriptions.Item>
                   <Descriptions.Item label="이름">{detail.data?.name}</Descriptions.Item>
-                  <Descriptions.Item label="상태">{detail.data?.statusCode}</Descriptions.Item>
+                  <Descriptions.Item label="상태">{getStatusName(detail.data?.statusCode)}</Descriptions.Item>
                   <Descriptions.Item label="가입일">{detail.data?.joinedAt}</Descriptions.Item>
                   <Descriptions.Item label="생년월일">{detail.data?.birthDate ?? '-'}</Descriptions.Item>
                   <Descriptions.Item label="양/음력">{detail.data?.calendarType ?? '-'}</Descriptions.Item>

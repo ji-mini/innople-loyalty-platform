@@ -35,5 +35,11 @@ public class MembershipGrade extends BaseEntity {
         this.level = level;
         this.description = description;
     }
+
+    public void update(String name, int level, String description) {
+        this.name = name;
+        this.level = level;
+        this.description = description;
+    }
 }
 

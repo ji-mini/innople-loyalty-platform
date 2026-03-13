@@ -62,8 +62,8 @@ export function MemberCreatePage() {
   const memberNo = Form.useWatch('memberNo', form)
   const webId = Form.useWatch('webId', form)
 
-  React.useEffect(() => {
-    addressCallbackRef.current = (data: AddressState) => {
+  const applyAddressData = React.useCallback(
+    (data: AddressState) => {
       setAddress((prev) => ({ ...data, detailAddress: prev.detailAddress }))
       form.setFieldsValue({
         address: {
@@ -71,14 +71,51 @@ export function MemberCreatePage() {
           detailAddress: form.getFieldValue(['address', 'detailAddress']) ?? '',
         },
       })
-    }
+    },
+    [form]
+  )
+
+  React.useEffect(() => {
+    addressCallbackRef.current = applyAddressData
     window.jusoCallBack = (data: AddressState) => {
       addressCallbackRef.current?.(data)
     }
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'JUSO_CALLBACK' && e.data?.data) {
+        applyAddressData(e.data.data)
+      }
+    }
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'juso_callback_data' && e.newValue) {
+        try {
+          const data = JSON.parse(e.newValue) as AddressState
+          applyAddressData(data)
+          localStorage.removeItem('juso_callback_data')
+          localStorage.removeItem('juso_callback_ts')
+        } catch (_) {}
+      }
+    }
+    const checkPendingJuso = () => {
+      try {
+        const raw = localStorage.getItem('juso_callback_data')
+        if (raw) {
+          const data = JSON.parse(raw) as AddressState
+          applyAddressData(data)
+          localStorage.removeItem('juso_callback_data')
+          localStorage.removeItem('juso_callback_ts')
+        }
+      } catch (_) {}
+    }
+    window.addEventListener('message', onMessage)
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('focus', checkPendingJuso)
     return () => {
       delete window.jusoCallBack
+      window.removeEventListener('message', onMessage)
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('focus', checkPendingJuso)
     }
-  }, [form])
+  }, [applyAddressData])
 
   React.useEffect(() => {
     const digits = String(phone ?? '').replace(/\D/g, '')
@@ -151,6 +188,7 @@ export function MemberCreatePage() {
   }, [phone, memberNo, webId, form])
 
   const openAddressSearch = () => {
+    window.name = 'jusoOpener'
     const formEl = document.createElement('form')
     formEl.method = 'post'
     formEl.action = 'https://business.juso.go.kr/addrlink/addrLinkUrl.do'
@@ -307,7 +345,7 @@ export function MemberCreatePage() {
               <Select
                 style={{ width: 200 }}
                 loading={statusCodes.isLoading}
-                options={(statusCodes.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
+                options={(statusCodes.data ?? []).map((c) => ({ value: c.code, label: c.name }))}
               />
             </Form.Item>
           </Space>
