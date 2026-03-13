@@ -1,25 +1,29 @@
 import { Card, Form, Input, Table, Typography } from 'antd'
 import React from 'react'
 import { PageShell } from '../common/PageShell'
-
-type MemberGrade = {
-  id: string
-  code: string
-  name: string
-  description: string
-}
+import { useMemberGrades } from '../../shared/queries'
 
 export function MemberGradesPage() {
   const [keyword, setKeyword] = React.useState('')
+  const { data: grades = [], isLoading } = useMemberGrades()
 
-  const rows = React.useMemo<MemberGrade[]>(() => [], [])
+  const rows = React.useMemo(() => {
+    if (!keyword.trim()) return grades
+    const k = keyword.toLowerCase().trim()
+    return grades.filter(
+      (g) =>
+        g.code.toLowerCase().includes(k) ||
+        (g.name?.toLowerCase().includes(k) ?? false) ||
+        (g.description?.toLowerCase().includes(k) ?? false)
+    )
+  }, [grades, keyword])
 
   return (
     <PageShell
       title="회원등급관리"
       extra={
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          등급 정책은 준비 중입니다.
+          회원 등급별 혜택 정책을 관리합니다.
         </Typography.Text>
       }
     >
@@ -38,9 +42,10 @@ export function MemberGradesPage() {
       </Card>
 
       <Card>
-        <Table<MemberGrade>
+        <Table
           rowKey={(r) => r.id}
           dataSource={rows}
+          loading={isLoading}
           pagination={false}
           columns={[
             { title: '코드', dataIndex: 'code', width: 160 },

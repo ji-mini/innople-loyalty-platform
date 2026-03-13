@@ -1,4 +1,7 @@
 spring:
+  flyway:
+    default-schema: loyalty
+    create-schemas: true
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}

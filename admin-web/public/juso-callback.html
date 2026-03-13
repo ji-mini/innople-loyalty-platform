@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>주소 검색 결과</title>
+</head>
+<body>
+  <p>주소를 불러오는 중...</p>
+  <script>
+    (function() {
+      var p = new URLSearchParams(window.location.search);
+      var data = {
+        zipCode: p.get('zipNo') || '',
+        roadAddress: p.get('roadAddrPart1') || p.get('roadFullAddr') || '',
+        jibunAddress: p.get('jibunAddr') || '',
+        buildingName: p.get('bdNm') || '',
+        detailAddress: p.get('addrDetail') || ''
+      };
+      if (window.opener && typeof window.opener.jusoCallBack === 'function') {
+        window.opener.jusoCallBack(data);
+      }
+      window.close();
+    })();
+  </script>
+</body>
+</html>

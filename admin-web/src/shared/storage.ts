@@ -1,7 +1,8 @@
 import type { AdminRole } from './types'
 
 export const SESSION_TTL_MS = 5 * 60 * 1000
-const TOUCH_THRESHOLD_MS = 60 * 1000
+/** 만료 이전 이 시간 이내면 touch 시 연장 (2분) */
+const TOUCH_THRESHOLD_MS = 2 * 60 * 1000
 
 export type AdminSession = {
   tenantId: string
@@ -66,8 +67,8 @@ export function clearSession(): void {
 }
 
 /**
- * 사용자 활동(요청)이 있을 때 TTL을 5분으로 연장(슬라이딩)합니다.
- * 너무 잦은 localStorage write를 피하려고 임박했을 때만 갱신합니다.
+ * 사용자 활동 또는 API 요청 시 TTL을 5분으로 연장(슬라이딩)합니다.
+ * 임박했을 때만 갱신하여 localStorage write를 줄입니다.
  */
 export function touchSession(session: AdminSession): AdminSession {
   const now = Date.now()
@@ -75,6 +76,22 @@ export function touchSession(session: AdminSession): AdminSession {
   const next: AdminSession = { ...session, expiresAt: now + SESSION_TTL_MS }
   setSession(next)
   return next
+}
+
+/** 남은 세션 시간(ms). 만료 시 0 이하. */
+export function getRemainingSessionMs(): number {
+  const s = getSession()
+  if (!s) return 0
+  return Math.max(0, s.expiresAt - Date.now())
+}
+
+/** 남은 세션 시간을 "4:32" 형식으로 반환 */
+export function formatRemainingSession(ms: number): string {
+  if (ms <= 0) return '0:00'
+  const totalSec = Math.ceil(ms / 1000)
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 export function getLoginRemember(): AdminLoginRemember | null {

@@ -1,9 +1,11 @@
 import { BarChartOutlined, DashboardOutlined, GiftOutlined, LogoutOutlined, SettingOutlined, ShopOutlined, TeamOutlined } from '@ant-design/icons'
-import { Button, Layout, Menu, Select, Space, Typography } from 'antd'
+import { Button, Layout, Menu, Select, Space, Tooltip, Typography } from 'antd'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import React from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { getSession, setSession } from '../../shared/storage'
+import { useSessionActivity } from '../../shared/useSessionActivity'
+import { useSessionRemaining } from '../../shared/useSessionRemaining'
 import { logout } from '../../shared/auth'
 import { atLeast } from '../../shared/roles'
 import { listPublicTenants } from '../../shared/tenants'
@@ -91,6 +93,9 @@ export function AdminLayout() {
   const qc = useQueryClient()
   const [session, setSessionState] = React.useState(() => getSession())
   const role = session?.role ?? 'OPERATOR'
+
+  useSessionActivity(!!session)
+  const sessionRemaining = useSessionRemaining(!!session)
 
   const tenantsQuery = useQuery({
     queryKey: ['public', 'tenants'],
@@ -270,6 +275,13 @@ export function AdminLayout() {
             </Space>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {sessionRemaining != null && (
+                <Tooltip title="활동 시 자동 연장됩니다">
+                  <Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                    세션 {sessionRemaining}
+                  </Typography.Text>
+                </Tooltip>
+              )}
               <Typography.Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
                 {session?.name ?? '-'} / {session?.role ?? 'OPERATOR'}
               </Typography.Text>

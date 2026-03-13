@@ -6,12 +6,25 @@ import { api } from '../../shared/api'
 import { useCommonCodes } from '../../shared/queries'
 import { PageShell } from '../common/PageShell'
 
-type AddressForm = {
+const JUSO_CONFIRM_KEY = 'U01TX0FVVEgyMDI2MDMxMzEzMDQzNTExNzcyNTI='
+
+type AddressState = {
   zipCode: string
   roadAddress: string
-  jibunAddress?: string
-  detailAddress?: string
-  buildingName?: string
+  jibunAddress: string
+  buildingName: string
+  detailAddress: string
+}
+
+const INITIAL_ADDRESS: AddressState = {
+  zipCode: '',
+  roadAddress: '',
+  jibunAddress: '',
+  buildingName: '',
+  detailAddress: '',
+}
+
+type AddressForm = AddressState & {
   siDo?: string
   siGunGu?: string
   eupMyeonDong?: string
@@ -31,21 +44,8 @@ type FormValues = {
 
 declare global {
   interface Window {
-    kakao?: {
-      Postcode: new (options: { oncomplete: (data: DaumPostcodeData) => void }) => { open: () => void }
-    }
+    jusoCallBack?: (data: AddressState) => void
   }
-}
-
-type DaumPostcodeData = {
-  zonecode: string
-  roadAddress: string
-  jibunAddress: string
-  buildingName: string
-  sido: string
-  sigungu: string
-  bname: string
-  bcode: string
 }
 
 const DEFAULT_STATUS = 'ACTIVE'
@@ -54,11 +54,31 @@ export function MemberCreatePage() {
   const nav = useNavigate()
   const [loading, setLoading] = React.useState(false)
   const [memberNoLoading, setMemberNoLoading] = React.useState(false)
+  const [address, setAddress] = React.useState<AddressState>(INITIAL_ADDRESS)
+  const addressCallbackRef = React.useRef<((data: AddressState) => void) | null>(null)
   const [form] = Form.useForm<FormValues>()
   const statusCodes = useCommonCodes('MEMBER_STATUS')
   const phone = Form.useWatch('phoneNumber', form)
   const memberNo = Form.useWatch('memberNo', form)
   const webId = Form.useWatch('webId', form)
+
+  React.useEffect(() => {
+    addressCallbackRef.current = (data: AddressState) => {
+      setAddress((prev) => ({ ...data, detailAddress: prev.detailAddress }))
+      form.setFieldsValue({
+        address: {
+          ...data,
+          detailAddress: form.getFieldValue(['address', 'detailAddress']) ?? '',
+        },
+      })
+    }
+    window.jusoCallBack = (data: AddressState) => {
+      addressCallbackRef.current?.(data)
+    }
+    return () => {
+      delete window.jusoCallBack
+    }
+  }, [form])
 
   React.useEffect(() => {
     const digits = String(phone ?? '').replace(/\D/g, '')
@@ -131,27 +151,36 @@ export function MemberCreatePage() {
   }, [phone, memberNo, webId, form])
 
   const openAddressSearch = () => {
-    if (!window.kakao?.Postcode) {
-      message.error('주소 검색 서비스를 불러올 수 없습니다.')
-      return
-    }
-    new window.kakao!.Postcode({
-      oncomplete: (data: DaumPostcodeData) => {
-        form.setFieldsValue({
-          address: {
-            zipCode: data.zonecode,
-            roadAddress: data.roadAddress,
-            jibunAddress: data.jibunAddress || undefined,
-            detailAddress: form.getFieldValue(['address', 'detailAddress']) || undefined,
-            buildingName: data.buildingName || undefined,
-            siDo: data.sido || undefined,
-            siGunGu: data.sigungu || undefined,
-            eupMyeonDong: data.bname || undefined,
-            legalDongCode: data.bcode || undefined,
-          },
-        })
-      },
-    }).open()
+    const formEl = document.createElement('form')
+    formEl.method = 'post'
+    formEl.action = 'https://business.juso.go.kr/addrlink/addrLinkUrl.do'
+    formEl.target = 'jusoPopup'
+    formEl.style.display = 'none'
+
+    const confmKeyInput = document.createElement('input')
+    confmKeyInput.name = 'confmKey'
+    confmKeyInput.value = JUSO_CONFIRM_KEY
+    formEl.appendChild(confmKeyInput)
+
+    const returnUrlInput = document.createElement('input')
+    returnUrlInput.name = 'returnUrl'
+    returnUrlInput.value = `${window.location.origin}/juso-callback.html`
+    formEl.appendChild(returnUrlInput)
+
+    const resultTypeInput = document.createElement('input')
+    resultTypeInput.name = 'resultType'
+    resultTypeInput.value = '4'
+    formEl.appendChild(resultTypeInput)
+
+    const useDetailAddrInput = document.createElement('input')
+    useDetailAddrInput.name = 'useDetailAddr'
+    useDetailAddrInput.value = 'N'
+    formEl.appendChild(useDetailAddrInput)
+
+    document.body.appendChild(formEl)
+    window.open('', 'jusoPopup', 'width=570,height=420,scrollbars=yes')
+    formEl.submit()
+    document.body.removeChild(formEl)
   }
 
   const onFinish = async (v: FormValues) => {
@@ -226,7 +255,7 @@ export function MemberCreatePage() {
             webId: '',
             joinedAt: dayjs(),
             statusCode: DEFAULT_STATUS,
-            address: { zipCode: '', roadAddress: '', detailAddress: '' },
+            address: INITIAL_ADDRESS,
           }}
           requiredMark={false}
         >
@@ -294,7 +323,10 @@ export function MemberCreatePage() {
                 </Button>
               </Space.Compact>
               <Form.Item name={['address', 'roadAddress']} noStyle>
-                <Input placeholder="기본주소" readOnly style={{ width: 400 }} />
+                <Input placeholder="도로명주소" readOnly style={{ width: 400 }} />
+              </Form.Item>
+              <Form.Item name={['address', 'jibunAddress']} noStyle>
+                <Input placeholder="지번주소" readOnly style={{ width: 400 }} />
               </Form.Item>
               <Form.Item name={['address', 'detailAddress']} noStyle>
                 <Input placeholder="상세주소 (직접 입력)" allowClear style={{ width: 400 }} />
@@ -309,6 +341,7 @@ export function MemberCreatePage() {
             <Button
               onClick={() => {
                 form.resetFields()
+                setAddress(INITIAL_ADDRESS)
               }}
             >
               초기화

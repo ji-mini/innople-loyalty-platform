@@ -72,3 +72,20 @@ export function useMemberLedgers(memberNo: string, limit = 50) {
   })
 }
 
+export type MemberGradeItem = {
+  id: string
+  code: string
+  name: string
+  description: string | null
+}
+
+export function useMemberGrades() {
+  return useQuery({
+    queryKey: ['member-grades'],
+    queryFn: async () => {
+      const res = await api.get<MemberGradeItem[]>('/api/v1/member-grades')
+      return res.data ?? []
+    },
+  })
+}
+
