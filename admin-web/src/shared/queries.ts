@@ -131,3 +131,25 @@ export function useMemberGrades() {
   })
 }
 
+export type MemberReportResponse = {
+  date: string
+  newSignups: number
+  dormant: number
+  withdrawRequested: number
+  withdrawn: number
+  totalSignups: number
+}
+
+export function useMemberReport(params: { date: string }) {
+  return useQuery({
+    queryKey: ['reports', 'members', params.date],
+    queryFn: async () => {
+      const res = await api.get<MemberReportResponse>('/api/v1/reports/members', {
+        params: { date: params.date },
+      })
+      return res.data
+    },
+    enabled: !!params.date,
+  })
+}
+

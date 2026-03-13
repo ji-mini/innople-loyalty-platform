@@ -16,12 +16,22 @@ import java.util.UUID;
 public interface MemberRepository extends JpaRepository<Member, UUID> {
     Optional<Member> findByTenantIdAndId(UUID tenantId, UUID id);
 
-    @EntityGraph(attributePaths = {"address"})
+    @EntityGraph(attributePaths = {"address", "membershipGrade"})
     Optional<Member> findByTenantIdAndMemberNo(UUID tenantId, String memberNo);
 
     long countByTenantId(UUID tenantId);
 
     long countByTenantIdAndJoinedAt(UUID tenantId, LocalDate joinedAt);
+
+    long countByTenantIdAndJoinedAtBetween(UUID tenantId, LocalDate from, LocalDate to);
+
+    long countByTenantIdAndJoinedAtLessThanEqual(UUID tenantId, LocalDate to);
+
+    long countByTenantIdAndStatusCode(UUID tenantId, String statusCode);
+
+    long countByTenantIdAndDormantAtBetween(UUID tenantId, LocalDate from, LocalDate to);
+
+    long countByTenantIdAndWithdrawnAtBetween(UUID tenantId, LocalDate from, LocalDate to);
 
     List<Member> findByTenantIdAndIdIn(UUID tenantId, List<UUID> ids);
 

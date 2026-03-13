@@ -59,6 +59,10 @@ public class Member extends BaseEntity {
     @JoinColumn(name = "address_id")
     private Address address;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "membership_grade_id")
+    private MembershipGrade membershipGrade;
+
     @Column(nullable = true, length = 100)
     private String webId;
 
@@ -92,6 +96,7 @@ public class Member extends BaseEntity {
             String phoneNumber,
             String email,
             Address address,
+            MembershipGrade membershipGrade,
             String webId,
             String statusCode,
             LocalDate joinedAt,
@@ -109,6 +114,7 @@ public class Member extends BaseEntity {
         member.phoneNumber = phoneNumber;
         member.email = email;
         member.address = address;
+        member.membershipGrade = membershipGrade;
         member.webId = webId;
         member.statusCode = requireText(statusCode, "statusCode");
         member.joinedAt = Objects.requireNonNull(joinedAt, "joinedAt must not be null");

@@ -5,6 +5,7 @@ import com.innople.loyalty.controller.dto.MemberDtos;
 import com.innople.loyalty.controller.dto.MemberQueryDtos;
 import com.innople.loyalty.domain.member.Address;
 import com.innople.loyalty.domain.member.Member;
+import com.innople.loyalty.domain.member.MembershipGrade;
 import com.innople.loyalty.domain.member.MemberLedger;
 import com.innople.loyalty.repository.MemberLedgerRepository;
 import com.innople.loyalty.repository.MemberRepository;
@@ -120,6 +121,9 @@ public class MemberQueryController {
     }
 
     private MemberQueryDtos.MemberDetailResponse toDetail(Member m) {
+        MembershipGrade grade = m.getMembershipGrade();
+        String gradeName = grade != null ? grade.getName() : null;
+
         Address addr = m.getAddress();
         MemberDtos.AddressResponse addressResponse = addr != null
                 ? new MemberDtos.AddressResponse(
@@ -139,6 +143,7 @@ public class MemberQueryController {
                 m.getId(),
                 m.getMemberNo(),
                 m.getName(),
+                gradeName,
                 m.getBirthDate(),
                 m.getCalendarType(),
                 m.getGender(),

@@ -78,18 +78,18 @@
 .featureCards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 20px;
-  width: min(480px, 100%);
+  gap: 10px;
+  margin-top: 16px;
+  width: min(384px, 100%);
 }
 
 .featureCard {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 16px 12px;
-  border-radius: 16px;
+  gap: 8px;
+  padding: 13px 10px;
+  border-radius: 13px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.48) 100%);
   border: 1px solid rgba(31, 42, 55, 0.08);
   box-shadow:
@@ -113,8 +113,8 @@
 }
 
 .featureCardImg {
-  width: 48px;
-  height: 48px;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
 }
 
@@ -126,7 +126,7 @@
 }
 
 .featureCardLabel {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: rgba(31, 42, 55, 0.82);
@@ -242,7 +242,7 @@
   .featureCards {
     margin-inline: auto;
     grid-template-columns: 1fr;
-    max-width: 200px;
+    max-width: 160px;
   }
   .decorPlane,
   .decorGift {

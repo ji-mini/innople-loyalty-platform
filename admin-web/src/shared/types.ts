@@ -78,6 +78,7 @@ export type MemberDetail = {
   id: string
   memberNo: string
   name: string
+  gradeName: string | null
   birthDate: string | null
   calendarType: 'SOLAR' | 'LUNAR' | null
   gender: 'MALE' | 'FEMALE' | 'UNKNOWN' | null

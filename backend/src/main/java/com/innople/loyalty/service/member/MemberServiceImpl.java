@@ -90,6 +90,7 @@ public class MemberServiceImpl implements MemberService {
                 normalizedPhone,
                 command.email(),
                 savedAddress,
+                null,
                 normalizedWebId,
                 statusCode,
                 (command.joinedAt() != null) ? command.joinedAt() : LocalDate.now(),

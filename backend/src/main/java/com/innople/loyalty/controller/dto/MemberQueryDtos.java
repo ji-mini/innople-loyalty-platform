@@ -31,6 +31,7 @@ public final class MemberQueryDtos {
             UUID id,
             String memberNo,
             String name,
+            String gradeName,
             LocalDate birthDate,
             CalendarType calendarType,
             Gender gender,
