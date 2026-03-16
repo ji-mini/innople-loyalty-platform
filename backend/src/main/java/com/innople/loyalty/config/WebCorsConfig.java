@@ -22,6 +22,7 @@ public class WebCorsConfig implements WebMvcConfigurer {
             @Value("${app.cors.allowed-origins:" +
                     "http://localhost:3200,http://127.0.0.1:3200," +
                     "http://localhost:5173,http://127.0.0.1:5173," +
+                    "http://localhost:8090,http://127.0.0.1:8090," +
                     "http://52.79.229.236:8090" +
                     "}") String allowedOrigins,
             @Value("${app.cors.allow-credentials:false}") boolean allowCredentials
@@ -47,7 +48,8 @@ public class WebCorsConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(allowedOrigins);
+        config.setAllowCredentials(false);
+        config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-Tenant-Id"));
         config.setExposedHeaders(List.of("X-Tenant-Id"));

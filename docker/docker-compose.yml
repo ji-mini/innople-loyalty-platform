@@ -17,6 +17,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3200:3200"
+    volumes:
+      - ../admin-web/src:/app/src
+      - ../admin-web/public:/app/public
     environment:
       VITE_API_PROXY_TARGET: "http://backend:3201"
     depends_on:

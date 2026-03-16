@@ -80,7 +80,8 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-top: 16px;
-  width: min(384px, 100%);
+  width: 95%;
+  margin-inline: auto;
 }
 
 .featureCard {

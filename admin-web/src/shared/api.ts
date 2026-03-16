@@ -14,9 +14,8 @@ function getRuntimeApiBaseUrl(): string | undefined {
 
 function inferApiBaseUrl(): string {
   if (import.meta.env.DEV) return ''
-  // Default inference for simple deployments:
-  // - admin-web: http://<host>:8090
-  // - backend:   http://<host>:3201
+  // nginx(8090)로 접속 시 API는 같은 origin (/api 프록시)
+  if (location.port === '8090') return ''
   return `${location.protocol}//${location.hostname}:3201`
 }
 
