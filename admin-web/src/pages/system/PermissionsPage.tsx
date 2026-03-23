@@ -28,7 +28,7 @@ const MENU_ENTRIES: MenuEntry[] = [
   { section: '포인트관리', label: '포인트 이력조회', path: '/points/history', minRole: 'OPERATOR' },
   { section: '포인트관리', label: '정책관리', path: '/points/policies', minRole: 'ADMIN' },
   { section: '포인트관리', label: '포인트 수기 등록', path: '/points/manual/earn', minRole: 'SUPER_ADMIN' },
-  { section: '포인트관리', label: '수기 차감', path: '/points/manual/deduct', minRole: 'SUPER_ADMIN' },
+  { section: '포인트관리', label: '포인트 수기 차감', path: '/points/manual/deduct', minRole: 'SUPER_ADMIN' },
 
   { section: '쿠폰관리', label: '쿠폰 이력', path: '/coupons/history', minRole: 'OPERATOR' },
   { section: '쿠폰관리', label: '쿠폰 발행', path: '/coupons/issue', minRole: 'SUPER_ADMIN' },

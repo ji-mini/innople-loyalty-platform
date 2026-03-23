@@ -1,5 +1,6 @@
 import { Button, Card, Form, Input, InputNumber, Modal, Select, Space, Switch, Table, Tag, Typography, message } from 'antd'
 import { useQuery } from '@tanstack/react-query'
+import dayjs from 'dayjs'
 import React from 'react'
 import { api } from '../../shared/api'
 import { atLeast } from '../../shared/roles'
@@ -176,7 +177,12 @@ export function CommonCodesPage() {
             { title: '이름', dataIndex: 'name' },
             { title: '활성', dataIndex: 'active', width: 110, render: (v: boolean) => <Switch checked={v} disabled /> },
             { title: '정렬', dataIndex: 'sortOrder', width: 90 },
-            { title: '수정일시', dataIndex: 'updatedAt', width: 190 },
+            {
+              title: '수정일시',
+              dataIndex: 'updatedAt',
+              width: 190,
+              render: (v: string) => (v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : '-'),
+            },
             ...(canEdit
               ? [
                   {

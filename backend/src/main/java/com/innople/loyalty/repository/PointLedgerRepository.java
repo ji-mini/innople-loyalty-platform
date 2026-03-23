@@ -1,7 +1,9 @@
 package com.innople.loyalty.repository;
 
+import com.innople.loyalty.controller.dto.PointDtos;
 import com.innople.loyalty.domain.points.PointEventType;
 import com.innople.loyalty.domain.points.PointLedger;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +17,20 @@ public interface PointLedgerRepository extends JpaRepository<PointLedger, UUID> 
     Optional<PointLedger> findByTenantIdAndId(UUID tenantId, UUID id);
 
     List<PointLedger> findTop50ByTenantIdAndAccountIdOrderByCreatedAtDesc(UUID tenantId, UUID accountId);
+
+    @Query("""
+            select new com.innople.loyalty.controller.dto.PointDtos$PointLedgerResponse(
+                l.id, m.memberNo, l.eventType, l.amount, l.reason, l.createdAt
+            ) from PointLedger l, com.innople.loyalty.domain.member.Member m
+            where l.memberId = m.id and l.tenantId = m.tenantId
+            and l.tenantId = :tenantId
+            and (:memberNo is null or m.memberNo = :memberNo)
+            order by l.createdAt desc
+            """)
+    List<PointDtos.PointLedgerResponse> findLedgersForTenant(
+            @Param("tenantId") UUID tenantId,
+            @Param("memberNo") String memberNo,
+            Pageable pageable);
 
     @Query("""
             select coalesce(sum(l.amount), 0) from PointLedger l

@@ -65,7 +65,8 @@ public class GlobalExceptionHandler {
             CommonCodeExceptions.CommonCodeNotFoundException.class,
             PointPolicyExceptions.PointPolicyAlreadyExistsException.class,
             PointPolicyExceptions.PointPolicyNotFoundException.class,
-            TenantAdminExceptions.TenantNotFoundException.class
+            TenantAdminExceptions.TenantNotFoundException.class,
+            TenantAdminExceptions.TenantDeleteConflictException.class
     })
     public ResponseEntity<ApiErrorResponse> handleBusiness(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(ex.getMessage()));

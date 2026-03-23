@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from './api'
-import type { MemberDetail, MemberLedger, MemberSummary, PagedResponse } from './types'
+import type { MemberDetail, MemberLedger, MemberSummary, PagedResponse, PointLedgerItem } from './types'
 
 export type CommonCodeItem = {
   id: string
@@ -169,6 +169,19 @@ export function useMemberReportMonthlyTotals(year: number) {
       return res.data
     },
     enabled: !!year,
+  })
+}
+
+export function usePointLedgers(params: { memberNo?: string; limit?: number }) {
+  const { memberNo, limit = 100 } = params
+  return useQuery({
+    queryKey: ['points', 'ledgers', memberNo ?? '', limit],
+    queryFn: async () => {
+      const res = await api.get<PointLedgerItem[]>('/api/v1/points/ledgers', {
+        params: { memberNo: memberNo || undefined, limit },
+      })
+      return res.data ?? []
+    },
   })
 }
 

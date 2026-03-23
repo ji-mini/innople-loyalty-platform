@@ -3,8 +3,8 @@ import dayjs from 'dayjs'
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../shared/api'
-import { useCommonCodes, useMemberDetail, useMemberLedgers } from '../../shared/queries'
-import type { MemberAddress, MemberDetail, MemberLedger } from '../../shared/types'
+import { useCommonCodes, useMemberDetail, useMemberLedgers, usePointLedgers } from '../../shared/queries'
+import type { MemberAddress, MemberDetail, MemberLedger, PointLedgerItem } from '../../shared/types'
 import { getSession } from '../../shared/storage'
 import { atLeast } from '../../shared/roles'
 
@@ -217,7 +217,19 @@ export function MemberDetailPage() {
 
   const detail = useMemberDetail(memberNo)
   const ledgers = useMemberLedgers(memberNo, 100)
+  const pointLedgers = usePointLedgers({ memberNo: memberNo || undefined, limit: 100 })
   const statusCodes = useCommonCodes('MEMBER_STATUS')
+
+  const pointEventTypeLabel = (v: string) =>
+    v === 'EARN' || v === 'ADJUST_EARN'
+      ? '적립'
+      : v === 'USE' || v === 'ADJUST_USE'
+        ? '사용'
+        : v === 'EXPIRE_AUTO'
+          ? '자동 소멸'
+          : v === 'EXPIRE_MANUAL'
+            ? '수동 소멸'
+            : v
   const [editOpen, setEditOpen] = React.useState(false)
   const [editLoading, setEditLoading] = React.useState(false)
   const [editForm] = Form.useForm()
@@ -304,8 +316,40 @@ export function MemberDetailPage() {
             key: 'points',
             label: '포인트 이력',
             children: (
-              <Card>
-                <Typography.Text type="secondary">포인트 이력 탭은 준비 중입니다.</Typography.Text>
+              <Card title="포인트 이력 (최근 100건)" loading={pointLedgers.isLoading}>
+                <Table<PointLedgerItem>
+                  rowKey={(r) => r.id}
+                  size="small"
+                  pagination={false}
+                  dataSource={pointLedgers.data ?? []}
+                  columns={[
+                    {
+                      title: '구분',
+                      dataIndex: 'eventType',
+                      width: 100,
+                      render: (v: string) => {
+                        const color =
+                          v === 'EARN' || v === 'ADJUST_EARN'
+                            ? 'green'
+                            : v === 'USE' || v === 'ADJUST_USE'
+                              ? 'volcano'
+                              : 'default'
+                        return <Tag color={color}>{pointEventTypeLabel(v)}</Tag>
+                      },
+                    },
+                    {
+                      title: '포인트',
+                      dataIndex: 'amount',
+                      width: 110,
+                      render: (v: number) => `${v >= 0 ? '+' : ''}${v.toLocaleString('ko-KR')} P`,
+                    },
+                    { title: '사유', dataIndex: 'reason', ellipsis: true },
+                    { title: '일시', dataIndex: 'createdAt', width: 170 },
+                  ]}
+                  locale={{
+                    emptyText: <Typography.Text type="secondary">포인트 이력이 없습니다.</Typography.Text>,
+                  }}
+                />
               </Card>
             ),
           },

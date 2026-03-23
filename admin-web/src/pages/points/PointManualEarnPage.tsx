@@ -49,6 +49,11 @@ export function PointManualEarnPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const onReset = () => {
+    form.resetFields()
+    setMember(null)
+  }
+
   const onFinish = async (v: FormValues) => {
     if (!member?.id) {
       message.error('먼저 회원번호를 조회하세요.')
@@ -133,9 +138,16 @@ export function PointManualEarnPage() {
             </Form.Item>
           </Space>
 
-          <Button type="primary" htmlType="submit" loading={loading}>
-            등록
-          </Button>
+          <div style={{ marginTop: 12 }}>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                등록
+              </Button>
+              <Button onClick={onReset} disabled={loading || lookupLoading}>
+                초기화
+              </Button>
+            </Space>
+          </div>
         </Form>
       </Card>
     </PageShell>

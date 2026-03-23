@@ -98,7 +98,7 @@ export const router = createBrowserRouter([
               { path: '/points/policies', element: <PointPoliciesPage />, handle: { crumbs: ['포인트관리', '정책관리'] } },
               { path: '/points/manual', element: <Navigate to="/points/manual/earn" replace /> },
               { path: '/points/manual/earn', element: <PointManualEarnPage />, handle: { crumbs: ['포인트관리', '포인트 수기 등록'] } },
-              { path: '/points/manual/deduct', element: <PointManualDeductPage />, handle: { crumbs: ['포인트관리', '수기 차감'] } },
+              { path: '/points/manual/deduct', element: <PointManualDeductPage />, handle: { crumbs: ['포인트관리', '포인트 수기 차감'] } },
               { path: '/points/history', element: <PointHistoryPage />, handle: { crumbs: ['포인트관리', '포인트 이력조회'] } },
               { path: '/points/expiry', element: <PointExpiryPage />, handle: { crumbs: ['포인트관리', '소멸관리'] } },
 

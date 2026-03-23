@@ -48,6 +48,11 @@ export function PointManualDeductPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const onReset = () => {
+    form.resetFields()
+    setMember(null)
+  }
+
   const onFinish = async (v: FormValues) => {
     if (!member?.id) {
       message.error('먼저 회원번호를 조회하세요.')
@@ -72,7 +77,7 @@ export function PointManualDeductPage() {
 
   return (
     <PageShell
-      title="수기 차감"
+      title="포인트 수기 차감"
       extra={
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
           회원 선택 후 포인트를 수기로 차감합니다.
@@ -87,42 +92,53 @@ export function PointManualDeductPage() {
           initialValues={{ memberNo: '', amount: 0, reasonCode: 'ADJ_FIX', reasonDetail: '' }}
           requiredMark={false}
         >
-          <Space size={16} wrap align="start">
-            <Form.Item label="회원번호" name="memberNo" rules={[{ required: true, message: '회원번호를 입력하세요' }]}>
-              <Input placeholder="예: 10000001" style={{ width: 260 }} />
-            </Form.Item>
-            <Form.Item label=" " colon={false}>
-              <Button onClick={onLookup} loading={lookupLoading}>
-                조회
+          <div>
+            <Space size={16} wrap align="start">
+              <Form.Item label="회원번호" name="memberNo" rules={[{ required: true, message: '회원번호를 입력하세요' }]}>
+                <Input placeholder="예: 10000001" style={{ width: 260 }} />
+              </Form.Item>
+              <Form.Item label=" " colon={false}>
+                <Button onClick={onLookup} loading={lookupLoading}>
+                  조회
+                </Button>
+              </Form.Item>
+              <Form.Item label="회원" colon={false}>
+                <Typography.Text type={member ? undefined : 'secondary'} style={{ display: 'block', minWidth: 220 }}>
+                  {member ? `${member.name} (${member.memberNo})` : '조회 필요'}
+                </Typography.Text>
+              </Form.Item>
+            </Space>
+          </div>
+
+          <div>
+            <Space size={16} wrap align="start">
+              <Form.Item label="포인트 금액" name="amount" rules={[{ required: true, message: '포인트 금액을 입력하세요' }]}>
+                <InputNumber min={1} step={1} style={{ width: 220 }} addonAfter="P" />
+              </Form.Item>
+              <Form.Item label="사유 템플릿" name="reasonCode" rules={[{ required: true, message: '사유 템플릿을 선택하세요' }]}>
+                <Select
+                  placeholder="선택"
+                  loading={reasons.isLoading}
+                  style={{ width: 260 }}
+                  options={(reasons.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
+                />
+              </Form.Item>
+              <Form.Item label="상세 사유(선택)" name="reasonDetail">
+                <Input placeholder="예: 오등록 정정 차감" style={{ width: 360, maxWidth: '100%' }} />
+              </Form.Item>
+            </Space>
+          </div>
+
+          <div style={{ marginTop: 12 }}>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading} danger>
+                차감
               </Button>
-            </Form.Item>
-            <Form.Item label="회원" colon={false}>
-              <Typography.Text type={member ? undefined : 'secondary'} style={{ display: 'block', minWidth: 220 }}>
-                {member ? `${member.name} (${member.memberNo})` : '조회 필요'}
-              </Typography.Text>
-            </Form.Item>
-          </Space>
-
-          <Space size={16} wrap align="start">
-            <Form.Item label="차감 포인트" name="amount" rules={[{ required: true, message: '차감 포인트를 입력하세요' }]}>
-              <InputNumber min={1} step={1} style={{ width: 220 }} addonAfter="P" />
-            </Form.Item>
-            <Form.Item label="사유 템플릿" name="reasonCode" rules={[{ required: true, message: '사유 템플릿을 선택하세요' }]}>
-              <Select
-                placeholder="선택"
-                loading={reasons.isLoading}
-                style={{ width: 260 }}
-                options={(reasons.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
-              />
-            </Form.Item>
-            <Form.Item label="상세 사유(선택)" name="reasonDetail">
-              <Input placeholder="예: 오등록 정정 차감" style={{ width: 360, maxWidth: '100%' }} />
-            </Form.Item>
-          </Space>
-
-          <Button type="primary" htmlType="submit" loading={loading} danger>
-            차감
-          </Button>
+              <Button onClick={onReset} disabled={loading || lookupLoading}>
+                초기화
+              </Button>
+            </Space>
+          </div>
         </Form>
       </Card>
     </PageShell>

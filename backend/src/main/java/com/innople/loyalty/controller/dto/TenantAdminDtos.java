@@ -18,8 +18,15 @@ public final class TenantAdminDtos {
     ) {
     }
 
+    public record CreateRequest(
+            @NotBlank String name,
+            @NotBlank String representativeCode
+    ) {
+    }
+
     public record UpdateRequest(
-            @NotBlank String name
+            @NotBlank String name,
+            @NotBlank String representativeCode
     ) {
     }
 }

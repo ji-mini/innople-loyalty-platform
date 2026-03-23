@@ -8,6 +8,7 @@ import { PageShell } from '../common/PageShell'
 type TenantDetail = {
   tenantId: string
   name: string
+  representativeCode: string
   createdAt: string
   updatedAt: string
 }
@@ -17,7 +18,7 @@ export function TenantDetailPage() {
   const params = useParams()
   const tenantId = params.tenantId ?? ''
   const [saving, setSaving] = React.useState(false)
-  const [form] = Form.useForm<{ name: string }>()
+  const [form] = Form.useForm<{ name: string; representativeCode: string }>()
 
   const q = useQuery({
     queryKey: ['admin', 'tenants', tenantId],
@@ -32,7 +33,7 @@ export function TenantDetailPage() {
 
   React.useEffect(() => {
     if (!q.data) return
-    form.setFieldsValue({ name: q.data.name })
+    form.setFieldsValue({ name: q.data.name, representativeCode: q.data.representativeCode })
   }, [form, q.data])
 
   const onSave = async () => {
@@ -41,7 +42,7 @@ export function TenantDetailPage() {
     try {
       await api.put(
         `/api/v1/admin/tenants/${encodeURIComponent(tenantId)}`,
-        { name: v.name },
+        { name: v.name, representativeCode: v.representativeCode },
         { headers: { 'X-Tenant-Id': tenantId } },
       )
       message.success('테넌트 정보가 수정되었습니다.')
@@ -77,6 +78,14 @@ export function TenantDetailPage() {
             </Form.Item>
             <Form.Item label="테넌트명" name="name" rules={[{ required: true, message: '테넌트명을 입력하세요' }]}>
               <Input placeholder="예: SPAO" />
+            </Form.Item>
+            <Form.Item
+              label="대표코드"
+              name="representativeCode"
+              rules={[{ required: true, message: '대표코드를 입력하세요' }]}
+              getValueFromEvent={(e) => String(e?.target?.value ?? '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2)}
+            >
+              <Input placeholder="예: SP" maxLength={2} />
             </Form.Item>
             <Form.Item label="생성일시" colon={false}>
               <Input value={q.data?.createdAt ?? '-'} disabled />

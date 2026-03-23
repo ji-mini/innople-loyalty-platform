@@ -9,5 +9,11 @@ public final class TenantAdminExceptions {
             super(message);
         }
     }
+
+    public static class TenantDeleteConflictException extends RuntimeException {
+        public TenantDeleteConflictException(String message) {
+            super(message);
+        }
+    }
 }
 

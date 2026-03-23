@@ -8,6 +8,18 @@ import java.time.Instant;
 import java.util.UUID;
 
 public final class PointDtos {
+
+    /** 포인트 이력 조회용 (API 응답). */
+    public record PointLedgerResponse(
+            UUID id,
+            String memberNo,
+            PointEventType eventType,
+            long amount,
+            String reason,
+            Instant createdAt
+    ) {
+    }
+
     private PointDtos() {
     }
 
@@ -42,4 +54,3 @@ public final class PointDtos {
     ) {
     }
 }
-

@@ -103,3 +103,13 @@ export type MemberLedger = {
   createdAt: string
 }
 
+/** 포인트 적립/사용/소멸 이력 (PointLedger) */
+export type PointLedgerItem = {
+  id: string
+  memberNo: string
+  eventType: 'EARN' | 'USE' | 'EXPIRE_AUTO' | 'EXPIRE_MANUAL' | 'ADJUST_EARN' | 'ADJUST_USE'
+  amount: number
+  reason: string | null
+  createdAt: string
+}
+

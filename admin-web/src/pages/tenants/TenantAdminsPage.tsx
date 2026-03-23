@@ -1,5 +1,6 @@
 import { Button, Card, Form, Input, Modal, Select, Space, Table, Tag, Typography, message } from 'antd'
 import { useQuery } from '@tanstack/react-query'
+import dayjs from 'dayjs'
 import React from 'react'
 import { PageShell } from '../common/PageShell'
 import { api } from '../../shared/api'
@@ -173,6 +174,7 @@ export function TenantAdminsPage() {
               title: '수정일시',
               dataIndex: 'updatedAt',
               width: 260,
+              render: (v: string) => (v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : '-'),
             },
             ...(canEdit
               ? [

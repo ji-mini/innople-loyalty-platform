@@ -212,7 +212,7 @@ export function AdminLayout() {
                 ...(atLeast(role, 'SUPER_ADMIN')
                   ? [
                       { key: 'points.manualEarn', label: '포인트 수기 등록', onClick: () => nav(KEY_TO_PATH['points.manualEarn']) },
-                      { key: 'points.manualDeduct', label: '수기 차감', onClick: () => nav(KEY_TO_PATH['points.manualDeduct']) },
+                      { key: 'points.manualDeduct', label: '포인트 수기 차감', onClick: () => nav(KEY_TO_PATH['points.manualDeduct']) },
                     ]
                   : []),
                 { key: 'points.history', label: '포인트 이력조회', onClick: () => nav(KEY_TO_PATH['points.history']) },

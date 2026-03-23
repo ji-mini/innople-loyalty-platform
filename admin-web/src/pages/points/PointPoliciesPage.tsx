@@ -1,5 +1,6 @@
 import { Button, Card, Form, Input, InputNumber, Modal, Select, Space, Switch, Table, Tag, Typography, message } from 'antd'
 import { useQuery } from '@tanstack/react-query'
+import dayjs from 'dayjs'
 import React from 'react'
 import { PageShell } from '../common/PageShell'
 import { api } from '../../shared/api'
@@ -137,6 +138,7 @@ export function PointPoliciesPage() {
               title: '수정일시',
               dataIndex: 'updatedAt',
               width: 190,
+              render: (v: string) => (v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : '-'),
             },
             ...(canEdit
               ? [
