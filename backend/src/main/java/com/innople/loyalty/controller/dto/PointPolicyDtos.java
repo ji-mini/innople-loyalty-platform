@@ -1,9 +1,7 @@
 package com.innople.loyalty.controller.dto;
 
-import com.innople.loyalty.domain.points.PointPolicyType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -13,7 +11,7 @@ public final class PointPolicyDtos {
     }
 
     public record CreateRequest(
-            @NotNull PointPolicyType pointType,
+            @NotBlank String pointType,
             @NotBlank String name,
             @Min(1) int validityDays,
             boolean enabled,
@@ -22,7 +20,7 @@ public final class PointPolicyDtos {
     }
 
     public record UpdateRequest(
-            @NotNull PointPolicyType pointType,
+            @NotBlank String pointType,
             @NotBlank String name,
             @Min(1) int validityDays,
             boolean enabled,
@@ -32,7 +30,7 @@ public final class PointPolicyDtos {
 
     public record PointPolicyResponse(
             UUID id,
-            PointPolicyType pointType,
+            String pointType,
             String name,
             int validityDays,
             boolean enabled,

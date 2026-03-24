@@ -4,12 +4,13 @@ import dayjs from 'dayjs'
 import React from 'react'
 import { PageShell } from '../common/PageShell'
 import { api } from '../../shared/api'
+import { useCommonCodes } from '../../shared/queries'
 import { atLeast } from '../../shared/roles'
 import { getSession } from '../../shared/storage'
 
 type PointPolicyRow = {
   id: string
-  pointType: 'BASIC' | 'EVENT'
+  pointType: string
   name: string
   validityDays: number
   enabled: boolean
@@ -21,11 +22,12 @@ type PointPolicyRow = {
 export function PointPoliciesPage() {
   const role = getSession()?.role ?? 'OPERATOR'
   const canEdit = atLeast(role, 'SUPER_ADMIN')
+  const pointReasons = useCommonCodes('POINT_REASON')
   const [open, setOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<PointPolicyRow | null>(null)
   const [saving, setSaving] = React.useState(false)
   const [form] = Form.useForm<{
-    pointType: PointPolicyRow['pointType']
+    pointType: string
     name: string
     validityDays: number
     enabled: boolean
@@ -41,11 +43,30 @@ export function PointPoliciesPage() {
   })
 
   const rows = q.data ?? []
+  const pointTypeOptions = React.useMemo(
+    () =>
+      (pointReasons.data ?? []).map((c) => ({
+        value: c.code,
+        label: `${c.code} (${c.name})`,
+      })),
+    [pointReasons.data]
+  )
+  const pointTypeNameMap = React.useMemo(
+    () => new Map((pointReasons.data ?? []).map((c) => [c.code, c.name])),
+    [pointReasons.data]
+  )
+  const formatPointType = React.useCallback((code: string) => pointTypeNameMap.get(code) ?? code, [pointTypeNameMap])
 
   const openCreate = () => {
     setEditing(null)
     form.resetFields()
-    form.setFieldsValue({ pointType: 'BASIC', name: '', validityDays: 365, enabled: true, description: '' })
+    form.setFieldsValue({
+      pointType: pointTypeOptions[0]?.value,
+      name: '',
+      validityDays: 365,
+      enabled: true,
+      description: '',
+    })
     setOpen(true)
   }
 
@@ -87,16 +108,16 @@ export function PointPoliciesPage() {
     <PageShell
       title="포인트 정책관리"
       extra={
-        <Space size={12} wrap>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
             테넌트별 포인트 유형/유효기간 등을 관리합니다.
           </Typography.Text>
           {canEdit ? (
-            <Button size="small" type="primary" onClick={openCreate}>
+            <Button type="primary" onClick={openCreate}>
               정책 추가
             </Button>
           ) : null}
-        </Space>
+        </div>
       }
     >
       <Card>
@@ -110,7 +131,7 @@ export function PointPoliciesPage() {
               title: '포인트 유형',
               dataIndex: 'pointType',
               width: 140,
-              render: (v: PointPolicyRow['pointType']) => <Tag>{v}</Tag>,
+              render: (v: string) => <Tag>{formatPointType(v)}</Tag>,
             },
             {
               title: '정책명',
@@ -183,10 +204,9 @@ export function PointPoliciesPage() {
         <Form form={form} layout="vertical" requiredMark={false}>
           <Form.Item label="포인트 유형" name="pointType" rules={[{ required: true, message: '포인트 유형을 선택하세요' }]}>
             <Select
-              options={[
-                { value: 'BASIC', label: 'BASIC(기본)' },
-                { value: 'EVENT', label: 'EVENT(이벤트)' },
-              ]}
+              placeholder="선택"
+              loading={pointReasons.isLoading}
+              options={pointTypeOptions}
             />
           </Form.Item>
           <Form.Item label="정책명" name="name" rules={[{ required: true, message: '정책명을 입력하세요' }]}>

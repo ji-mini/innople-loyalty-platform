@@ -1,8 +1,8 @@
 package com.innople.loyalty.service.points;
 
 import com.innople.loyalty.config.TenantContext;
+import com.innople.loyalty.repository.CommonCodeRepository;
 import com.innople.loyalty.domain.points.PointPolicy;
-import com.innople.loyalty.domain.points.PointPolicyType;
 import com.innople.loyalty.repository.PointPolicyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,10 @@ import static com.innople.loyalty.service.points.PointPolicyExceptions.PointPoli
 @RequiredArgsConstructor
 public class PointPolicyServiceImpl implements PointPolicyService {
 
+    private static final String POINT_REASON_GROUP = "POINT_REASON";
+
     private final PointPolicyRepository pointPolicyRepository;
+    private final CommonCodeRepository commonCodeRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -32,22 +35,27 @@ public class PointPolicyServiceImpl implements PointPolicyService {
 
     @Override
     @Transactional
-    public PointPolicyItem create(PointPolicyType pointType, String name, int validityDays, boolean enabled, String description) {
+    public PointPolicyItem create(String pointType, String name, int validityDays, boolean enabled, String description) {
         UUID tenantId = TenantContext.requireTenantId();
-        if (pointPolicyRepository.existsByTenantIdAndPointType(tenantId, pointType)) {
-            throw new PointPolicyAlreadyExistsException("PointPolicy already exists for pointType=" + pointType);
+        String normalizedPointType = validatePointType(tenantId, pointType);
+        if (pointPolicyRepository.existsByTenantIdAndPointType(tenantId, normalizedPointType)) {
+            throw new PointPolicyAlreadyExistsException("PointPolicy already exists for pointType=" + normalizedPointType);
         }
-        PointPolicy saved = pointPolicyRepository.save(new PointPolicy(pointType, name, validityDays, enabled, description));
+        PointPolicy saved = pointPolicyRepository.save(new PointPolicy(normalizedPointType, name, validityDays, enabled, description));
         return toItem(saved);
     }
 
     @Override
     @Transactional
-    public PointPolicyItem update(UUID policyId, PointPolicyType pointType, String name, int validityDays, boolean enabled, String description) {
+    public PointPolicyItem update(UUID policyId, String pointType, String name, int validityDays, boolean enabled, String description) {
         UUID tenantId = TenantContext.requireTenantId();
+        String normalizedPointType = validatePointType(tenantId, pointType);
         PointPolicy policy = pointPolicyRepository.findByTenantIdAndId(tenantId, policyId)
                 .orElseThrow(() -> new PointPolicyNotFoundException("PointPolicy not found"));
-        policy.change(pointType, name, validityDays, enabled, description);
+        if (pointPolicyRepository.existsByTenantIdAndPointTypeAndIdNot(tenantId, normalizedPointType, policyId)) {
+            throw new PointPolicyAlreadyExistsException("PointPolicy already exists for pointType=" + normalizedPointType);
+        }
+        policy.change(normalizedPointType, name, validityDays, enabled, description);
         PointPolicy saved = pointPolicyRepository.save(policy);
         return toItem(saved);
     }
@@ -63,6 +71,16 @@ public class PointPolicyServiceImpl implements PointPolicyService {
                 p.getCreatedAt(),
                 p.getUpdatedAt()
         );
+    }
+
+    private String validatePointType(UUID tenantId, String pointType) {
+        String normalized = (pointType == null) ? null : pointType.trim();
+        if (normalized == null || normalized.isBlank()) {
+            throw new IllegalArgumentException("pointType must not be blank");
+        }
+        commonCodeRepository.findByTenantIdAndCodeGroupAndCodeAndActiveIsTrue(tenantId, POINT_REASON_GROUP, normalized)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid pointType: " + normalized));
+        return normalized;
     }
 }
 

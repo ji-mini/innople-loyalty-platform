@@ -312,10 +312,6 @@ export function MemberCreatePage() {
                 <DatePicker style={{ width: 180 }} placeholder="선택" />
               </Form.Item>
 
-            <Form.Item label="기념일(선택)" name="anniversaries">
-              <DatePicker style={{ width: 180 }} placeholder="선택" />
-            </Form.Item>
-
               <Form.Item label="양/음력" name="calendarType">
                 <Select
                   style={{ width: 120 }}
@@ -326,6 +322,10 @@ export function MemberCreatePage() {
                     { value: 'LUNAR', label: '음력' },
                   ]}
                 />
+              </Form.Item>
+
+              <Form.Item label="기념일(선택)" name="anniversaries">
+                <DatePicker style={{ width: 180 }} placeholder="선택" />
               </Form.Item>
 
               <Form.Item label="성별" name="gender">
@@ -386,13 +386,14 @@ export function MemberCreatePage() {
               </Form.Item>
 
               <Form.Item label="가입일" name="joinedAt">
-                <DatePicker style={{ width: 180 }} />
+                <DatePicker style={{ width: 180 }} disabled inputReadOnly />
               </Form.Item>
 
               <Form.Item label="상태" name="statusCode">
                 <Select
                   style={{ width: 200 }}
                   loading={statusCodes.isLoading}
+                  disabled
                   options={(statusCodes.data ?? []).map((c) => ({ value: c.code, label: c.name }))}
                 />
               </Form.Item>

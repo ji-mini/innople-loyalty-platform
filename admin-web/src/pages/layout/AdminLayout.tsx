@@ -133,6 +133,7 @@ export function AdminLayout() {
 
   const selectedKey = React.useMemo<MenuKey>(() => pickSelectedKey(loc.pathname), [loc.pathname])
   const groupKey = selectedKey.includes('.') ? selectedKey.split('.')[0] : undefined
+  const showBreadcrumbs = selectedKey !== 'dashboard'
   const [openKeys, setOpenKeys] = React.useState<string[]>(groupKey ? [groupKey] : [])
 
   React.useEffect(() => {
@@ -160,116 +161,118 @@ export function AdminLayout() {
 
   return (
     <Layout style={{ height: '100vh', overflow: 'hidden' }}>
-      <Layout.Sider width={240} theme="light" style={{ height: '100vh', overflow: 'auto' }}>
+      <Layout.Sider width={240} theme="light" style={{ height: '100vh' }}>
         <BrandHeader variant="sider" />
-        <Menu
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          openKeys={openKeys}
-          onOpenChange={(keys) => setOpenKeys(keys as string[])}
-          style={{ paddingTop: 8 }}
-          items={[
-            {
-              key: 'dashboard',
-              icon: <DashboardOutlined />,
-              label: '대시보드',
-              onClick: () => nav(KEY_TO_PATH.dashboard),
-            },
-            {
-              key: 'members',
-              icon: <TeamOutlined />,
-              label: '회원관리',
-              children: [
-                {
-                  key: 'members.list',
-                  label: '회원조회',
-                  onClick: () => nav(KEY_TO_PATH['members.list']),
-                },
-                ...(atLeast(role, 'SUPER_ADMIN')
-                  ? [
-                      {
-                        key: 'members.register',
-                        label: '회원등록',
-                        onClick: () => nav(KEY_TO_PATH['members.register']),
-                      },
-                    ]
-                  : []),
-                ...(atLeast(role, 'ADMIN')
-                  ? [
-                      {
-                        key: 'members.grades',
-                        label: '회원등급관리',
-                        onClick: () => nav(KEY_TO_PATH['members.grades']),
-                      },
-                    ]
-                  : []),
-              ],
-            },
-            {
-              key: 'points',
-              icon: <ShopOutlined />,
-              label: '포인트관리',
-              children: [
-                ...(atLeast(role, 'ADMIN') ? [{ key: 'points.policies', label: '포인트 정책 관리', onClick: () => nav(KEY_TO_PATH['points.policies']) }] : []),
-                ...(atLeast(role, 'SUPER_ADMIN')
-                  ? [
-                      { key: 'points.manualEarn', label: '포인트 수기 등록', onClick: () => nav(KEY_TO_PATH['points.manualEarn']) },
-                      { key: 'points.manualDeduct', label: '포인트 수기 차감', onClick: () => nav(KEY_TO_PATH['points.manualDeduct']) },
-                    ]
-                  : []),
-                { key: 'points.history', label: '포인트 이력조회', onClick: () => nav(KEY_TO_PATH['points.history']) },
-              ],
-            },
-            {
-              key: 'coupons',
-              icon: <GiftOutlined />,
-              label: '쿠폰관리',
-              children: [
-                ...(atLeast(role, 'SUPER_ADMIN')
-                  ? [{ key: 'coupons.issue', label: '쿠폰 발행', onClick: () => nav(KEY_TO_PATH['coupons.issue']) }]
-                  : []),
-                { key: 'coupons.history', label: '쿠폰 이력', onClick: () => nav(KEY_TO_PATH['coupons.history']) },
-              ],
-            },
-            {
-              key: 'reports',
-              icon: <BarChartOutlined />,
-              label: '리포트',
-              children: [
-                { key: 'reports.points', label: '포인트 리포트', onClick: () => nav(KEY_TO_PATH['reports.points']) },
-                { key: 'reports.members', label: '회원 리포트', onClick: () => nav(KEY_TO_PATH['reports.members']) },
-              ],
-            },
-            ...(atLeast(role, 'ADMIN')
-              ? [
+        <div style={{ height: 'calc(100vh - 58px)', overflow: 'auto' }}>
+          <Menu
+            mode="inline"
+            selectedKeys={[selectedKey]}
+            openKeys={openKeys}
+            onOpenChange={(keys) => setOpenKeys(keys as string[])}
+            style={{ paddingTop: 8 }}
+            items={[
+              {
+                key: 'dashboard',
+                icon: <DashboardOutlined />,
+                label: '대시보드',
+                onClick: () => nav(KEY_TO_PATH.dashboard),
+              },
+              {
+                key: 'members',
+                icon: <TeamOutlined />,
+                label: '회원관리',
+                children: [
                   {
-                    key: 'system',
-                    icon: <SettingOutlined />,
-                    label: '시스템',
-                    children: [
-                      { key: 'system.users', label: '사용자 관리', onClick: () => nav(KEY_TO_PATH['system.users']) },
-                      { key: 'system.commonCodes', label: '공통코드 관리', onClick: () => nav(KEY_TO_PATH['system.commonCodes']) },
-                      { key: 'system.permissions', label: '권한관리', onClick: () => nav(KEY_TO_PATH['system.permissions']) },
-                      { key: 'system.logs', label: '로그조회', onClick: () => nav(KEY_TO_PATH['system.logs']) },
-                    ],
+                    key: 'members.list',
+                    label: '회원조회',
+                    onClick: () => nav(KEY_TO_PATH['members.list']),
                   },
-                ]
-              : []),
-            ...(atLeast(role, 'SUPER_ADMIN')
-              ? [
-                  {
-                    key: 'tenants',
-                    icon: <ShopOutlined />,
-                    label: '테넌트관리',
-                    children: [
-                      { key: 'tenants.list', label: '테넌트 목록', onClick: () => nav(KEY_TO_PATH['tenants.list']) },
-                      { key: 'tenants.admins', label: '테넌트 관리자', onClick: () => nav(KEY_TO_PATH['tenants.admins']) },
-                    ],
-                  },
-                ]
-              : []),
-          ]}
-        />
+                  ...(atLeast(role, 'SUPER_ADMIN')
+                    ? [
+                        {
+                          key: 'members.register',
+                          label: '회원등록',
+                          onClick: () => nav(KEY_TO_PATH['members.register']),
+                        },
+                      ]
+                    : []),
+                  ...(atLeast(role, 'ADMIN')
+                    ? [
+                        {
+                          key: 'members.grades',
+                          label: '회원등급관리',
+                          onClick: () => nav(KEY_TO_PATH['members.grades']),
+                        },
+                      ]
+                    : []),
+                ],
+              },
+              {
+                key: 'points',
+                icon: <ShopOutlined />,
+                label: '포인트관리',
+                children: [
+                  ...(atLeast(role, 'ADMIN') ? [{ key: 'points.policies', label: '포인트 정책 관리', onClick: () => nav(KEY_TO_PATH['points.policies']) }] : []),
+                  ...(atLeast(role, 'SUPER_ADMIN')
+                    ? [
+                        { key: 'points.manualEarn', label: '포인트 수기 등록', onClick: () => nav(KEY_TO_PATH['points.manualEarn']) },
+                        { key: 'points.manualDeduct', label: '포인트 수기 차감', onClick: () => nav(KEY_TO_PATH['points.manualDeduct']) },
+                      ]
+                    : []),
+                  { key: 'points.history', label: '포인트 이력조회', onClick: () => nav(KEY_TO_PATH['points.history']) },
+                ],
+              },
+              {
+                key: 'coupons',
+                icon: <GiftOutlined />,
+                label: '쿠폰관리',
+                children: [
+                  ...(atLeast(role, 'SUPER_ADMIN')
+                    ? [{ key: 'coupons.issue', label: '쿠폰 발행', onClick: () => nav(KEY_TO_PATH['coupons.issue']) }]
+                    : []),
+                  { key: 'coupons.history', label: '쿠폰 이력', onClick: () => nav(KEY_TO_PATH['coupons.history']) },
+                ],
+              },
+              {
+                key: 'reports',
+                icon: <BarChartOutlined />,
+                label: '리포트',
+                children: [
+                  { key: 'reports.members', label: '회원 리포트', onClick: () => nav(KEY_TO_PATH['reports.members']) },
+                  { key: 'reports.points', label: '포인트 리포트', onClick: () => nav(KEY_TO_PATH['reports.points']) },
+                ],
+              },
+              ...(atLeast(role, 'ADMIN')
+                ? [
+                    {
+                      key: 'system',
+                      icon: <SettingOutlined />,
+                      label: '시스템',
+                      children: [
+                        { key: 'system.users', label: '사용자 관리', onClick: () => nav(KEY_TO_PATH['system.users']) },
+                        { key: 'system.commonCodes', label: '공통코드 관리', onClick: () => nav(KEY_TO_PATH['system.commonCodes']) },
+                        { key: 'system.permissions', label: '권한관리', onClick: () => nav(KEY_TO_PATH['system.permissions']) },
+                        { key: 'system.logs', label: '로그조회', onClick: () => nav(KEY_TO_PATH['system.logs']) },
+                      ],
+                    },
+                  ]
+                : []),
+              ...(atLeast(role, 'SUPER_ADMIN')
+                ? [
+                    {
+                      key: 'tenants',
+                      icon: <ShopOutlined />,
+                      label: '테넌트관리',
+                      children: [
+                        { key: 'tenants.list', label: '테넌트 목록', onClick: () => nav(KEY_TO_PATH['tenants.list']) },
+                        { key: 'tenants.admins', label: '테넌트 관리자', onClick: () => nav(KEY_TO_PATH['tenants.admins']) },
+                      ],
+                    },
+                  ]
+                : []),
+            ]}
+          />
+        </div>
       </Layout.Sider>
 
       <Layout style={{ height: '100vh', overflow: 'hidden' }}>
@@ -327,7 +330,7 @@ export function AdminLayout() {
           </div>
         </Layout.Header>
         <Layout.Content style={{ padding: 16, overflow: 'auto', flex: '1 1 auto' }}>
-          <AdminBreadcrumbs />
+          {showBreadcrumbs && <AdminBreadcrumbs />}
           <Outlet />
         </Layout.Content>
       </Layout>

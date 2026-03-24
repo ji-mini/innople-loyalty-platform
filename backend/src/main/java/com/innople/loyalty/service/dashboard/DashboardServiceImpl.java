@@ -4,6 +4,7 @@ import com.innople.loyalty.config.TenantContext;
 import com.innople.loyalty.controller.dto.DashboardDtos;
 import com.innople.loyalty.domain.log.ApiAuditLog;
 import com.innople.loyalty.domain.member.Member;
+import com.innople.loyalty.domain.member.MemberStatusCodes;
 import com.innople.loyalty.domain.points.PointEventType;
 import com.innople.loyalty.domain.points.PointLedger;
 import com.innople.loyalty.repository.AdminUserRepository;
@@ -41,13 +42,15 @@ public class DashboardServiceImpl implements DashboardService {
         UUID tenantId = TenantContext.requireTenantId();
         LocalDate today = LocalDate.now();
         ZoneId zone = ZoneId.systemDefault();
-        Instant todayStart = today.atStartOfDay(zone).toInstant();
-        Instant tomorrowStart = today.plusDays(1).atStartOfDay(zone).toInstant();
+        LocalDate monthStart = today.withDayOfMonth(1);
+        LocalDate nextMonthStart = monthStart.plusMonths(1);
+        Instant monthFrom = monthStart.atStartOfDay(zone).toInstant();
+        Instant monthTo = nextMonthStart.atStartOfDay(zone).toInstant();
 
-        long todayNewMembers = memberRepository.countByTenantIdAndJoinedAt(tenantId, today);
-        long todayEarn = pointLedgerRepository.sumEarnByTenantIdAndCreatedAtBetween(tenantId, todayStart, tomorrowStart);
-        long todayUse = pointLedgerRepository.sumUseByTenantIdAndCreatedAtBetween(tenantId, todayStart, tomorrowStart);
-        long totalMembers = memberRepository.countByTenantId(tenantId);
+        long thisMonthNewMembers = memberRepository.countByTenantIdAndCreatedAtBetween(tenantId, monthFrom, monthTo);
+        long thisMonthEarn = pointLedgerRepository.sumEarnByTenantIdAndCreatedAtBetween(tenantId, monthFrom, monthTo);
+        long thisMonthUse = pointLedgerRepository.sumUseByTenantIdAndCreatedAtBetween(tenantId, monthFrom, monthTo);
+        long totalMembers = memberRepository.countByTenantIdAndStatusCodeNot(tenantId, MemberStatusCodes.WITHDRAWN);
         long totalPointBalance = pointAccountRepository.sumCurrentBalanceByTenantId(tenantId);
 
         String brand = tenantQueryService.findByTenantId(tenantId)
@@ -97,9 +100,9 @@ public class DashboardServiceImpl implements DashboardService {
 
         return new DashboardDtos.DashboardResponse(
                 new DashboardDtos.DashboardSummaryResponse(
-                        todayNewMembers,
-                        todayEarn,
-                        todayUse,
+                        thisMonthNewMembers,
+                        thisMonthEarn,
+                        thisMonthUse,
                         totalMembers,
                         totalPointBalance
                 ),

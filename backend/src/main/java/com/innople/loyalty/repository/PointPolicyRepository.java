@@ -1,7 +1,6 @@
 package com.innople.loyalty.repository;
 
 import com.innople.loyalty.domain.points.PointPolicy;
-import com.innople.loyalty.domain.points.PointPolicyType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -13,6 +12,8 @@ public interface PointPolicyRepository extends JpaRepository<PointPolicy, UUID> 
 
     Optional<PointPolicy> findByTenantIdAndId(UUID tenantId, UUID id);
 
-    boolean existsByTenantIdAndPointType(UUID tenantId, PointPolicyType pointType);
+    boolean existsByTenantIdAndPointType(UUID tenantId, String pointType);
+
+    boolean existsByTenantIdAndPointTypeAndIdNot(UUID tenantId, String pointType, UUID id);
 }
 

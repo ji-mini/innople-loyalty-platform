@@ -80,9 +80,9 @@ export type MemberGradeItem = {
 }
 
 export type DashboardSummary = {
-  todayNewMembers: number
-  todayEarn: number
-  todayUse: number
+  thisMonthNewMembers: number
+  thisMonthEarn: number
+  thisMonthUse: number
   totalMembers: number
   totalPointBalance: number
 }

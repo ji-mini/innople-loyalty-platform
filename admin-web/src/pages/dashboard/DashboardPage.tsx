@@ -1,4 +1,5 @@
 import { Card, Col, Row, Space, Statistic, Table, Tag, Typography } from 'antd'
+import dayjs from 'dayjs'
 import { useDashboard } from '../../shared/queries'
 import type { RecentAdminAction, RecentPointActivity } from '../../shared/queries'
 import { PageShell } from '../common/PageShell'
@@ -7,26 +8,16 @@ const nf = new Intl.NumberFormat('ko-KR')
 
 function formatInstant(iso: string): string {
   if (!iso) return '-'
-  try {
-    const d = new Date(iso)
-    return d.toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return iso
-  }
+  const parsed = dayjs(iso)
+  return parsed.isValid() ? parsed.format('YYYY-MM-DD HH:mm:ss') : iso
 }
 
 export function DashboardPage() {
   const dashboard = useDashboard()
   const summary = dashboard.data?.summary
-  const todayNewMembers = summary?.todayNewMembers ?? 0
-  const todayEarn = summary?.todayEarn ?? 0
-  const todayUse = summary?.todayUse ?? 0
+  const thisMonthNewMembers = summary?.thisMonthNewMembers ?? 0
+  const thisMonthEarn = summary?.thisMonthEarn ?? 0
+  const thisMonthUse = summary?.thisMonthUse ?? 0
   const totalMembers = summary?.totalMembers ?? 0
   const totalPointBalance = summary?.totalPointBalance ?? 0
 
@@ -54,11 +45,11 @@ export function DashboardPage() {
           </div>
           <div>
             <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
-              오늘 현황
+              이번 달 현황
             </Typography.Text>
             <Typography.Text>
-              오늘 적립 <b>{nf.format(todayEarn)}</b> P / 오늘 사용 <b>{nf.format(todayUse)}</b> P / 신규 회원{' '}
-              <b>{nf.format(todayNewMembers)}</b>
+              이번 달 적립 <b>{nf.format(thisMonthEarn)}</b> P / 이번 달 사용 <b>{nf.format(thisMonthUse)}</b> P / 이번 달 신규 회원{' '}
+              <b>{nf.format(thisMonthNewMembers)}</b>
             </Typography.Text>
           </div>
         </Space>
@@ -67,17 +58,17 @@ export function DashboardPage() {
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
           <Card loading={dashboard.isLoading}>
-            <Statistic title="오늘 신규 회원" value={todayNewMembers} />
+            <Statistic title="이번 달 신규 회원" value={thisMonthNewMembers} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card loading={dashboard.isLoading}>
-            <Statistic title="오늘 포인트 적립" value={todayEarn} formatter={(v) => `${nf.format(Number(v))} P`} />
+            <Statistic title="이번 달 포인트 적립" value={thisMonthEarn} formatter={(v) => `${nf.format(Number(v))} P`} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card loading={dashboard.isLoading}>
-            <Statistic title="오늘 포인트 사용" value={todayUse} formatter={(v) => `${nf.format(Number(v))} P`} />
+            <Statistic title="이번 달 포인트 사용" value={thisMonthUse} formatter={(v) => `${nf.format(Number(v))} P`} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>

@@ -144,6 +144,11 @@ export function PointManualDeductPage() {
                   options={(reasons.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
                 />
               </Form.Item>
+            </Space>
+          </div>
+
+          <div>
+            <Space size={16} wrap align="start">
               <Form.Item label="상세 사유(선택)" name="reasonDetail">
                 <Input placeholder="예: 오등록 정정 차감" style={{ width: 360, maxWidth: '100%' }} />
               </Form.Item>

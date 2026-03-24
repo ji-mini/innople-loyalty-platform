@@ -38,6 +38,12 @@ function formatPointSourceChannel(v: string | null | undefined): string {
           : v
 }
 
+function formatDateTime(v: string | null | undefined): string {
+  if (!v) return '-'
+  const parsed = dayjs(v)
+  return parsed.isValid() ? parsed.format('YYYY-MM-DD HH:mm:ss') : v
+}
+
 type JusoSearchItem = { roadAddr: string; roadAddrPart1: string; jibunAddr: string; zipNo: string; bdNm?: string }
 
 function MemberEditModal({
@@ -251,7 +257,7 @@ export function MemberDetailPage() {
     code ? (statusCodes.data?.find((c) => c.code === code)?.name ?? code) : '-'
 
   const ledgerCols = [
-    { title: '일시', dataIndex: 'createdAt' },
+    { title: '일시', dataIndex: 'createdAt', render: (v: string) => formatDateTime(v) },
     { title: '이벤트', dataIndex: 'eventType', render: (v: string) => <Tag>{v}</Tag> },
     { title: '상태(전)', dataIndex: 'statusCodeBefore', render: getStatusName },
     { title: '상태(후)', dataIndex: 'statusCodeAfter', render: getStatusName },
@@ -299,28 +305,43 @@ export function MemberDetailPage() {
                   <Typography.Text type="secondary">회원을 찾을 수 없습니다.</Typography.Text>
                 )}
                 {detail.data && (
-                  <Descriptions bordered size="small" column={2}>
-                    <Descriptions.Item label="회원번호">{detail.data.memberNo ?? '-'}</Descriptions.Item>
-                    <Descriptions.Item label="이름">{detail.data.name ?? '-'}</Descriptions.Item>
-                    <Descriptions.Item label="상태">{getStatusName(detail.data.statusCode)}</Descriptions.Item>
-                    <Descriptions.Item label="등급">{detail.data.gradeName ?? '-'}</Descriptions.Item>
-                    <Descriptions.Item label="가입일시">{detail.data.joinedAt ?? '-'}</Descriptions.Item>
-                    <Descriptions.Item label="생년월일">{detail.data.birthDate ?? '-'}</Descriptions.Item>
-                    <Descriptions.Item label="양/음력">{formatCalendarType(detail.data.calendarType)}</Descriptions.Item>
-                    <Descriptions.Item label="성별">{formatGender(detail.data.gender)}</Descriptions.Item>
-                    <Descriptions.Item label="휴대폰">{detail.data.phoneNumber ?? '-'}</Descriptions.Item>
-                    <Descriptions.Item label="이메일">{detail.data.email ?? '-'}</Descriptions.Item>
-                    <Descriptions.Item label="주소" span={2}>
-                      {formatAddress(detail.data.address)}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Web ID">{detail.data.webId ?? '-'}</Descriptions.Item>
-                    <Descriptions.Item label="CI">{detail.data.ci ?? '-'}</Descriptions.Item>
-                    <Descriptions.Item label="휴면일자">{detail.data.dormantAt ?? '-'}</Descriptions.Item>
-                    <Descriptions.Item label="탈퇴일자">{detail.data.withdrawnAt ?? '-'}</Descriptions.Item>
-                    <Descriptions.Item label="기념일" span={2}>
-                      {detail.data.anniversaries ?? '-'}
-                    </Descriptions.Item>
-                  </Descriptions>
+                  <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                    <div>
+                      <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 12 }}>
+                        계정 정보
+                      </Typography.Title>
+                      <Descriptions bordered size="small" column={2}>
+                        <Descriptions.Item label="회원번호">{detail.data.memberNo ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="상태">{getStatusName(detail.data.statusCode)}</Descriptions.Item>
+                        <Descriptions.Item label="등급">{detail.data.gradeName ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="Web ID">{detail.data.webId ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="가입일시">{detail.data.joinedAt ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="휴면일시">{detail.data.dormantAt ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="탈퇴일시" span={2}>
+                          {detail.data.withdrawnAt ?? '-'}
+                        </Descriptions.Item>
+                      </Descriptions>
+                    </div>
+
+                    <div>
+                      <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 12 }}>
+                        회원 정보
+                      </Typography.Title>
+                      <Descriptions bordered size="small" column={2}>
+                        <Descriptions.Item label="이름">{detail.data.name ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="생년월일">{detail.data.birthDate ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="양/음력">{formatCalendarType(detail.data.calendarType)}</Descriptions.Item>
+                        <Descriptions.Item label="성별">{formatGender(detail.data.gender)}</Descriptions.Item>
+                        <Descriptions.Item label="휴대폰">{detail.data.phoneNumber ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="이메일">{detail.data.email ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="주소" span={2}>
+                          {formatAddress(detail.data.address)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="CI">{detail.data.ci ?? '-'}</Descriptions.Item>
+                        <Descriptions.Item label="기념일">{detail.data.anniversaries ?? '-'}</Descriptions.Item>
+                      </Descriptions>
+                    </div>
+                  </Space>
                 )}
               </Card>
             ),
@@ -371,7 +392,7 @@ export function MemberDetailPage() {
                       render: (v: string) => formatPointSourceChannel(v),
                     },
                     { title: '사유', dataIndex: 'reason', ellipsis: true },
-                    { title: '일시', dataIndex: 'createdAt', width: 170 },
+                    { title: '일시', dataIndex: 'createdAt', width: 170, render: (v: string) => formatDateTime(v) },
                   ]}
                   locale={{
                     emptyText: <Typography.Text type="secondary">포인트 이력이 없습니다.</Typography.Text>,

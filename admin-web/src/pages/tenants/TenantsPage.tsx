@@ -136,9 +136,6 @@ export function TenantsPage() {
             style: { cursor: 'pointer' },
           })}
           columns={[
-            { title: '테넌트ID', dataIndex: 'tenantId', width: 330 },
-            { title: '대표코드', dataIndex: 'representativeCode', width: 110 },
-            { title: '테넌트명', dataIndex: 'name' },
             ...(canManage
               ? [
                   {
@@ -180,6 +177,9 @@ export function TenantsPage() {
                   },
                 ]
               : []),
+            { title: '테넌트ID', dataIndex: 'tenantId', width: 330 },
+            { title: '대표코드', dataIndex: 'representativeCode', width: 110 },
+            { title: '테넌트명', dataIndex: 'name' },
           ]}
           locale={{ emptyText: q.isError ? '테넌트 목록 조회에 실패했습니다.' : '테넌트 데이터가 없습니다.' }}
         />

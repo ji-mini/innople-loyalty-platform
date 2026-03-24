@@ -52,23 +52,31 @@ public class ApiAuditLogFilter extends OncePerRequestFilter {
                     : ApiAuditCategory.ADMIN_USAGE;
 
             UUID adminUserId = parseUuidHeader(request.getHeader("X-Admin-User-Id"));
+            UUID tenantId = parseUuidHeader(request.getHeader("X-Tenant-Id"));
             String ip = request.getRemoteAddr();
             String ua = request.getHeader("User-Agent");
 
             try {
+                if (tenantId != null) {
+                    TenantContext.setTenantId(tenantId);
+                }
                 apiAuditLogService.write(
-                        category,
-                        request.getMethod(),
-                        uri,
-                        request.getQueryString(),
-                        resp.getStatus(),
-                        durationMs,
-                        adminUserId,
-                        ip,
-                        ua
+                    category,
+                    request.getMethod(),
+                    uri,
+                    request.getQueryString(),
+                    resp.getStatus(),
+                    durationMs,
+                    adminUserId,
+                    ip,
+                    ua
                 );
             } catch (RuntimeException ignored) {
                 // Do not break actual API flow when logging fails.
+            } finally {
+                if (tenantId != null) {
+                    TenantContext.clear();
+                }
             }
         }
     }

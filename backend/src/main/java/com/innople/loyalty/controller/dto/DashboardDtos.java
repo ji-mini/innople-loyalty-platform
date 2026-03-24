@@ -10,9 +10,9 @@ public final class DashboardDtos {
     }
 
     public record DashboardSummaryResponse(
-            long todayNewMembers,
-            long todayEarn,
-            long todayUse,
+            long thisMonthNewMembers,
+            long thisMonthEarn,
+            long thisMonthUse,
             long totalMembers,
             long totalPointBalance
     ) {

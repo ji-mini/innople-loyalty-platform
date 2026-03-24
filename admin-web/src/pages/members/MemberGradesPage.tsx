@@ -95,7 +95,7 @@ export function MemberGradesPage() {
     <PageShell
       title="회원등급관리"
       extra={
-        <Space size={12} wrap>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
             회원 등급별 혜택 정책을 관리합니다.
           </Typography.Text>
@@ -104,12 +104,12 @@ export function MemberGradesPage() {
               등급 등록
             </Button>
           ) : null}
-        </Space>
+        </div>
       }
     >
       <Card>
         <Form layout="inline">
-          <Form.Item label="검색">
+          <Form.Item>
             <Input
               placeholder="등급 코드/명"
               value={keyword}

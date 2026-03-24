@@ -71,6 +71,7 @@ export function PointHistoryPage() {
             placeholder="회원번호"
             value={memberNo}
             onChange={(e) => setMemberNo(e.target.value)}
+            onPressEnter={onSearch}
             allowClear
             style={{ width: 240 }}
           />
@@ -120,11 +121,10 @@ export function PointHistoryPage() {
               render: (v: number) => `${v >= 0 ? '+' : ''}${v.toLocaleString('ko-KR')} P`,
             },
             { title: '포인트 유효기간', dataIndex: 'expiresAt', width: 180, render: (v: string | null) => formatDateTime(v) },
-            { title: '승인번호', dataIndex: 'approvalNo', width: 130 },
+            { title: '승인번호', dataIndex: 'approvalNo', width: 170 },
             { title: '참조유형', dataIndex: 'referenceType', width: 140, render: (v: string | null) => v || '-' },
-            { title: '참조ID', dataIndex: 'referenceId', width: 180, render: (v: string | null) => v || '-' },
-            { title: '처리사유', dataIndex: 'reason', ellipsis: true },
             { title: '처리일시', dataIndex: 'createdAt', width: 180, render: (v: string) => formatDateTime(v) },
+            { title: '처리사유', dataIndex: 'reason', ellipsis: true },
           ]}
           locale={{
             emptyText: (

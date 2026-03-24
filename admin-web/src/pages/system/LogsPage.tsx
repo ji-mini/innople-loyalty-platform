@@ -44,7 +44,7 @@ export function LogsPage() {
   const rows = q.data?.items ?? []
 
   const cols = [
-    { title: '일시', dataIndex: 'createdAt', width: 190 },
+    { title: '일시', dataIndex: 'createdAt', width: 190, render: (v: string) => (v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : '-') },
     {
       title: '구분',
       dataIndex: 'category',
