@@ -1,18 +1,18 @@
 spring:
   flyway:
-    default-schema: ${APP_DB_SCHEMA:public}
-    create-schemas: true
+    default-schema: public
+    create-schemas: false
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     hikari:
-      schema: ${APP_DB_SCHEMA:public}
+      schema: public
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         format_sql: true
-        default_schema: ${APP_DB_SCHEMA:public}
+        default_schema: public
 

@@ -44,7 +44,7 @@ docker compose -f docker-compose.yml -f docker-compose.prd.yml up -d
 
 예) dev의 RDS 엔드포인트가 `mini-forge-dev-db.cp6ciiyw4ag1.ap-northeast-2.rds.amazonaws.com` 이면:
 
-- `SPRING_DATASOURCE_URL=jdbc:postgresql://mini-forge-dev-db.cp6ciiyw4ag1.ap-northeast-2.rds.amazonaws.com:5432/<DB_NAME>`
+- `SPRING_DATASOURCE_URL=jdbc:postgresql://mini-forge-dev-db.cp6ciiyw4ag1.ap-northeast-2.rds.amazonaws.com:5432/<DB_NAME>?currentSchema=public`
 
 ### 애플리케이션 실행
 
