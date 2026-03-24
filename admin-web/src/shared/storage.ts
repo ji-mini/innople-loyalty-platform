@@ -6,6 +6,7 @@ const TOUCH_THRESHOLD_MS = 5 * 60 * 1000
 
 export type AdminSession = {
   tenantId: string
+  tenantName?: string
   accessToken: string
   adminUserId: string
   phoneNumber: string
@@ -45,6 +46,7 @@ export function getSession(): AdminSession | null {
     }
     return {
       tenantId: v.tenantId,
+      tenantName: v.tenantName ?? undefined,
       accessToken: v.accessToken,
       adminUserId: v.adminUserId,
       phoneNumber: v.phoneNumber ?? '',

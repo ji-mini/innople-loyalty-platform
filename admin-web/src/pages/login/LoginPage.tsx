@@ -80,7 +80,8 @@ export function LoginPage() {
     setError(null)
     setLoading(true)
     try {
-      await login(v.tenantId, { phoneNumber: v.phoneNumber, password: v.password })
+      const selectedTenant = tenants.find((item) => item.tenantId === v.tenantId)
+      await login(v.tenantId, { phoneNumber: v.phoneNumber, password: v.password }, selectedTenant?.name)
       setLoginRemember(v.remember ? { tenantId: v.tenantId, phoneNumber: v.phoneNumber, remember: true } : null)
       nav('/dashboard', { replace: true })
     } catch (e: any) {

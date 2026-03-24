@@ -18,7 +18,9 @@ import java.util.UUID;
         name = "point_ledgers",
         indexes = {
                 @Index(name = "idx_point_ledgers_tenant_account", columnList = "tenantId,accountId"),
-                @Index(name = "idx_point_ledgers_tenant_member", columnList = "tenantId,memberId")
+                @Index(name = "idx_point_ledgers_tenant_member", columnList = "tenantId,memberId"),
+                @Index(name = "uk_point_ledgers_tenant_approval", columnList = "tenantId,approvalNo", unique = true),
+                @Index(name = "idx_point_ledgers_tenant_reference", columnList = "tenantId,referenceType,referenceId")
         }
 )
 @Getter
@@ -46,12 +48,29 @@ public class PointLedger extends BaseEntity {
     @Column(nullable = true, length = 500)
     private String reason;
 
-    public PointLedger(UUID accountId, UUID memberId, PointEventType eventType, long amount, String reason) {
+    @Column(nullable = false, length = 40)
+    private String sourceChannel;
+
+    @Column(nullable = false, length = 12)
+    private String approvalNo;
+
+    @Column(length = 50)
+    private String referenceType;
+
+    @Column(length = 100)
+    private String referenceId;
+
+    public PointLedger(UUID accountId, UUID memberId, PointEventType eventType, long amount, String reason,
+                       String sourceChannel, String approvalNo, String referenceType, String referenceId) {
         this.accountId = accountId;
         this.memberId = memberId;
         this.eventType = eventType;
         this.amount = amount;
         this.reason = reason;
+        this.sourceChannel = sourceChannel;
+        this.approvalNo = approvalNo;
+        this.referenceType = referenceType;
+        this.referenceId = referenceId;
     }
 }
 

@@ -31,6 +31,7 @@ public final class MemberQueryDtos {
             UUID id,
             String memberNo,
             String name,
+            long pointBalance,
             String gradeName,
             LocalDate birthDate,
             CalendarType calendarType,
@@ -50,7 +51,6 @@ public final class MemberQueryDtos {
 
     public record MemberLedgerResponse(
             UUID id,
-            String memberNo,
             String eventType,
             String statusCodeBefore,
             String statusCodeAfter,

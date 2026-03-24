@@ -10,11 +10,13 @@ import com.innople.loyalty.domain.member.Address;
 import com.innople.loyalty.domain.member.Member;
 import com.innople.loyalty.domain.member.MemberLedger;
 import com.innople.loyalty.domain.member.MemberLedgerEventType;
+import com.innople.loyalty.domain.member.MembershipGrade;
 import com.innople.loyalty.domain.member.MemberStatusCodes;
 import com.innople.loyalty.repository.AddressRepository;
 import com.innople.loyalty.repository.CommonCodeRepository;
 import com.innople.loyalty.repository.MemberLedgerRepository;
 import com.innople.loyalty.repository.MemberRepository;
+import com.innople.loyalty.repository.MembershipGradeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -33,10 +35,12 @@ import static com.innople.loyalty.service.member.MemberExceptions.MemberNotFound
 @Service
 @RequiredArgsConstructor
 public class MemberServiceImpl implements MemberService {
+    private static final String DEFAULT_MEMBERSHIP_GRADE_NAME = "기본등급";
 
     private final MemberRepository memberRepository;
     private final AddressRepository addressRepository;
     private final MemberLedgerRepository memberLedgerRepository;
+    private final MembershipGradeRepository membershipGradeRepository;
     private final CommonCodeRepository commonCodeRepository;
     private final ObjectMapper objectMapper;
     private static final Pattern WEB_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
@@ -81,6 +85,8 @@ public class MemberServiceImpl implements MemberService {
             savedAddress = addressRepository.save(address);
         }
 
+        MembershipGrade defaultMembershipGrade = resolveDefaultMembershipGrade(tenantId);
+
         Member member = Member.register(
                 command.memberNo(),
                 command.name(),
@@ -90,7 +96,7 @@ public class MemberServiceImpl implements MemberService {
                 normalizedPhone,
                 command.email(),
                 savedAddress,
-                null,
+                defaultMembershipGrade,
                 normalizedWebId,
                 statusCode,
                 (command.joinedAt() != null) ? command.joinedAt() : LocalDate.now(),
@@ -103,6 +109,7 @@ public class MemberServiceImpl implements MemberService {
         try {
             Member saved = memberRepository.save(member);
             memberLedgerRepository.save(MemberLedger.of(
+                    saved.getId(),
                     saved.getMemberNo(),
                     MemberLedgerEventType.REGISTER,
                     statusCode,
@@ -113,6 +120,12 @@ public class MemberServiceImpl implements MemberService {
         } catch (DataIntegrityViolationException e) {
             throw new MemberAlreadyExistsException("unique constraint violated (memberNo/webId/ci)");
         }
+    }
+
+    private MembershipGrade resolveDefaultMembershipGrade(UUID tenantId) {
+        return membershipGradeRepository.findByTenantIdAndName(tenantId, DEFAULT_MEMBERSHIP_GRADE_NAME)
+                .or(() -> membershipGradeRepository.findAllByTenantIdOrderByLevelAsc(tenantId).stream().findFirst())
+                .orElse(null);
     }
 
     @Override
@@ -156,6 +169,7 @@ public class MemberServiceImpl implements MemberService {
         try {
             Member saved = memberRepository.save(member);
             memberLedgerRepository.save(MemberLedger.of(
+                    saved.getId(),
                     saved.getMemberNo(),
                     MemberLedgerEventType.UPDATE_INFO,
                     beforeStatus,
@@ -195,6 +209,7 @@ public class MemberServiceImpl implements MemberService {
         member.updateStatus(newStatus, dormantAt, withdrawnAt);
         Member saved = memberRepository.save(member);
         memberLedgerRepository.save(MemberLedger.of(
+                saved.getId(),
                 saved.getMemberNo(),
                 MemberLedgerEventType.UPDATE_STATUS,
                 beforeStatus,
@@ -219,6 +234,7 @@ public class MemberServiceImpl implements MemberService {
 
         Member saved = memberRepository.save(member);
         memberLedgerRepository.save(MemberLedger.of(
+                saved.getId(),
                 saved.getMemberNo(),
                 MemberLedgerEventType.WITHDRAW,
                 beforeStatus,

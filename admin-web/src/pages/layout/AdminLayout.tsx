@@ -116,11 +116,12 @@ export function AdminLayout() {
 
   const tenantName = React.useMemo(() => {
     if (!tenantId) return '-'
+    if (session?.tenantName?.trim()) return session.tenantName
     if (tenantInList) return tenantInList.name
     if (tenantByIdQuery.data?.name) return tenantByIdQuery.data.name
     if (tenantsQuery.isLoading || tenantByIdQuery.isLoading) return '로딩 중...'
-    return '테넌트'
-  }, [tenantId, tenantInList, tenantByIdQuery.data?.name, tenantByIdQuery.isLoading, tenantsQuery.isLoading])
+    return tenantId
+  }, [session?.tenantName, tenantId, tenantInList, tenantByIdQuery.data?.name, tenantByIdQuery.isLoading, tenantsQuery.isLoading])
 
   const tenantSelectOptions = React.useMemo(() => {
     const items = tenantsQuery.data?.items ?? []
@@ -149,7 +150,8 @@ export function AdminLayout() {
     if (!atLeast(role, 'SUPER_ADMIN')) return
     if (!tenantId || tenantId === session.tenantId) return
 
-    const next = { ...session, tenantId }
+    const selectedOption = tenantSelectOptions.find((option) => option.value === tenantId)
+    const next = { ...session, tenantId, tenantName: typeof selectedOption?.label === 'string' ? selectedOption.label : session.tenantName }
     setSession(next)
     setSessionState(next)
     qc.clear()
@@ -208,7 +210,7 @@ export function AdminLayout() {
               icon: <ShopOutlined />,
               label: '포인트관리',
               children: [
-                ...(atLeast(role, 'ADMIN') ? [{ key: 'points.policies', label: '정책관리', onClick: () => nav(KEY_TO_PATH['points.policies']) }] : []),
+                ...(atLeast(role, 'ADMIN') ? [{ key: 'points.policies', label: '포인트 정책 관리', onClick: () => nav(KEY_TO_PATH['points.policies']) }] : []),
                 ...(atLeast(role, 'SUPER_ADMIN')
                   ? [
                       { key: 'points.manualEarn', label: '포인트 수기 등록', onClick: () => nav(KEY_TO_PATH['points.manualEarn']) },
@@ -274,10 +276,6 @@ export function AdminLayout() {
         <Layout.Header style={{ background: '#fff', borderBottom: '1px solid #f0f0f0', paddingInline: 16, flex: '0 0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Space size={12} wrap>
-              <Typography.Text strong>관리자</Typography.Text>
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                Tenant:
-              </Typography.Text>
               {atLeast(role, 'SUPER_ADMIN') ? (
                 <Select
                   value={session?.tenantId}

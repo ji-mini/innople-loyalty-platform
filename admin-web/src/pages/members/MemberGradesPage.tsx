@@ -180,7 +180,7 @@ export function MemberGradesPage() {
             label="레벨"
             name="level"
             rules={[{ required: true, message: '레벨을 입력하세요' }]}
-            extra="숫자가 작을수록 높은 등급입니다."
+            extra="숫자가 클수록 높은 등급입니다."
           >
             <InputNumber style={{ width: '100%' }} min={1} />
           </Form.Item>

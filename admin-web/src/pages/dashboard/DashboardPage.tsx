@@ -1,5 +1,4 @@
 import { Card, Col, Row, Space, Statistic, Table, Tag, Typography } from 'antd'
-import React from 'react'
 import { useDashboard } from '../../shared/queries'
 import type { RecentAdminAction, RecentPointActivity } from '../../shared/queries'
 import { PageShell } from '../common/PageShell'
@@ -43,6 +42,28 @@ export function DashboardPage() {
         </Typography.Text>
       }
     >
+      <Card loading={dashboard.isLoading}>
+        <Space wrap size={24}>
+          <div>
+            <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
+              총 회원 수
+            </Typography.Text>
+            <Typography.Title level={4} style={{ margin: 0 }}>
+              {nf.format(totalMembers)}
+            </Typography.Title>
+          </div>
+          <div>
+            <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
+              오늘 현황
+            </Typography.Text>
+            <Typography.Text>
+              오늘 적립 <b>{nf.format(todayEarn)}</b> P / 오늘 사용 <b>{nf.format(todayUse)}</b> P / 신규 회원{' '}
+              <b>{nf.format(todayNewMembers)}</b>
+            </Typography.Text>
+          </div>
+        </Space>
+      </Card>
+
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
           <Card loading={dashboard.isLoading}>
@@ -114,27 +135,6 @@ export function DashboardPage() {
         </Col>
       </Row>
 
-      <Card loading={dashboard.isLoading}>
-        <Space wrap size={24}>
-          <div>
-            <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
-              총 회원 수
-            </Typography.Text>
-            <Typography.Title level={4} style={{ margin: 0 }}>
-              {nf.format(totalMembers)}
-            </Typography.Title>
-          </div>
-          <div>
-            <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
-              오늘 현황
-            </Typography.Text>
-            <Typography.Text>
-              오늘 적립 <b>{nf.format(todayEarn)}</b> P / 오늘 사용 <b>{nf.format(todayUse)}</b> P / 신규 회원{' '}
-              <b>{nf.format(todayNewMembers)}</b>
-            </Typography.Text>
-          </div>
-        </Space>
-      </Card>
     </PageShell>
   )
 }

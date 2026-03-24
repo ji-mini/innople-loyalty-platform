@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface MemberLedgerRepository extends JpaRepository<MemberLedger, UUID> {
-    List<MemberLedger> findTop100ByTenantIdAndMemberNoOrderByCreatedAtDesc(UUID tenantId, String memberNo);
+    List<MemberLedger> findTop100ByTenantIdAndMemberIdOrderByCreatedAtDesc(UUID tenantId, UUID memberId);
 
-    List<MemberLedger> findByTenantIdAndMemberNoOrderByCreatedAtDesc(UUID tenantId, String memberNo, Pageable pageable);
+    List<MemberLedger> findByTenantIdAndMemberIdOrderByCreatedAtDesc(UUID tenantId, UUID memberId, Pageable pageable);
 }
 

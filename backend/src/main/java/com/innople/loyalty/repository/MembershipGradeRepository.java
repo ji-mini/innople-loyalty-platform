@@ -9,8 +9,10 @@ import java.util.UUID;
 
 public interface MembershipGradeRepository extends JpaRepository<MembershipGrade, UUID> {
     List<MembershipGrade> findAllByTenantIdOrderByLevelAsc(UUID tenantId);
+    List<MembershipGrade> findAllByTenantIdOrderByLevelDesc(UUID tenantId);
 
     Optional<MembershipGrade> findByTenantIdAndId(UUID tenantId, UUID id);
+    Optional<MembershipGrade> findByTenantIdAndName(UUID tenantId, String name);
     Optional<MembershipGrade> findByTenantIdAndLevel(UUID tenantId, int level);
 }
 

@@ -17,7 +17,8 @@ import java.util.UUID;
         name = "point_lots",
         indexes = {
                 @Index(name = "idx_point_lots_tenant_account", columnList = "tenantId,accountId"),
-                @Index(name = "idx_point_lots_tenant_account_exp", columnList = "tenantId,accountId,expiresAt,createdAt")
+                @Index(name = "idx_point_lots_tenant_account_exp", columnList = "tenantId,accountId,expiresAt,createdAt"),
+                @Index(name = "idx_point_lots_tenant_source_ledger", columnList = "tenantId,sourceLedgerId")
         }
 )
 @Getter
@@ -39,12 +40,16 @@ public class PointLot extends BaseEntity {
     @Column(nullable = false)
     private Instant expiresAt;
 
-    public PointLot(UUID accountId, UUID memberId, long earnedAmount, Instant expiresAt) {
+    @Column(nullable = true)
+    private UUID sourceLedgerId;
+
+    public PointLot(UUID accountId, UUID memberId, long earnedAmount, Instant expiresAt, UUID sourceLedgerId) {
         this.accountId = accountId;
         this.memberId = memberId;
         this.earnedAmount = earnedAmount;
         this.remainingAmount = earnedAmount;
         this.expiresAt = expiresAt;
+        this.sourceLedgerId = sourceLedgerId;
     }
 
     public void deduct(long amount) {

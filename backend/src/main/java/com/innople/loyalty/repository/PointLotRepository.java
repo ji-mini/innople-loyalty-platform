@@ -13,6 +13,8 @@ import java.util.UUID;
 public interface PointLotRepository extends JpaRepository<PointLot, UUID> {
     Optional<PointLot> findByTenantIdAndId(UUID tenantId, UUID id);
 
+    Optional<PointLot> findByTenantIdAndSourceLedgerId(UUID tenantId, UUID sourceLedgerId);
+
     @Query("""
             select l
             from PointLot l
@@ -40,6 +42,18 @@ public interface PointLotRepository extends JpaRepository<PointLot, UUID> {
     List<PointLot> findExpirableLotsFefo(
             @Param("tenantId") UUID tenantId,
             @Param("accountId") UUID accountId,
+            @Param("referenceAt") Instant referenceAt
+    );
+
+    @Query("""
+            select distinct l.memberId
+            from PointLot l
+            where l.tenantId = :tenantId
+              and l.remainingAmount > 0
+              and l.expiresAt <= :referenceAt
+            """)
+    List<UUID> findDistinctMemberIdsWithExpirableLots(
+            @Param("tenantId") UUID tenantId,
             @Param("referenceAt") Instant referenceAt
     );
 }

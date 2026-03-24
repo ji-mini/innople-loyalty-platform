@@ -1,6 +1,8 @@
 import { Button, Card, DatePicker, Form, Input, InputNumber, Radio, Select, Space, Typography, message } from 'antd'
+import { useQueryClient } from '@tanstack/react-query'
 import React from 'react'
 import { api } from '../../shared/api'
+import { useCommonCodes } from '../../shared/queries'
 import { PageShell } from '../common/PageShell'
 
 type FormValues = {
@@ -11,6 +13,8 @@ type FormValues = {
   expiresAt?: any
   referenceAt?: any
   reason: string
+  referenceType?: string
+  referenceId?: string
 }
 
 export function PointManualPage() {
@@ -18,6 +22,8 @@ export function PointManualPage() {
   const [lookupLoading, setLookupLoading] = React.useState(false)
   const [member, setMember] = React.useState<{ id: string; memberNo: string; name: string } | null>(null)
   const [form] = Form.useForm<FormValues>()
+  const queryClient = useQueryClient()
+  const referenceTypes = useCommonCodes('POINT_REFERENCE_TYPE')
 
   const onFinish = async (v: FormValues) => {
     if (!member?.id) {
@@ -39,6 +45,8 @@ export function PointManualPage() {
           amount: v.amount,
           expiresAt: expiresAtIso,
           reason,
+          referenceType: v.referenceType || null,
+          referenceId: v.referenceId?.trim() || null,
         })
         message.success('포인트 적립이 완료되었습니다.')
       } else if (v.type === 'USE') {
@@ -46,6 +54,8 @@ export function PointManualPage() {
           memberId: member.id,
           amount: v.amount,
           reason,
+          referenceType: v.referenceType || null,
+          referenceId: v.referenceId?.trim() || null,
         })
         message.success('포인트 사용이 완료되었습니다.')
       } else {
@@ -54,9 +64,18 @@ export function PointManualPage() {
           memberId: member.id,
           referenceAt: referenceAtIso,
           reason,
+          referenceType: v.referenceType || null,
+          referenceId: v.referenceId?.trim() || null,
         })
         message.success('포인트 소멸(만료분)이 처리되었습니다.')
       }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['members', 'detail', member.memberNo] }),
+        queryClient.invalidateQueries({ queryKey: ['points', 'ledgers', member.memberNo] }),
+        queryClient.invalidateQueries({ queryKey: ['points', 'ledgers'] }),
+        queryClient.invalidateQueries({ queryKey: ['members', 'list'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+      ])
     } finally {
       setLoading(false)
     }
@@ -96,7 +115,17 @@ export function PointManualPage() {
           layout="vertical"
           form={form}
           onFinish={onFinish}
-          initialValues={{ memberNo: '', brand: '', type: 'EARN', amount: 0, expiresAt: null, referenceAt: null, reason: '' }}
+          initialValues={{
+            memberNo: '',
+            brand: '',
+            type: 'EARN',
+            amount: 0,
+            expiresAt: null,
+            referenceAt: null,
+            reason: '',
+            referenceType: undefined,
+            referenceId: '',
+          }}
           requiredMark={false}
         >
           <Space size={16} wrap align="start">
@@ -175,6 +204,21 @@ export function PointManualPage() {
 
             <Form.Item label="처리사유" name="reason" rules={[{ required: true, message: '처리사유를 입력하세요' }]}>
               <Input placeholder="예: 고객 CS 보상" style={{ width: 420, maxWidth: '100%' }} />
+            </Form.Item>
+          </Space>
+
+          <Space size={16} wrap align="start">
+            <Form.Item label="참조유형(선택)" name="referenceType">
+              <Select
+                placeholder="선택"
+                allowClear
+                loading={referenceTypes.isLoading}
+                style={{ width: 220 }}
+                options={(referenceTypes.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
+              />
+            </Form.Item>
+            <Form.Item label="참조ID(선택)" name="referenceId">
+              <Input placeholder="예: ORDER-20260324-001" style={{ width: 280 }} />
             </Form.Item>
           </Space>
 

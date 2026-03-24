@@ -78,6 +78,7 @@ export type MemberDetail = {
   id: string
   memberNo: string
   name: string
+  pointBalance: number
   gradeName: string | null
   birthDate: string | null
   calendarType: 'SOLAR' | 'LUNAR' | null
@@ -96,7 +97,6 @@ export type MemberDetail = {
 
 export type MemberLedger = {
   id: string
-  memberNo: string
   eventType: string
   statusCodeBefore: string
   statusCodeAfter: string
@@ -110,6 +110,11 @@ export type PointLedgerItem = {
   eventType: 'EARN' | 'USE' | 'EXPIRE_AUTO' | 'EXPIRE_MANUAL' | 'ADJUST_EARN' | 'ADJUST_USE'
   amount: number
   reason: string | null
+  sourceChannel: string
+  expiresAt: string | null
+  approvalNo: string
+  referenceType: string | null
+  referenceId: string | null
   createdAt: string
 }
 

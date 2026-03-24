@@ -25,6 +25,19 @@ function formatGender(v: string | null | undefined): string {
   return v === 'MALE' ? '남성' : v === 'FEMALE' ? '여성' : v === 'UNKNOWN' ? '미정' : v
 }
 
+function formatPointSourceChannel(v: string | null | undefined): string {
+  if (!v) return '-'
+  return v === 'ADMIN_WEB_MANUAL_EARN'
+    ? '관리자 웹 수기 적립'
+    : v === 'ADMIN_WEB_MANUAL_USE'
+      ? '관리자 웹 수기 차감'
+      : v === 'ADMIN_WEB_MANUAL_EXPIRE'
+        ? '관리자 웹 수기 소멸'
+        : v === 'SYSTEM_AUTO_EXPIRE'
+          ? '시스템 자동 소멸'
+          : v
+}
+
 type JusoSearchItem = { roadAddr: string; roadAddrPart1: string; jibunAddr: string; zipNo: string; bdNm?: string }
 
 function MemberEditModal({
@@ -316,7 +329,15 @@ export function MemberDetailPage() {
             key: 'points',
             label: '포인트 이력',
             children: (
-              <Card title="포인트 이력 (최근 100건)" loading={pointLedgers.isLoading}>
+              <Card
+                title="포인트 이력 (최근 100건)"
+                extra={
+                  <Typography.Text strong>
+                    현재 잔액 {detail.data?.pointBalance?.toLocaleString('ko-KR') ?? '0'} P
+                  </Typography.Text>
+                }
+                loading={pointLedgers.isLoading}
+              >
                 <Table<PointLedgerItem>
                   rowKey={(r) => r.id}
                   size="small"
@@ -342,6 +363,12 @@ export function MemberDetailPage() {
                       dataIndex: 'amount',
                       width: 110,
                       render: (v: number) => `${v >= 0 ? '+' : ''}${v.toLocaleString('ko-KR')} P`,
+                    },
+                    {
+                      title: '경로',
+                      dataIndex: 'sourceChannel',
+                      width: 170,
+                      render: (v: string) => formatPointSourceChannel(v),
                     },
                     { title: '사유', dataIndex: 'reason', ellipsis: true },
                     { title: '일시', dataIndex: 'createdAt', width: 170 },

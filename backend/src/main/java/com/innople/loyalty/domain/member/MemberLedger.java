@@ -11,18 +11,29 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Entity
 @Table(
         name = "member_ledgers",
         indexes = {
                 @Index(name = "idx_member_ledgers_tenant_id", columnList = "tenantId"),
-                @Index(name = "idx_member_ledgers_tenant_member_no", columnList = "tenantId,memberNo")
+                @Index(name = "idx_member_ledgers_tenant_member_id", columnList = "tenantId,memberId")
         }
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MemberLedger extends BaseEntity {
 
+    /**
+     * Canonical member reference for relational integrity.
+     */
+    @Column(nullable = false)
+    private UUID memberId;
+
+    /**
+     * Snapshot/display value kept for audit readability.
+     */
     @Column(nullable = false, length = 50)
     private String memberNo;
 
@@ -40,6 +51,7 @@ public class MemberLedger extends BaseEntity {
     private String snapshotJson;
 
     public static MemberLedger of(
+            UUID memberId,
             String memberNo,
             MemberLedgerEventType eventType,
             String statusCodeBefore,
@@ -47,6 +59,7 @@ public class MemberLedger extends BaseEntity {
             String snapshotJson
     ) {
         MemberLedger ledger = new MemberLedger();
+        ledger.memberId = memberId;
         ledger.memberNo = memberNo;
         ledger.eventType = eventType;
         ledger.statusCodeBefore = statusCodeBefore;

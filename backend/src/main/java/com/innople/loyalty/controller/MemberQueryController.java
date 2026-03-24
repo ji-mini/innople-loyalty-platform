@@ -9,6 +9,7 @@ import com.innople.loyalty.domain.member.MembershipGrade;
 import com.innople.loyalty.domain.member.MemberLedger;
 import com.innople.loyalty.repository.MemberLedgerRepository;
 import com.innople.loyalty.repository.MemberRepository;
+import com.innople.loyalty.repository.PointAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +32,7 @@ public class MemberQueryController {
 
     private final MemberRepository memberRepository;
     private final MemberLedgerRepository memberLedgerRepository;
+    private final PointAccountRepository pointAccountRepository;
 
     @GetMapping
     public MemberQueryDtos.PagedResponse<MemberQueryDtos.MemberSummaryResponse> search(
@@ -103,16 +105,17 @@ public class MemberQueryController {
     ) {
         UUID tenantId = TenantContext.requireTenantId();
         int size = Math.min(Math.max(limit, 1), 200);
+        Member member = memberRepository.findByTenantIdAndMemberNo(tenantId, memberNo)
+                .orElseThrow(() -> new IllegalArgumentException("member not found"));
 
-        List<MemberLedger> ledgers = memberLedgerRepository.findByTenantIdAndMemberNoOrderByCreatedAtDesc(
+        List<MemberLedger> ledgers = memberLedgerRepository.findByTenantIdAndMemberIdOrderByCreatedAtDesc(
                 tenantId,
-                memberNo,
+                member.getId(),
                 PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "createdAt"))
         );
 
         return ledgers.stream().map(l -> new MemberQueryDtos.MemberLedgerResponse(
                 l.getId(),
-                l.getMemberNo(),
                 l.getEventType().name(),
                 l.getStatusCodeBefore(),
                 l.getStatusCodeAfter(),
@@ -123,6 +126,10 @@ public class MemberQueryController {
     private MemberQueryDtos.MemberDetailResponse toDetail(Member m) {
         MembershipGrade grade = m.getMembershipGrade();
         String gradeName = grade != null ? grade.getName() : null;
+        UUID tenantId = TenantContext.requireTenantId();
+        long pointBalance = pointAccountRepository.findByTenantIdAndMemberId(tenantId, m.getId())
+                .map(account -> account.getCurrentBalance())
+                .orElse(0L);
 
         Address addr = m.getAddress();
         MemberDtos.AddressResponse addressResponse = addr != null
@@ -143,6 +150,7 @@ public class MemberQueryController {
                 m.getId(),
                 m.getMemberNo(),
                 m.getName(),
+                pointBalance,
                 gradeName,
                 m.getBirthDate(),
                 m.getCalendarType(),

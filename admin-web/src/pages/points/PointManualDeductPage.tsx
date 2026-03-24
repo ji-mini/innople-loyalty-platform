@@ -1,4 +1,5 @@
 import { Button, Card, Form, Input, InputNumber, Select, Space, Typography, message } from 'antd'
+import { useQueryClient } from '@tanstack/react-query'
 import React from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../../shared/api'
@@ -10,6 +11,8 @@ type FormValues = {
   amount: number
   reasonCode: string
   reasonDetail?: string
+  referenceType?: string
+  referenceId?: string
 }
 
 export function PointManualDeductPage() {
@@ -19,6 +22,8 @@ export function PointManualDeductPage() {
   const [form] = Form.useForm<FormValues>()
   const [sp] = useSearchParams()
   const reasons = useCommonCodes('POINT_REASON')
+  const referenceTypes = useCommonCodes('POINT_REFERENCE_TYPE')
+  const queryClient = useQueryClient()
 
   const onLookup = async () => {
     const memberNo = String(form.getFieldValue('memberNo') ?? '').trim()
@@ -66,7 +71,16 @@ export function PointManualDeductPage() {
         memberId: member.id,
         amount: v.amount,
         reason,
+        referenceType: v.referenceType || null,
+        referenceId: v.referenceId?.trim() || null,
       })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['members', 'detail', member.memberNo] }),
+        queryClient.invalidateQueries({ queryKey: ['points', 'ledgers', member.memberNo] }),
+        queryClient.invalidateQueries({ queryKey: ['points', 'ledgers'] }),
+        queryClient.invalidateQueries({ queryKey: ['members', 'list'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+      ])
       message.success('수기 차감(사용)이 완료되었습니다.')
     } catch (e: any) {
       message.error(e?.response?.data?.message ?? e?.message ?? '처리 실패')
@@ -89,7 +103,14 @@ export function PointManualDeductPage() {
           layout="vertical"
           form={form}
           onFinish={onFinish}
-          initialValues={{ memberNo: '', amount: 0, reasonCode: 'ADJ_FIX', reasonDetail: '' }}
+          initialValues={{
+            memberNo: '',
+            amount: 0,
+            reasonCode: 'ADJ_FIX',
+            reasonDetail: '',
+            referenceType: undefined,
+            referenceId: '',
+          }}
           requiredMark={false}
         >
           <div>
@@ -125,6 +146,23 @@ export function PointManualDeductPage() {
               </Form.Item>
               <Form.Item label="상세 사유(선택)" name="reasonDetail">
                 <Input placeholder="예: 오등록 정정 차감" style={{ width: 360, maxWidth: '100%' }} />
+              </Form.Item>
+            </Space>
+          </div>
+
+          <div>
+            <Space size={16} wrap align="start">
+              <Form.Item label="참조유형(선택)" name="referenceType">
+                <Select
+                  placeholder="선택"
+                  allowClear
+                  loading={referenceTypes.isLoading}
+                  style={{ width: 220 }}
+                  options={(referenceTypes.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
+                />
+              </Form.Item>
+              <Form.Item label="참조ID(선택)" name="referenceId">
+                <Input placeholder="예: ORDER-20260324-001" style={{ width: 280 }} />
               </Form.Item>
             </Space>
           </div>

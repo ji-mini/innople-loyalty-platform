@@ -47,10 +47,14 @@ public class PointController {
                 request.memberId(),
                 request.amount(),
                 request.expiresAt(),
-                request.reason()
+                request.reason(),
+                request.approvalNo(),
+                request.referenceType(),
+                request.referenceId()
         );
         return new PointDtos.PointOperationResponse(
                 result.ledgerId(),
+                result.approvalNo(),
                 result.eventType(),
                 result.amount(),
                 result.currentBalance(),
@@ -63,10 +67,14 @@ public class PointController {
         PointOperationResult result = pointService.use(
                 request.memberId(),
                 request.amount(),
-                request.reason()
+                request.reason(),
+                request.approvalNo(),
+                request.referenceType(),
+                request.referenceId()
         );
         return new PointDtos.PointOperationResponse(
                 result.ledgerId(),
+                result.approvalNo(),
                 result.eventType(),
                 result.amount(),
                 result.currentBalance(),
@@ -79,10 +87,14 @@ public class PointController {
         PointOperationResult result = pointService.manualExpire(
                 request.memberId(),
                 request.referenceAt(),
-                request.reason()
+                request.reason(),
+                request.approvalNo(),
+                request.referenceType(),
+                request.referenceId()
         );
         return new PointDtos.PointOperationResponse(
                 result.ledgerId(),
+                result.approvalNo(),
                 result.eventType(),
                 result.amount(),
                 result.currentBalance(),

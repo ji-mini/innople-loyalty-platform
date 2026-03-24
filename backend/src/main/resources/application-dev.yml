@@ -1,18 +1,18 @@
 spring:
   flyway:
-    default-schema: loyalty
+    default-schema: ${APP_DB_SCHEMA:public}
     create-schemas: true
   datasource:
     url: ${SPRING_DATASOURCE_URL}
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     hikari:
-      schema: ${APP_DB_SCHEMA:loyalty}
+      schema: ${APP_DB_SCHEMA:public}
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
         format_sql: true
-        default_schema: ${APP_DB_SCHEMA:loyalty}
+        default_schema: ${APP_DB_SCHEMA:public}
 

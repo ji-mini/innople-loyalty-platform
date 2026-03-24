@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public record PointOperationResult(
         UUID ledgerId,
+        String approvalNo,
         PointEventType eventType,
         long amount,
         long currentBalance,

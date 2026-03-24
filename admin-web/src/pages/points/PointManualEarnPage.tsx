@@ -1,4 +1,5 @@
 import { Button, Card, DatePicker, Form, Input, InputNumber, Select, Space, Typography, message } from 'antd'
+import { useQueryClient } from '@tanstack/react-query'
 import React from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../../shared/api'
@@ -11,6 +12,8 @@ type FormValues = {
   expiresAt: any
   reasonCode: string
   reasonDetail?: string
+  referenceType?: string
+  referenceId?: string
 }
 
 export function PointManualEarnPage() {
@@ -20,6 +23,8 @@ export function PointManualEarnPage() {
   const [form] = Form.useForm<FormValues>()
   const [sp] = useSearchParams()
   const reasons = useCommonCodes('POINT_REASON')
+  const referenceTypes = useCommonCodes('POINT_REFERENCE_TYPE')
+  const queryClient = useQueryClient()
 
   const onLookup = async () => {
     const memberNo = String(form.getFieldValue('memberNo') ?? '').trim()
@@ -73,7 +78,16 @@ export function PointManualEarnPage() {
         amount: v.amount,
         expiresAt: expiresAtIso,
         reason,
+        referenceType: v.referenceType || null,
+        referenceId: v.referenceId?.trim() || null,
       })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['members', 'detail', member.memberNo] }),
+        queryClient.invalidateQueries({ queryKey: ['points', 'ledgers', member.memberNo] }),
+        queryClient.invalidateQueries({ queryKey: ['points', 'ledgers'] }),
+        queryClient.invalidateQueries({ queryKey: ['members', 'list'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+      ])
       message.success('포인트 수기 등록(적립)이 완료되었습니다.')
     } catch (e: any) {
       message.error(e?.response?.data?.message ?? e?.message ?? '처리 실패')
@@ -96,7 +110,15 @@ export function PointManualEarnPage() {
           layout="vertical"
           form={form}
           onFinish={onFinish}
-          initialValues={{ memberNo: '', amount: 0, expiresAt: null, reasonCode: 'CS_COMP', reasonDetail: '' }}
+          initialValues={{
+            memberNo: '',
+            amount: 0,
+            expiresAt: null,
+            reasonCode: 'CS_COMP',
+            reasonDetail: '',
+            referenceType: undefined,
+            referenceId: '',
+          }}
           requiredMark={false}
         >
           <Space size={16} wrap align="start">
@@ -135,6 +157,21 @@ export function PointManualEarnPage() {
 
             <Form.Item label="상세 사유(선택)" name="reasonDetail">
               <Input placeholder="예: 고객 CS 보상 적립" style={{ width: 360, maxWidth: '100%' }} />
+            </Form.Item>
+          </Space>
+
+          <Space size={16} wrap align="start">
+            <Form.Item label="참조유형(선택)" name="referenceType">
+              <Select
+                placeholder="선택"
+                allowClear
+                loading={referenceTypes.isLoading}
+                style={{ width: 220 }}
+                options={(referenceTypes.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
+              />
+            </Form.Item>
+            <Form.Item label="참조ID(선택)" name="referenceId">
+              <Input placeholder="예: ORDER-20260324-001" style={{ width: 280 }} />
             </Form.Item>
           </Space>
 

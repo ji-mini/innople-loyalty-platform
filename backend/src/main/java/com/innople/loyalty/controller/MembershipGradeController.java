@@ -34,7 +34,7 @@ public class MembershipGradeController {
     @GetMapping
     public List<MembershipGradeResponse> list() {
         UUID tenantId = TenantContext.requireTenantId();
-        List<MembershipGrade> grades = membershipGradeRepository.findAllByTenantIdOrderByLevelAsc(tenantId);
+        List<MembershipGrade> grades = membershipGradeRepository.findAllByTenantIdOrderByLevelDesc(tenantId);
         return grades.stream()
                 .map(g -> new MembershipGradeResponse(
                         g.getId(),

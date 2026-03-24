@@ -172,8 +172,8 @@ export function useMemberReportMonthlyTotals(year: number) {
   })
 }
 
-export function usePointLedgers(params: { memberNo?: string; limit?: number }) {
-  const { memberNo, limit = 100 } = params
+export function usePointLedgers(params: { memberNo?: string; limit?: number; enabled?: boolean }) {
+  const { memberNo, limit = 100, enabled = true } = params
   return useQuery({
     queryKey: ['points', 'ledgers', memberNo ?? '', limit],
     queryFn: async () => {
@@ -182,6 +182,7 @@ export function usePointLedgers(params: { memberNo?: string; limit?: number }) {
       })
       return res.data ?? []
     },
+    enabled,
   })
 }
 
