@@ -1,4 +1,4 @@
-import { Button, Card, DatePicker, Input, Space, Table, Tabs, Tag, Typography } from 'antd'
+import { Button, Card, DatePicker, Input, Space, Table, Tabs, Tag, Typography, message } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import dayjs, { type Dayjs } from 'dayjs'
 import React from 'react'
@@ -52,7 +52,31 @@ export function LogsPage() {
       width: 140,
       render: (v: Category) => <Tag color={v === 'ADMIN_USAGE' ? 'blue' : 'gold'}>{v}</Tag>,
     },
-    { title: '관리자ID', dataIndex: 'adminUserId', width: 260, render: (v: string | null) => v ?? '-' },
+    {
+      title: '관리자ID',
+      dataIndex: 'adminUserId',
+      width: 260,
+      render: (v: string | null) => {
+        if (!v) return '-'
+        return (
+          <Space size={8} style={{ width: '100%' }}>
+            <Typography.Text ellipsis={{ tooltip: v }} style={{ flex: 1, minWidth: 0 }}>
+              {v}
+            </Typography.Text>
+            <Button
+              size="small"
+              type="link"
+              onClick={async () => {
+                await navigator.clipboard.writeText(v)
+                message.success('관리자ID가 복사되었습니다.')
+              }}
+            >
+              복사
+            </Button>
+          </Space>
+        )
+      },
+    },
     { title: 'IP', dataIndex: 'ip', width: 140, render: (v: string | null) => v ?? '-' },
     { title: '메서드', dataIndex: 'httpMethod', width: 90 },
     { title: '상태', dataIndex: 'statusCode', width: 90, render: (v: number) => <Tag color={v >= 400 ? 'red' : 'green'}>{v}</Tag> },

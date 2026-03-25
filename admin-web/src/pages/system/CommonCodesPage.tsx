@@ -43,6 +43,22 @@ export function CommonCodesPage() {
   })
 
   const rows = q.data ?? []
+  const codeGroupsQuery = useQuery({
+    queryKey: ['admin', 'common-code-groups'],
+    queryFn: async () => {
+      const res = await api.get('/api/v1/admin/common-codes')
+      return (res.data ?? []) as Row[]
+    },
+  })
+  const codeGroupOptions = React.useMemo(
+    () => [
+      { value: '', label: '전체 코드그룹' },
+      ...Array.from(new Set((codeGroupsQuery.data ?? []).map((item) => item.codeGroup)))
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({ value, label: value })),
+    ],
+    [codeGroupsQuery.data],
+  )
 
   const [open, setOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<Row | null>(null)
@@ -135,10 +151,19 @@ export function CommonCodesPage() {
     >
       <Card>
         <Space wrap>
-          <Input
-            placeholder="코드그룹 (예: MEMBER_STATUS)"
+          <Select
             value={filters.codeGroup}
-            onChange={(e) => setFilters((p) => ({ ...p, codeGroup: e.target.value }))}
+            onChange={(v) => setFilters((p) => ({ ...p, codeGroup: v }))}
+            options={codeGroupOptions}
+            loading={codeGroupsQuery.isLoading}
+            showSearch
+            optionFilterProp="label"
+            style={{ width: 220 }}
+          />
+          <Input
+            placeholder="코드/이름 검색"
+            value={filters.keyword}
+            onChange={(e) => setFilters((p) => ({ ...p, keyword: e.target.value }))}
             allowClear
             style={{ width: 260 }}
           />
@@ -151,13 +176,6 @@ export function CommonCodesPage() {
               { value: 'true', label: '활성' },
               { value: 'false', label: '비활성' },
             ]}
-          />
-          <Input
-            placeholder="코드/이름 검색"
-            value={filters.keyword}
-            onChange={(e) => setFilters((p) => ({ ...p, keyword: e.target.value }))}
-            allowClear
-            style={{ width: 260 }}
           />
           <Button onClick={() => q.refetch()} loading={q.isFetching}>
             새로고침
@@ -174,7 +192,7 @@ export function CommonCodesPage() {
           columns={[
             { title: '코드그룹', dataIndex: 'codeGroup', width: 220, render: (v: string) => <Tag>{v}</Tag> },
             { title: '코드', dataIndex: 'code', width: 180 },
-            { title: '이름', dataIndex: 'name' },
+            { title: '이름', dataIndex: 'name', width: 220 },
             { title: '활성', dataIndex: 'active', width: 110, render: (v: boolean) => <Switch checked={v} disabled /> },
             { title: '정렬', dataIndex: 'sortOrder', width: 90 },
             {
