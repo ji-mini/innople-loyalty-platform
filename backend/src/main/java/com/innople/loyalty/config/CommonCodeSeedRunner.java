@@ -56,6 +56,8 @@ public class CommonCodeSeedRunner implements ApplicationRunner {
         upsert("POINT_REASON", "CS_COMP", "고객보상", true, 10);
         upsert("POINT_REASON", "ADJ_FIX", "오등록정정", true, 20);
         upsert("POINT_REASON", "EVENT", "이벤트", true, 30);
+        upsert("POINT_REASON", "PURCHASE", "구매", true, 40);
+        upsert("POINT_REASON", "SIGNUP", "신규가입", true, 50);
     }
 
     private void upsert(String codeGroup, String code, String name, boolean active, int sortOrder) {

@@ -173,6 +173,16 @@ export function AdminAccountsPage() {
             { title: '휴대폰', dataIndex: 'phoneNumber', width: 180 },
             { title: '이메일', dataIndex: 'email', render: (v: string | null) => v ?? '-' },
             {
+              title: '사용자ID',
+              dataIndex: 'id',
+              width: 320,
+              render: (v: string) => (
+                <Space size={8}>
+                  <Typography.Text copyable={{ text: v }}>{v}</Typography.Text>
+                </Space>
+              ),
+            },
+            {
               title: '권한',
               dataIndex: 'role',
               width: 140,

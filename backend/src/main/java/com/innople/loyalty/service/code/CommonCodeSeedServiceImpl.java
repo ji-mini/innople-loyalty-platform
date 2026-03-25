@@ -37,6 +37,8 @@ public class CommonCodeSeedServiceImpl implements CommonCodeSeedService {
         created += upsertIfMissing(tenantId, "POINT_REASON", "CS_COMP", "고객보상", true, 10);
         created += upsertIfMissing(tenantId, "POINT_REASON", "ADJ_FIX", "오등록정정", true, 20);
         created += upsertIfMissing(tenantId, "POINT_REASON", "EVENT", "이벤트", true, 30);
+        created += upsertIfMissing(tenantId, "POINT_REASON", "PURCHASE", "구매", true, 40);
+        created += upsertIfMissing(tenantId, "POINT_REASON", "SIGNUP", "신규가입", true, 50);
 
         return new SeedResult(created);
     }

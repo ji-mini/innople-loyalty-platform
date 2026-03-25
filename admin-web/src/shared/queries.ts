@@ -13,6 +13,17 @@ export type CommonCodeItem = {
   updatedAt: string
 }
 
+export type PointPolicyItem = {
+  id: string
+  pointType: string
+  name: string
+  validityDays: number
+  enabled: boolean
+  description: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export function useCommonCodes(codeGroup: string) {
   return useQuery({
     queryKey: ['admin', 'common-codes', codeGroup],
@@ -24,6 +35,16 @@ export function useCommonCodes(codeGroup: string) {
       return [...items].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.code.localeCompare(b.code))
     },
     enabled: !!codeGroup,
+  })
+}
+
+export function usePointPolicies() {
+  return useQuery({
+    queryKey: ['admin', 'point-policies'],
+    queryFn: async () => {
+      const res = await api.get<PointPolicyItem[]>('/api/v1/admin/point-policies')
+      return res.data ?? []
+    },
   })
 }
 

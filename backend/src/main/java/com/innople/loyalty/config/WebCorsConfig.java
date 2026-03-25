@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -17,8 +18,10 @@ public class WebCorsConfig implements WebMvcConfigurer {
 
     private final List<String> allowedOrigins;
     private final boolean allowCredentials;
+    private final ApiAuditLogInterceptor apiAuditLogInterceptor;
 
     public WebCorsConfig(
+            ApiAuditLogInterceptor apiAuditLogInterceptor,
             @Value("${app.cors.allowed-origins:" +
                     "http://localhost:3200,http://127.0.0.1:3200," +
                     "http://localhost:5173,http://127.0.0.1:5173," +
@@ -27,6 +30,7 @@ public class WebCorsConfig implements WebMvcConfigurer {
                     "}") String allowedOrigins,
             @Value("${app.cors.allow-credentials:false}") boolean allowCredentials
     ) {
+        this.apiAuditLogInterceptor = apiAuditLogInterceptor;
         this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
@@ -39,10 +43,17 @@ public class WebCorsConfig implements WebMvcConfigurer {
         registry.addMapping("/api/**")
                 .allowedOrigins(allowedOrigins.toArray(String[]::new))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("Content-Type", "Authorization", "X-Tenant-Id")
-                .exposedHeaders("X-Tenant-Id")
+                .allowedHeaders("Content-Type", "Authorization", "X-Tenant-Id", "X-Admin-User-Id")
+                .exposedHeaders("X-Tenant-Id", "X-Admin-User-Id")
                 .maxAge(3600)
                 .allowCredentials(allowCredentials);
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(apiAuditLogInterceptor)
+                .addPathPatterns("/api/v1/**")
+                .excludePathPatterns("/api/v1/public/**", "/error");
     }
 
     @Bean
@@ -51,8 +62,8 @@ public class WebCorsConfig implements WebMvcConfigurer {
         config.setAllowCredentials(false);
         config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-Tenant-Id"));
-        config.setExposedHeaders(List.of("X-Tenant-Id"));
+        config.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-Tenant-Id", "X-Admin-User-Id"));
+        config.setExposedHeaders(List.of("X-Tenant-Id", "X-Admin-User-Id"));
         config.setAllowCredentials(allowCredentials);
         config.setMaxAge(3600L);
 

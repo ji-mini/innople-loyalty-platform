@@ -1,9 +1,10 @@
 import { Button, Card, DatePicker, Form, Input, InputNumber, Select, Space, Typography, message } from 'antd'
 import { useQueryClient } from '@tanstack/react-query'
+import dayjs from 'dayjs'
 import React from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../../shared/api'
-import { useCommonCodes } from '../../shared/queries'
+import { useCommonCodes, usePointPolicies } from '../../shared/queries'
 import { PageShell } from '../common/PageShell'
 
 type FormValues = {
@@ -23,8 +24,15 @@ export function PointManualEarnPage() {
   const [form] = Form.useForm<FormValues>()
   const [sp] = useSearchParams()
   const reasons = useCommonCodes('POINT_REASON')
+  const pointPolicies = usePointPolicies()
   const referenceTypes = useCommonCodes('POINT_REFERENCE_TYPE')
   const queryClient = useQueryClient()
+  const selectedReasonCode = Form.useWatch('reasonCode', form)
+  const previousReasonCodeRef = React.useRef<string | undefined>(undefined)
+
+  const policyByPointType = React.useMemo(() => {
+    return new Map((pointPolicies.data ?? []).filter((policy) => policy.enabled).map((policy) => [policy.pointType, policy]))
+  }, [pointPolicies.data])
 
   const onLookup = async () => {
     const memberNo = String(form.getFieldValue('memberNo') ?? '').trim()
@@ -53,6 +61,23 @@ export function PointManualEarnPage() {
     onLookup()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  React.useEffect(() => {
+    const reasonCode = typeof selectedReasonCode === 'string' ? selectedReasonCode : undefined
+    if (!reasonCode) return
+
+    const previousReasonCode = previousReasonCodeRef.current
+    const hasCurrentExpiresAt = !!form.getFieldValue('expiresAt')
+    const matchedPolicy = policyByPointType.get(reasonCode)
+
+    if ((previousReasonCode !== reasonCode || !hasCurrentExpiresAt) && matchedPolicy) {
+      form.setFieldsValue({
+        expiresAt: dayjs().add(matchedPolicy.validityDays, 'day'),
+      })
+    }
+
+    previousReasonCodeRef.current = reasonCode
+  }, [form, policyByPointType, selectedReasonCode])
 
   const onReset = () => {
     form.resetFields()
@@ -149,7 +174,7 @@ export function PointManualEarnPage() {
             <Form.Item label="사유 템플릿" name="reasonCode" rules={[{ required: true, message: '사유 템플릿을 선택하세요' }]}>
               <Select
                 placeholder="선택"
-                loading={reasons.isLoading}
+                loading={reasons.isLoading || pointPolicies.isLoading}
                 style={{ width: 260 }}
                 options={(reasons.data ?? []).map((c) => ({ value: c.code, label: `${c.code} (${c.name})` }))}
               />

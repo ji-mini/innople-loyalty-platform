@@ -1,6 +1,6 @@
 import { Button, Card, DatePicker, Input, Space, Table, Tabs, Tag, Typography } from 'antd'
 import { useQuery } from '@tanstack/react-query'
-import dayjs from 'dayjs'
+import dayjs, { type Dayjs } from 'dayjs'
 import React from 'react'
 import { PageShell } from '../common/PageShell'
 import { api } from '../../shared/api'
@@ -21,10 +21,11 @@ type Row = {
 }
 
 type PagedResponse<T> = { items: T[]; page: number; size: number; totalElements: number; totalPages: number }
+type DateRange = [Dayjs, Dayjs]
 
 export function LogsPage() {
   const [keyword, setKeyword] = React.useState('')
-  const [range, setRange] = React.useState<[any, any] | null>([dayjs().subtract(7, 'day'), dayjs()])
+  const [range, setRange] = React.useState<DateRange | null>([dayjs().subtract(7, 'day'), dayjs()])
   const [activeTab, setActiveTab] = React.useState<Category>('ADMIN_USAGE')
 
   const q = useQuery({
@@ -81,7 +82,12 @@ export function LogsPage() {
             allowClear
             style={{ width: 280 }}
           />
-          <DatePicker.RangePicker value={range as any} onChange={(v) => setRange((v as any) ?? null)} />
+          <DatePicker.RangePicker
+            value={range}
+            onChange={(v) => setRange((v as DateRange | null) ?? null)}
+            showTime
+            format="YYYY-MM-DD HH:mm:ss"
+          />
           <Button onClick={() => q.refetch()} loading={q.isFetching}>
             새로고침
           </Button>

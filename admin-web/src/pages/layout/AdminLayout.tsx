@@ -55,6 +55,10 @@ const KEY_TO_PATH: Record<MenuKey, string> = {
   'system.logs': '/system/logs',
 }
 
+function topMenuLabel(text: string) {
+  return <span style={{ fontWeight: 700 }}>{text}</span>
+}
+
 function pickSelectedKey(pathname: string): MenuKey {
   if (pathname === '/' || pathname.startsWith('/dashboard')) return 'dashboard'
   if (pathname.startsWith('/members/register')) return 'members.register'
@@ -174,13 +178,13 @@ export function AdminLayout() {
               {
                 key: 'dashboard',
                 icon: <DashboardOutlined />,
-                label: '대시보드',
+                label: topMenuLabel('대시보드'),
                 onClick: () => nav(KEY_TO_PATH.dashboard),
               },
               {
                 key: 'members',
                 icon: <TeamOutlined />,
-                label: '회원관리',
+                label: topMenuLabel('회원관리'),
                 children: [
                   {
                     key: 'members.list',
@@ -210,7 +214,7 @@ export function AdminLayout() {
               {
                 key: 'points',
                 icon: <ShopOutlined />,
-                label: '포인트관리',
+                label: topMenuLabel('포인트관리'),
                 children: [
                   ...(atLeast(role, 'ADMIN') ? [{ key: 'points.policies', label: '포인트 정책 관리', onClick: () => nav(KEY_TO_PATH['points.policies']) }] : []),
                   ...(atLeast(role, 'SUPER_ADMIN')
@@ -225,7 +229,7 @@ export function AdminLayout() {
               {
                 key: 'coupons',
                 icon: <GiftOutlined />,
-                label: '쿠폰관리',
+                label: topMenuLabel('쿠폰관리'),
                 children: [
                   ...(atLeast(role, 'SUPER_ADMIN')
                     ? [{ key: 'coupons.issue', label: '쿠폰 발행', onClick: () => nav(KEY_TO_PATH['coupons.issue']) }]
@@ -236,7 +240,7 @@ export function AdminLayout() {
               {
                 key: 'reports',
                 icon: <BarChartOutlined />,
-                label: '리포트',
+                label: topMenuLabel('리포트'),
                 children: [
                   { key: 'reports.members', label: '회원 리포트', onClick: () => nav(KEY_TO_PATH['reports.members']) },
                   { key: 'reports.points', label: '포인트 리포트', onClick: () => nav(KEY_TO_PATH['reports.points']) },
@@ -247,7 +251,7 @@ export function AdminLayout() {
                     {
                       key: 'system',
                       icon: <SettingOutlined />,
-                      label: '시스템',
+                      label: topMenuLabel('시스템'),
                       children: [
                         { key: 'system.users', label: '사용자 관리', onClick: () => nav(KEY_TO_PATH['system.users']) },
                         { key: 'system.commonCodes', label: '공통코드 관리', onClick: () => nav(KEY_TO_PATH['system.commonCodes']) },
@@ -262,7 +266,7 @@ export function AdminLayout() {
                     {
                       key: 'tenants',
                       icon: <ShopOutlined />,
-                      label: '테넌트관리',
+                      label: topMenuLabel('테넌트관리'),
                       children: [
                         { key: 'tenants.list', label: '테넌트 목록', onClick: () => nav(KEY_TO_PATH['tenants.list']) },
                         { key: 'tenants.admins', label: '테넌트 관리자', onClick: () => nav(KEY_TO_PATH['tenants.admins']) },
