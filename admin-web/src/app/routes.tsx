@@ -3,30 +3,31 @@ import { Navigate, Outlet, createBrowserRouter, useLocation } from 'react-router
 import { getSession } from '../shared/storage'
 import { canAccessPath } from '../shared/roles'
 import { AdminLayout } from '../pages/layout/AdminLayout'
-import { LoginPage } from '../pages/login/LoginPage'
-import { AdminSignUpPage } from '../pages/signup/AdminSignUpPage'
-import { MembersPage } from '../pages/members/MembersPage'
-import { MemberDetailPage } from '../pages/members/MemberDetailPage'
-import { MemberCreatePage } from '../pages/members/MemberCreatePage'
-import { DashboardPage } from '../pages/dashboard/DashboardPage'
-import { MemberGradesPage } from '../pages/members/MemberGradesPage'
-import { PointPoliciesPage } from '../pages/points/PointPoliciesPage'
-import { PointManualEarnPage } from '../pages/points/PointManualEarnPage'
-import { PointManualDeductPage } from '../pages/points/PointManualDeductPage'
-import { PointHistoryPage } from '../pages/points/PointHistoryPage'
-import { PointExpiryPage } from '../pages/points/PointExpiryPage'
-import { CouponIssuePage } from '../pages/coupons/CouponIssuePage'
-import { CouponHistoryPage } from '../pages/coupons/CouponHistoryPage'
-import { PointReportPage } from '../pages/reports/PointReportPage'
-import { MemberReportPage } from '../pages/reports/MemberReportPage'
-import { TenantsPage } from '../pages/tenants/TenantsPage'
-import { TenantAdminsPage } from '../pages/tenants/TenantAdminsPage'
-import { TenantDetailPage } from '../pages/tenants/TenantDetailPage'
-import { AdminAccountsPage } from '../pages/system/AdminAccountsPage'
-import { CommonCodesPage } from '../pages/system/CommonCodesPage'
-import { PermissionsPage } from '../pages/system/PermissionsPage'
-import { LogsPage } from '../pages/system/LogsPage'
 import { BrandHeader } from './BrandHeader'
+
+const LoginPage = React.lazy(async () => ({ default: (await import('../pages/login/LoginPage')).LoginPage }))
+const AdminSignUpPage = React.lazy(async () => ({ default: (await import('../pages/signup/AdminSignUpPage')).AdminSignUpPage }))
+const MembersPage = React.lazy(async () => ({ default: (await import('../pages/members/MembersPage')).MembersPage }))
+const MemberDetailPage = React.lazy(async () => ({ default: (await import('../pages/members/MemberDetailPage')).MemberDetailPage }))
+const MemberCreatePage = React.lazy(async () => ({ default: (await import('../pages/members/MemberCreatePage')).MemberCreatePage }))
+const DashboardPage = React.lazy(async () => ({ default: (await import('../pages/dashboard/DashboardPage')).DashboardPage }))
+const MemberGradesPage = React.lazy(async () => ({ default: (await import('../pages/members/MemberGradesPage')).MemberGradesPage }))
+const PointPoliciesPage = React.lazy(async () => ({ default: (await import('../pages/points/PointPoliciesPage')).PointPoliciesPage }))
+const PointManualEarnPage = React.lazy(async () => ({ default: (await import('../pages/points/PointManualEarnPage')).PointManualEarnPage }))
+const PointManualDeductPage = React.lazy(async () => ({ default: (await import('../pages/points/PointManualDeductPage')).PointManualDeductPage }))
+const PointHistoryPage = React.lazy(async () => ({ default: (await import('../pages/points/PointHistoryPage')).PointHistoryPage }))
+const PointExpiryPage = React.lazy(async () => ({ default: (await import('../pages/points/PointExpiryPage')).PointExpiryPage }))
+const CouponIssuePage = React.lazy(async () => ({ default: (await import('../pages/coupons/CouponIssuePage')).CouponIssuePage }))
+const CouponHistoryPage = React.lazy(async () => ({ default: (await import('../pages/coupons/CouponHistoryPage')).CouponHistoryPage }))
+const PointReportPage = React.lazy(async () => ({ default: (await import('../pages/reports/PointReportPage')).PointReportPage }))
+const MemberReportPage = React.lazy(async () => ({ default: (await import('../pages/reports/MemberReportPage')).MemberReportPage }))
+const TenantsPage = React.lazy(async () => ({ default: (await import('../pages/tenants/TenantsPage')).TenantsPage }))
+const TenantAdminsPage = React.lazy(async () => ({ default: (await import('../pages/tenants/TenantAdminsPage')).TenantAdminsPage }))
+const TenantDetailPage = React.lazy(async () => ({ default: (await import('../pages/tenants/TenantDetailPage')).TenantDetailPage }))
+const AdminAccountsPage = React.lazy(async () => ({ default: (await import('../pages/system/AdminAccountsPage')).AdminAccountsPage }))
+const CommonCodesPage = React.lazy(async () => ({ default: (await import('../pages/system/CommonCodesPage')).CommonCodesPage }))
+const PermissionsPage = React.lazy(async () => ({ default: (await import('../pages/system/PermissionsPage')).PermissionsPage }))
+const LogsPage = React.lazy(async () => ({ default: (await import('../pages/system/LogsPage')).LogsPage }))
 
 function RequireAuth() {
   const loc = useLocation()
@@ -59,6 +60,14 @@ function RootLayout() {
   )
 }
 
+function withSuspense(element: React.ReactNode) {
+  return (
+    <React.Suspense fallback={<div style={{ padding: 24 }}>불러오는 중...</div>}>
+      {element}
+    </React.Suspense>
+  )
+}
+
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -69,11 +78,11 @@ export const router = createBrowserRouter([
       },
       {
         path: '/login',
-        element: <LoginPage />,
+        element: withSuspense(<LoginPage />),
       },
       {
         path: '/signup',
-        element: <AdminSignUpPage />,
+        element: withSuspense(<AdminSignUpPage />),
       },
       {
         element: <RequireAuth />,
@@ -82,49 +91,49 @@ export const router = createBrowserRouter([
             element: <AdminLayout />,
             children: [
               { index: true, element: <Navigate to="/dashboard" replace /> },
-              { path: '/dashboard', element: <DashboardPage />, handle: { crumbs: ['대시보드'] } },
+              { path: '/dashboard', element: withSuspense(<DashboardPage />), handle: { crumbs: ['대시보드'] } },
 
               // Member management
-              { path: '/members', element: <MembersPage />, handle: { crumbs: ['회원관리', '회원조회'] } },
-              { path: '/members/register', element: <MemberCreatePage />, handle: { crumbs: ['회원관리', '회원등록'] } },
+              { path: '/members', element: withSuspense(<MembersPage />), handle: { crumbs: ['회원관리', '회원조회'] } },
+              { path: '/members/register', element: withSuspense(<MemberCreatePage />), handle: { crumbs: ['회원관리', '회원등록'] } },
               {
                 path: '/members/:memberNo',
-                element: <MemberDetailPage />,
+                element: withSuspense(<MemberDetailPage />),
                 handle: { crumbs: (p: any) => ['회원관리', '회원상세', p?.memberNo ?? '-'] },
               },
-              { path: '/member-grades', element: <MemberGradesPage />, handle: { crumbs: ['회원관리', '회원등급관리'] } },
+              { path: '/member-grades', element: withSuspense(<MemberGradesPage />), handle: { crumbs: ['회원관리', '회원등급관리'] } },
 
               // Point management
-              { path: '/points/policies', element: <PointPoliciesPage />, handle: { crumbs: ['포인트관리', '정책관리'] } },
+              { path: '/points/policies', element: withSuspense(<PointPoliciesPage />), handle: { crumbs: ['포인트관리', '정책관리'] } },
               { path: '/points/manual', element: <Navigate to="/points/manual/earn" replace /> },
-              { path: '/points/manual/earn', element: <PointManualEarnPage />, handle: { crumbs: ['포인트관리', '포인트 수기 등록'] } },
-              { path: '/points/manual/deduct', element: <PointManualDeductPage />, handle: { crumbs: ['포인트관리', '포인트 수기 차감'] } },
-              { path: '/points/history', element: <PointHistoryPage />, handle: { crumbs: ['포인트관리', '포인트 이력조회'] } },
-              { path: '/points/expiry', element: <PointExpiryPage />, handle: { crumbs: ['포인트관리', '소멸관리'] } },
+              { path: '/points/manual/earn', element: withSuspense(<PointManualEarnPage />), handle: { crumbs: ['포인트관리', '포인트 수기 등록'] } },
+              { path: '/points/manual/deduct', element: withSuspense(<PointManualDeductPage />), handle: { crumbs: ['포인트관리', '포인트 수기 차감'] } },
+              { path: '/points/history', element: withSuspense(<PointHistoryPage />), handle: { crumbs: ['포인트관리', '포인트 이력조회'] } },
+              { path: '/points/expiry', element: withSuspense(<PointExpiryPage />), handle: { crumbs: ['포인트관리', '소멸관리'] } },
 
               // Coupon management
-              { path: '/coupons/issue', element: <CouponIssuePage />, handle: { crumbs: ['쿠폰관리', '쿠폰 발행'] } },
-              { path: '/coupons/history', element: <CouponHistoryPage />, handle: { crumbs: ['쿠폰관리', '쿠폰 이력'] } },
+              { path: '/coupons/issue', element: withSuspense(<CouponIssuePage />), handle: { crumbs: ['쿠폰관리', '쿠폰 발행'] } },
+              { path: '/coupons/history', element: withSuspense(<CouponHistoryPage />), handle: { crumbs: ['쿠폰관리', '쿠폰 이력'] } },
 
               // Reports
-              { path: '/reports/points', element: <PointReportPage />, handle: { crumbs: ['리포트', '포인트 리포트'] } },
-              { path: '/reports/members', element: <MemberReportPage />, handle: { crumbs: ['리포트', '회원 리포트'] } },
+              { path: '/reports/points', element: withSuspense(<PointReportPage />), handle: { crumbs: ['리포트', '포인트 리포트'] } },
+              { path: '/reports/members', element: withSuspense(<MemberReportPage />), handle: { crumbs: ['리포트', '회원 리포트'] } },
 
               // Tenant management
-              { path: '/tenants', element: <TenantsPage />, handle: { crumbs: ['테넌트관리', '테넌트 목록'] } },
-              { path: '/tenants/admins', element: <TenantAdminsPage />, handle: { crumbs: ['테넌트관리', '테넌트 관리자'] } },
+              { path: '/tenants', element: withSuspense(<TenantsPage />), handle: { crumbs: ['테넌트관리', '테넌트 목록'] } },
+              { path: '/tenants/admins', element: withSuspense(<TenantAdminsPage />), handle: { crumbs: ['테넌트관리', '테넌트 관리자'] } },
               {
                 path: '/tenants/:tenantId',
-                element: <TenantDetailPage />,
+                element: withSuspense(<TenantDetailPage />),
                 handle: { crumbs: (p: any) => ['테넌트관리', '테넌트 상세', p?.tenantId ?? '-'] },
               },
 
               // System management
-              { path: '/system/users', element: <AdminAccountsPage />, handle: { crumbs: ['시스템', '사용자 관리'] } },
+              { path: '/system/users', element: withSuspense(<AdminAccountsPage />), handle: { crumbs: ['시스템', '사용자 관리'] } },
               { path: '/system/admins', element: <Navigate to="/system/users" replace /> },
-              { path: '/system/common-codes', element: <CommonCodesPage />, handle: { crumbs: ['시스템', '공통코드 관리'] } },
-              { path: '/system/permissions', element: <PermissionsPage />, handle: { crumbs: ['시스템', '권한관리'] } },
-              { path: '/system/logs', element: <LogsPage />, handle: { crumbs: ['시스템', '로그조회'] } },
+              { path: '/system/common-codes', element: withSuspense(<CommonCodesPage />), handle: { crumbs: ['시스템', '공통코드 관리'] } },
+              { path: '/system/permissions', element: withSuspense(<PermissionsPage />), handle: { crumbs: ['시스템', '권한관리'] } },
+              { path: '/system/logs', element: withSuspense(<LogsPage />), handle: { crumbs: ['시스템', '로그조회'] } },
             ],
           },
         ],

@@ -1,10 +1,14 @@
 package com.innople.loyalty.controller;
 
+import com.innople.loyalty.config.AdminRoleResolver;
+import com.innople.loyalty.config.ApiAuditLogInterceptor;
 import com.innople.loyalty.controller.dto.MemberDtos;
+import com.innople.loyalty.domain.user.AdminUser;
 import com.innople.loyalty.service.member.MemberDuplicationService;
 import com.innople.loyalty.service.member.MemberNumberService;
 import com.innople.loyalty.service.member.MemberResult;
 import com.innople.loyalty.service.member.MemberService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +29,7 @@ public class MemberController {
     private final MemberService memberService;
     private final MemberNumberService memberNumberService;
     private final MemberDuplicationService memberDuplicationService;
+    private final AdminRoleResolver adminRoleResolver;
 
     @GetMapping("/member-no/suggest")
     public MemberDtos.SuggestMemberNoResponse suggestMemberNo(@RequestParam @NotBlank String phoneNumber) {
@@ -43,7 +48,7 @@ public class MemberController {
     }
 
     @PostMapping
-    public MemberDtos.MemberResponse register(@Valid @RequestBody MemberDtos.RegisterRequest request) {
+    public MemberDtos.MemberResponse register(@Valid @RequestBody MemberDtos.RegisterRequest request, HttpServletRequest httpRequest) {
         MemberResult result = memberService.register(new MemberService.RegisterCommand(
                 request.memberNo(),
                 request.name(),
@@ -59,13 +64,15 @@ public class MemberController {
                 request.ci(),
                 request.anniversaries()
         ));
+        setMemberAuditMessage(httpRequest, "회원 생성", result.memberNo());
         return toResponse(result);
     }
 
     @PutMapping("/{memberNo}")
     public MemberDtos.MemberResponse updateInfo(
             @PathVariable String memberNo,
-            @Valid @RequestBody MemberDtos.UpdateInfoRequest request
+            @Valid @RequestBody MemberDtos.UpdateInfoRequest request,
+            HttpServletRequest httpRequest
     ) {
         MemberResult result = memberService.updateInfo(memberNo, new MemberService.UpdateInfoCommand(
                 request.name(),
@@ -79,31 +86,42 @@ public class MemberController {
                 request.ci(),
                 request.anniversaries()
         ));
+        setMemberAuditMessage(httpRequest, "회원 정보 변경", memberNo);
         return toResponse(result);
     }
 
     @PutMapping("/{memberNo}/status")
     public MemberDtos.MemberResponse updateStatus(
             @PathVariable String memberNo,
-            @Valid @RequestBody MemberDtos.UpdateStatusRequest request
+            @Valid @RequestBody MemberDtos.UpdateStatusRequest request,
+            HttpServletRequest httpRequest
     ) {
         MemberResult result = memberService.updateStatus(memberNo, new MemberService.UpdateStatusCommand(
                 request.statusCode(),
                 request.dormantAt()
         ));
+        setMemberAuditMessage(httpRequest, "회원 상태 변경", memberNo);
         return toResponse(result);
     }
 
     @PutMapping("/{memberNo}/withdraw")
     public MemberDtos.MemberResponse withdraw(
             @PathVariable String memberNo,
-            @Valid @RequestBody MemberDtos.WithdrawRequest request
+            @Valid @RequestBody MemberDtos.WithdrawRequest request,
+            HttpServletRequest httpRequest
     ) {
         MemberResult result = memberService.withdraw(memberNo, new MemberService.WithdrawCommand(
                 request.withdrawnAt(),
                 request.reason()
         ));
+        setMemberAuditMessage(httpRequest, "회원 탈퇴", memberNo);
         return toResponse(result);
+    }
+
+    private void setMemberAuditMessage(HttpServletRequest httpRequest, String action, String memberNo) {
+        AdminUser admin = adminRoleResolver.resolve(httpRequest);
+        String adminName = admin != null ? admin.getName() : "관리자";
+        ApiAuditLogInterceptor.setAuditMessage(httpRequest, "%s (%s → 회원 %s)".formatted(action, adminName, memberNo));
     }
 
     private MemberDtos.MemberResponse toResponse(MemberResult r) {

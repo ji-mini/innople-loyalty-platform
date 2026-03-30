@@ -49,7 +49,8 @@ public class AdminLogController {
                 i.durationMs(),
                 i.adminUserId(),
                 i.ip(),
-                i.createdAt()
+                i.createdAt(),
+                i.displayMessage()
         );
     }
 }

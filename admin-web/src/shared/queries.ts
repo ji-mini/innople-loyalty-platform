@@ -102,10 +102,27 @@ export type MemberGradeItem = {
 
 export type DashboardSummary = {
   thisMonthNewMembers: number
+  prevMonthNewMembers: number
+  avgNewMembers: number
   thisMonthEarn: number
+  prevMonthEarn: number
+  avgEarn: number
   thisMonthUse: number
+  prevMonthUse: number
+  avgUse: number
+  targetNewMembers: number
+  targetEarn: number
+  targetUse: number
   totalMembers: number
   totalPointBalance: number
+}
+
+export type DashboardGoal = {
+  targetYear: number
+  targetMonth: number
+  targetNewMembers: number
+  targetEarn: number
+  targetUse: number
 }
 
 export type RecentPointActivity = {
@@ -126,8 +143,22 @@ export type RecentAdminAction = {
   target: string
 }
 
+export type TodayStatus = {
+  todayEarn: number
+  todayUse: number
+  todayNewMembers: number
+}
+
+/** 잔여가 남은 롯 중 만료일이 7일 이내인 포인트 합계·회원 수 */
+export type ExpiringPointsSummary = {
+  pointsExpiringWithin7Days: number
+  membersWithExpiringLots: number
+}
+
 export type DashboardResponse = {
   summary: DashboardSummary
+  todayStatus: TodayStatus
+  expiringPoints: ExpiringPointsSummary
   recentPoints: RecentPointActivity[]
   recentAdmins: RecentAdminAction[]
 }

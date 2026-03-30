@@ -17,6 +17,16 @@ import java.util.UUID;
 public class ApiAuditLogInterceptor implements HandlerInterceptor {
 
     private static final String START_TIME_ATTRIBUTE = ApiAuditLogInterceptor.class.getName() + ".START_TIME";
+    public static final String AUTHENTICATED_ADMIN_USER_ID_ATTRIBUTE = ApiAuditLogInterceptor.class.getName() + ".AUTHENTICATED_ADMIN_USER_ID";
+    /** 컨트롤러에서 설정하면 감사 로그 message에 저장됩니다. */
+    public static final String AUDIT_MESSAGE_ATTRIBUTE = ApiAuditLogInterceptor.class.getName() + ".AUDIT_MESSAGE";
+
+    public static void setAuditMessage(HttpServletRequest request, String message) {
+        if (request == null || message == null || message.isBlank()) {
+            return;
+        }
+        request.setAttribute(AUDIT_MESSAGE_ATTRIBUTE, message.trim());
+    }
 
     private final ApiAuditLogService apiAuditLogService;
 
@@ -46,6 +56,10 @@ public class ApiAuditLogInterceptor implements HandlerInterceptor {
 
         try {
             TenantContext.setTenantId(tenantId);
+            UUID adminUserId = resolveAdminUserId(request);
+            Object msgAttr = request.getAttribute(AUDIT_MESSAGE_ATTRIBUTE);
+            String auditMessage = msgAttr instanceof String s && !s.isBlank() ? s : null;
+            request.removeAttribute(AUDIT_MESSAGE_ATTRIBUTE);
             apiAuditLogService.write(
                     category,
                     request.getMethod(),
@@ -53,9 +67,10 @@ public class ApiAuditLogInterceptor implements HandlerInterceptor {
                     request.getQueryString(),
                     response.getStatus(),
                     durationMs,
-                    parseUuidHeader(request.getHeader("X-Admin-User-Id")),
+                    adminUserId,
                     request.getRemoteAddr(),
-                    request.getHeader("User-Agent")
+                    request.getHeader("User-Agent"),
+                    auditMessage
             );
         } catch (RuntimeException writeException) {
             log.warn("Failed to write api audit log. uri={}", uri, writeException);
@@ -86,5 +101,13 @@ public class ApiAuditLogInterceptor implements HandlerInterceptor {
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    private UUID resolveAdminUserId(HttpServletRequest request) {
+        Object authenticatedAdminUserId = request.getAttribute(AUTHENTICATED_ADMIN_USER_ID_ATTRIBUTE);
+        if (authenticatedAdminUserId instanceof UUID uuid) {
+            return uuid;
+        }
+        return parseUuidHeader(request.getHeader("X-Admin-User-Id"));
     }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { clearSession, getSession, touchSession } from './storage'
+import { getSession, touchSession } from './storage'
 
 const ACTIVITY_THROTTLE_MS = 30 * 1000
 

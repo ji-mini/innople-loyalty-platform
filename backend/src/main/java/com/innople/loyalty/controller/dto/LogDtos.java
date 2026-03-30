@@ -20,7 +20,8 @@ public final class LogDtos {
             long durationMs,
             UUID adminUserId,
             String ip,
-            Instant createdAt
+            Instant createdAt,
+            String displayMessage
     ) {
     }
 

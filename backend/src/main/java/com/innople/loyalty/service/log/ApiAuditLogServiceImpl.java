@@ -73,7 +73,18 @@ public class ApiAuditLogServiceImpl implements ApiAuditLogService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void write(ApiAuditCategory category, String method, String path, String queryString, int statusCode, long durationMs, UUID adminUserId, String ip, String userAgent) {
+    public void write(
+            ApiAuditCategory category,
+            String method,
+            String path,
+            String queryString,
+            int statusCode,
+            long durationMs,
+            UUID adminUserId,
+            String ip,
+            String userAgent,
+            String message
+    ) {
         TenantContext.requireTenantId();
         ApiAuditLog log = ApiAuditLog.of(
                 category,
@@ -85,7 +96,7 @@ public class ApiAuditLogServiceImpl implements ApiAuditLogService {
                 adminUserId,
                 safe(ip, 45),
                 safe(userAgent, 400),
-                null
+                safe(message, 500)
         );
         apiAuditLogRepository.save(log);
     }
@@ -102,7 +113,8 @@ public class ApiAuditLogServiceImpl implements ApiAuditLogService {
                 l.getAdminUserId(),
                 l.getIp(),
                 l.getUserAgent(),
-                l.getCreatedAt()
+                l.getCreatedAt(),
+                AdminAuditDescriptionFormatter.describe(l)
         );
     }
 

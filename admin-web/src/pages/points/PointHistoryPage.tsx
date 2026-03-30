@@ -1,17 +1,15 @@
 import { Button, Card, Input, Select, Space, Table, Tag, Typography } from 'antd'
 import React from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMemberDetail, usePointLedgers } from '../../shared/queries'
 import type { PointLedgerItem } from '../../shared/types'
 import { PageShell } from '../common/PageShell'
 
-const TYPE_OPTIONS = [
+const TYPE_OPTIONS: Array<{ value: 'ALL' | 'EARN' | 'USE' | 'EVENT'; label: string }> = [
   { value: 'ALL', label: '전체' },
   { value: 'EARN', label: '적립' },
-  { value: 'ADJUST_EARN', label: '적립 조정' },
   { value: 'USE', label: '사용' },
-  { value: 'ADJUST_USE', label: '사용 조정' },
-  { value: 'EXPIRE_AUTO', label: '자동 소멸' },
-  { value: 'EXPIRE_MANUAL', label: '수동 소멸' },
+  { value: 'EVENT', label: '이벤트' },
 ]
 
 function eventTypeLabel(eventType: string): string {
@@ -30,11 +28,14 @@ function formatDateTime(value: string | null | undefined): string {
 }
 
 export function PointHistoryPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialMemberNo = searchParams.get('memberNo') ?? ''
+  const initialTypeGroup = (searchParams.get('typeGroup') as 'ALL' | 'EARN' | 'USE' | 'EVENT' | null) ?? 'ALL'
   const [memberNo, setMemberNo] = React.useState('')
-  const [typeFilter, setTypeFilter] = React.useState<string>('ALL')
+  const [typeFilter, setTypeFilter] = React.useState<'ALL' | 'EARN' | 'USE' | 'EVENT'>('ALL')
   const [searched, setSearched] = React.useState(false)
   const [appliedMemberNo, setAppliedMemberNo] = React.useState('')
-  const [appliedTypeFilter, setAppliedTypeFilter] = React.useState<string>('ALL')
+  const [appliedTypeFilter, setAppliedTypeFilter] = React.useState<'ALL' | 'EARN' | 'USE' | 'EVENT'>('ALL')
   const trimmedMemberNo = memberNo.trim()
   const memberDetail = useMemberDetail(appliedMemberNo)
 
@@ -46,13 +47,31 @@ export function PointHistoryPage() {
 
   const rows = React.useMemo(() => {
     if (appliedTypeFilter === 'ALL') return allRows
-    return allRows.filter((r) => r.eventType === appliedTypeFilter)
+    return allRows.filter((r) => {
+      if (appliedTypeFilter === 'EARN') return r.eventType === 'EARN' || r.eventType === 'ADJUST_EARN'
+      if (appliedTypeFilter === 'USE') return r.eventType === 'USE' || r.eventType === 'ADJUST_USE'
+      return r.eventType === 'EXPIRE_AUTO' || r.eventType === 'EXPIRE_MANUAL'
+    })
   }, [allRows, appliedTypeFilter])
+
+  React.useEffect(() => {
+    if (!initialMemberNo && initialTypeGroup === 'ALL') return
+    setMemberNo(initialMemberNo)
+    setTypeFilter(initialTypeGroup)
+    setAppliedMemberNo(initialMemberNo.trim())
+    setAppliedTypeFilter(initialTypeGroup)
+    setSearched(true)
+  }, [initialMemberNo, initialTypeGroup])
 
   const onSearch = () => {
     setAppliedMemberNo(trimmedMemberNo)
     setAppliedTypeFilter(typeFilter)
     setSearched(true)
+    setSearchParams(
+      trimmedMemberNo || typeFilter !== 'ALL'
+        ? { ...(trimmedMemberNo ? { memberNo: trimmedMemberNo } : {}), ...(typeFilter !== 'ALL' ? { typeGroup: typeFilter } : {}) }
+        : {},
+    )
   }
 
   const onReset = () => {
@@ -61,6 +80,7 @@ export function PointHistoryPage() {
     setAppliedMemberNo('')
     setAppliedTypeFilter('ALL')
     setSearched(false)
+    setSearchParams({})
   }
 
   return (

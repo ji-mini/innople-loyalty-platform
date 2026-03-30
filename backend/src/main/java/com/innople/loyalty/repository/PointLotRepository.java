@@ -56,5 +56,33 @@ public interface PointLotRepository extends JpaRepository<PointLot, UUID> {
             @Param("tenantId") UUID tenantId,
             @Param("referenceAt") Instant referenceAt
     );
+
+    @Query("""
+            select coalesce(sum(l.remainingAmount), 0)
+            from PointLot l
+            where l.tenantId = :tenantId
+              and l.remainingAmount > 0
+              and l.expiresAt > :now
+              and l.expiresAt <= :deadline
+            """)
+    long sumRemainingAmountExpiringBetween(
+            @Param("tenantId") UUID tenantId,
+            @Param("now") Instant now,
+            @Param("deadline") Instant deadline
+    );
+
+    @Query("""
+            select count(distinct l.memberId)
+            from PointLot l
+            where l.tenantId = :tenantId
+              and l.remainingAmount > 0
+              and l.expiresAt > :now
+              and l.expiresAt <= :deadline
+            """)
+    long countDistinctMembersWithLotsExpiringBetween(
+            @Param("tenantId") UUID tenantId,
+            @Param("now") Instant now,
+            @Param("deadline") Instant deadline
+    );
 }
 

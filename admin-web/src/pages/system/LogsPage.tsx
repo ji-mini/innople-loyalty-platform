@@ -18,6 +18,7 @@ type Row = {
   adminUserId: string | null
   ip: string | null
   createdAt: string
+  displayMessage: string | null
 }
 
 type PagedResponse<T> = { items: T[]; page: number; size: number; totalElements: number; totalPages: number }
@@ -46,6 +47,14 @@ export function LogsPage() {
 
   const cols = [
     { title: '일시', dataIndex: 'createdAt', width: 190, render: (v: string) => (v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : '-') },
+    {
+      title: '활동 요약',
+      dataIndex: 'displayMessage',
+      width: 320,
+      render: (v: string | null) => (
+        <Typography.Text style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{v?.trim() || '-'}</Typography.Text>
+      ),
+    },
     {
       title: '구분',
       dataIndex: 'category',

@@ -60,7 +60,6 @@ export function MemberCreatePage() {
   const nav = useNavigate()
   const [loading, setLoading] = React.useState(false)
   const [memberNoLoading, setMemberNoLoading] = React.useState(false)
-  const [address, setAddress] = React.useState<AddressState>(INITIAL_ADDRESS)
   const [form] = Form.useForm<FormValues>()
   const statusCodes = useCommonCodes('MEMBER_STATUS')
   const phone = Form.useWatch('phoneNumber', form)
@@ -69,7 +68,6 @@ export function MemberCreatePage() {
 
   const applyAddressData = React.useCallback(
     (data: AddressState) => {
-      setAddress((prev) => ({ ...data, detailAddress: prev.detailAddress }))
       form.setFieldsValue({
         address: {
           ...data,
@@ -495,7 +493,6 @@ export function MemberCreatePage() {
             <Button
               onClick={() => {
                 form.resetFields()
-                setAddress(INITIAL_ADDRESS)
               }}
             >
               초기화

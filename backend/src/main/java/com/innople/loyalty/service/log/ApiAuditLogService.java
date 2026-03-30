@@ -8,7 +8,18 @@ import java.util.UUID;
 public interface ApiAuditLogService {
     PagedResult list(ApiAuditCategory category, Instant fromAt, Instant toAt, String keyword, int page, int size);
 
-    void write(ApiAuditCategory category, String method, String path, String queryString, int statusCode, long durationMs, UUID adminUserId, String ip, String userAgent);
+    void write(
+            ApiAuditCategory category,
+            String method,
+            String path,
+            String queryString,
+            int statusCode,
+            long durationMs,
+            UUID adminUserId,
+            String ip,
+            String userAgent,
+            String message
+    );
 
     record ApiAuditLogItem(
             UUID id,
@@ -21,7 +32,8 @@ public interface ApiAuditLogService {
             UUID adminUserId,
             String ip,
             String userAgent,
-            Instant createdAt
+            Instant createdAt,
+            String displayMessage
     ) {
     }
 
