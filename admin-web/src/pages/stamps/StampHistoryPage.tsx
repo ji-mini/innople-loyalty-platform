@@ -109,10 +109,10 @@ export function StampHistoryPage() {
               width: 120,
               render: (v: number | null) => (v == null ? '-' : v.toLocaleString('ko-KR')),
             },
-            { title: '참조', dataIndex: 'referenceType', width: 120, render: (v: string | null) => v || '-' },
+            { title: '일시', dataIndex: 'createdAt', width: 180, render: (v: string) => formatDateTime(v) },
+            { title: '참조', dataIndex: 'referenceType', width: 170, render: (v: string | null) => v || '-' },
             { title: '참조ID', dataIndex: 'referenceId', width: 140, ellipsis: true, render: (v: string | null) => v || '-' },
             { title: '사유', dataIndex: 'reason', ellipsis: true },
-            { title: '일시', dataIndex: 'createdAt', width: 180, render: (v: string) => formatDateTime(v) },
           ]}
           locale={{
             emptyText: (

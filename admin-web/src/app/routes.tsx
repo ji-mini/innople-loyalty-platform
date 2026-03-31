@@ -118,6 +118,7 @@ export const router = createBrowserRouter([
               { path: '/points/expiry', element: withSuspense(<PointExpiryPage />), handle: { crumbs: ['포인트관리', '소멸관리'] } },
 
               { path: '/stamps/policies', element: withSuspense(<StampPoliciesPage />), handle: { crumbs: ['스탬프관리', '스탬프 정책'] } },
+              { path: '/stamps/coupon-templates', element: <Navigate to="/stamps/policies" replace /> },
               { path: '/stamps/manual', element: withSuspense(<StampManualGrantPage />), handle: { crumbs: ['스탬프관리', '스탬프 수기 지급'] } },
               { path: '/stamps/history', element: withSuspense(<StampHistoryPage />), handle: { crumbs: ['스탬프관리', '스탬프 이력'] } },
 

@@ -13,6 +13,17 @@ type CouponTemplate = {
   name: string
   description: string | null
   active: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+function formatCouponDt(v: string | null | undefined): string {
+  if (!v) return '-'
+  try {
+    return new Date(v).toLocaleString('ko-KR')
+  } catch {
+    return v
+  }
 }
 
 type StampPolicy = {
@@ -31,6 +42,7 @@ export function StampPoliciesPage() {
   const canEdit = atLeast(role, 'ADMIN')
   const qc = useQueryClient()
   const [open, setOpen] = React.useState(false)
+  const [tplListOpen, setTplListOpen] = React.useState(false)
   const [tplOpen, setTplOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<StampPolicy | null>(null)
   const [saving, setSaving] = React.useState(false)
@@ -166,6 +178,14 @@ export function StampPoliciesPage() {
         </Typography.Paragraph>
         {canEdit ? (
           <Space wrap>
+            <Button
+              onClick={() => {
+                setTplListOpen(true)
+                void templatesQ.refetch()
+              }}
+            >
+              쿠폰 템플릿 보기
+            </Button>
             <Button onClick={() => setTplOpen(true)}>쿠폰 템플릿 추가</Button>
             {templateOptions.length === 0 ? (
               <Typography.Text type="warning">활성 쿠폰 템플릿이 없으면 정책을 등록할 수 없습니다.</Typography.Text>
@@ -267,6 +287,58 @@ export function StampPoliciesPage() {
             <Switch checkedChildren="활성" unCheckedChildren="비활성" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title="등록된 쿠폰 템플릿"
+        open={tplListOpen}
+        onCancel={() => setTplListOpen(false)}
+        footer={
+          <Button type="primary" onClick={() => setTplListOpen(false)}>
+            닫기
+          </Button>
+        }
+        width={920}
+        styles={{ body: { maxHeight: '70vh', overflow: 'auto', paddingTop: 8 } }}
+      >
+        <Table<CouponTemplate>
+          rowKey={(r) => r.id}
+          size="small"
+          pagination={false}
+          loading={templatesQ.isLoading || templatesQ.isFetching}
+          dataSource={templatesQ.data ?? []}
+          locale={{
+            emptyText: templatesQ.isError ? '목록을 불러오지 못했습니다.' : '등록된 쿠폰 템플릿이 없습니다.',
+          }}
+          columns={[
+            { title: '이름', dataIndex: 'name', width: 180, ellipsis: true },
+            {
+              title: '설명',
+              dataIndex: 'description',
+              ellipsis: true,
+              render: (v: string | null) => v?.trim() || '—',
+            },
+            {
+              title: '상태',
+              dataIndex: 'active',
+              width: 88,
+              render: (active: boolean) => (active ? <Tag color="green">활성</Tag> : <Tag>비활성</Tag>),
+            },
+            { title: '등록일시', dataIndex: 'createdAt', width: 168, render: (v: string | undefined) => formatCouponDt(v) },
+            { title: '수정일시', dataIndex: 'updatedAt', width: 168, render: (v: string | undefined) => formatCouponDt(v) },
+            {
+              title: 'ID',
+              dataIndex: 'id',
+              width: 260,
+              ellipsis: true,
+              render: (id: string) => (
+                <Typography.Paragraph copyable={{ text: id }} style={{ marginBottom: 0, fontSize: 12 }}>
+                  {id}
+                </Typography.Paragraph>
+              ),
+            },
+          ]}
+        />
       </Modal>
 
       <Modal title="쿠폰 템플릿 추가" open={tplOpen} onCancel={() => setTplOpen(false)} onOk={onCreateTemplate} confirmLoading={saving}>
