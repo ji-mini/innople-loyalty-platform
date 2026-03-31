@@ -1,4 +1,4 @@
-import { Button, Card, Form, Input, InputNumber, Space, Typography, message } from 'antd'
+import { Button, Card, Form, Input, InputNumber, Typography, message } from 'antd'
 import { useQueryClient } from '@tanstack/react-query'
 import React from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -74,18 +74,44 @@ export function StampManualGrantPage() {
     }
   }
 
+  const pillRadius = 999
+  const controlHeight = 40
+
   return (
     <PageShell title="스탬프 수기 지급" extra={<Typography.Text type="secondary">관리자 사유가 원장에 남습니다.</Typography.Text>}>
       <Card style={{ maxWidth: 560 }}>
         <Form form={form} layout="vertical" onFinish={onFinish}>
-          <Space.Compact style={{ width: '100%' }}>
-            <Form.Item name="memberNo" label="회원번호" rules={[{ required: true }]} style={{ flex: 1, marginBottom: 8 }}>
-              <Input placeholder="회원번호 입력 후 조회" />
-            </Form.Item>
-            <Button style={{ marginTop: 30 }} loading={lookupLoading} onClick={onLookup}>
-              조회
-            </Button>
-          </Space.Compact>
+          <Form.Item label="회원번호" style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+              <Form.Item name="memberNo" noStyle rules={[{ required: true, message: '회원번호를 입력하세요' }]}>
+                <Input
+                  placeholder="회원번호 입력 후 조회"
+                  onPressEnter={onLookup}
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    height: controlHeight,
+                    borderRadius: pillRadius,
+                    paddingInline: 16,
+                  }}
+                />
+              </Form.Item>
+              <Button
+                loading={lookupLoading}
+                onClick={onLookup}
+                type="default"
+                style={{
+                  height: controlHeight,
+                  borderRadius: pillRadius,
+                  paddingInline: 22,
+                  flexShrink: 0,
+                  fontWeight: 500,
+                }}
+              >
+                조회
+              </Button>
+            </div>
+          </Form.Item>
           {member ? (
             <Typography.Paragraph style={{ marginBottom: 16 }}>
               <Typography.Text strong>{member.name}</Typography.Text> ({member.memberNo})

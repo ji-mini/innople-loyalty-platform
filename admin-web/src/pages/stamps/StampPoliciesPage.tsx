@@ -87,8 +87,16 @@ export function StampPoliciesPage() {
     setOpen(true)
   }
 
+  const errMsg = (e: unknown) => {
+    const any = e as { response?: { data?: { message?: string } }; message?: string }
+    return any?.response?.data?.message ?? any?.message ?? '요청 실패'
+  }
+
   const onSubmit = async () => {
-    if (!canEdit) return
+    if (!canEdit) {
+      message.warning('수정 권한이 없습니다.')
+      throw new Error('FORBIDDEN')
+    }
     const v = await form.validateFields()
     setSaving(true)
     try {
@@ -103,14 +111,18 @@ export function StampPoliciesPage() {
       setEditing(null)
       await qc.invalidateQueries({ queryKey: ['admin', 'stamp-policies'] })
     } catch (e: any) {
-      message.error(e?.response?.data?.message ?? e?.message ?? '저장 실패')
+      message.error(errMsg(e))
+      throw e
     } finally {
       setSaving(false)
     }
   }
 
   const onCreateTemplate = async () => {
-    if (!canEdit) return
+    if (!canEdit) {
+      message.warning('등록 권한이 없습니다.')
+      throw new Error('FORBIDDEN')
+    }
     const v = await tplForm.validateFields()
     setSaving(true)
     try {
@@ -124,7 +136,8 @@ export function StampPoliciesPage() {
       tplForm.resetFields()
       await qc.invalidateQueries({ queryKey: ['admin', 'coupon-templates'] })
     } catch (e: any) {
-      message.error(e?.response?.data?.message ?? e?.message ?? '등록 실패')
+      message.error(errMsg(e))
+      throw e
     } finally {
       setSaving(false)
     }
