@@ -55,7 +55,7 @@ export function StampPoliciesPage() {
   const templatesQ = useQuery({
     queryKey: ['admin', 'coupon-templates'],
     queryFn: async () => {
-      const res = await api.get<CouponTemplate[]>('/api/v1/admin/coupon-templates')
+      const res = await api.get<CouponTemplate[]>('/api/v1/admin/stamp-policies/coupon-templates')
       return res.data ?? []
     },
   })
@@ -126,7 +126,7 @@ export function StampPoliciesPage() {
     const v = await tplForm.validateFields()
     setSaving(true)
     try {
-      await api.post('/api/v1/admin/coupon-templates', {
+      await api.post('/api/v1/admin/stamp-policies/coupon-templates', {
         name: v.name.trim(),
         description: v.description?.trim() || null,
         active: v.active ?? true,

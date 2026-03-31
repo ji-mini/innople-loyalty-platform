@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS coupon_templates (
 
 CREATE INDEX IF NOT EXISTS idx_coupon_templates_tenant_id ON coupon_templates (tenant_id);
 
+-- 복합 FK (tenant_id, id) 참조용 — PostgreSQL 요구사항
+CREATE UNIQUE INDEX IF NOT EXISTS uk_coupon_templates_tenant_id_id ON coupon_templates (tenant_id, id);
+
 CREATE TABLE IF NOT EXISTS stamp_policies (
     id UUID NOT NULL,
     tenant_id UUID NOT NULL,
@@ -31,6 +34,8 @@ CREATE TABLE IF NOT EXISTS stamp_policies (
 );
 
 CREATE INDEX IF NOT EXISTS idx_stamp_policies_tenant_id ON stamp_policies (tenant_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_stamp_policies_tenant_id_id ON stamp_policies (tenant_id, id);
 
 -- 테넌트당 활성 정책 1개
 CREATE UNIQUE INDEX IF NOT EXISTS uk_stamp_policies_tenant_active
@@ -52,6 +57,8 @@ CREATE TABLE IF NOT EXISTS stamp_accounts (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_stamp_accounts_tenant_member ON stamp_accounts (tenant_id, member_id);
 CREATE INDEX IF NOT EXISTS idx_stamp_accounts_tenant_id ON stamp_accounts (tenant_id);
 
+CREATE UNIQUE INDEX IF NOT EXISTS uk_stamp_accounts_tenant_id_id ON stamp_accounts (tenant_id, id);
+
 CREATE TABLE IF NOT EXISTS stamp_ledgers (
     id UUID NOT NULL,
     tenant_id UUID NOT NULL,
@@ -71,6 +78,8 @@ CREATE TABLE IF NOT EXISTS stamp_ledgers (
 
 CREATE INDEX IF NOT EXISTS idx_stamp_ledgers_tenant_member ON stamp_ledgers (tenant_id, member_id);
 CREATE INDEX IF NOT EXISTS idx_stamp_ledgers_tenant_created ON stamp_ledgers (tenant_id, created_at DESC);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_stamp_ledgers_tenant_id_id ON stamp_ledgers (tenant_id, id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_stamp_ledgers_pos_idempotent
     ON stamp_ledgers (tenant_id, reference_type, reference_id)
@@ -92,6 +101,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_stamp_coupon_issues_tenant_redemption_ledge
     ON stamp_coupon_issues (tenant_id, redemption_ledger_id);
 
 CREATE INDEX IF NOT EXISTS idx_stamp_coupon_issues_tenant_member ON stamp_coupon_issues (tenant_id, member_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_stamp_coupon_issues_tenant_id_id ON stamp_coupon_issues (tenant_id, id);
 
 DO $$
 BEGIN
