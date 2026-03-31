@@ -23,15 +23,21 @@ const MENU_ENTRIES: MenuEntry[] = [
   { section: '회원관리', label: '회원조회', path: '/members', minRole: 'OPERATOR' },
   { section: '회원관리', label: '회원 상세', path: '/members/:memberNo', minRole: 'OPERATOR' },
   { section: '회원관리', label: '회원등록', path: '/members/register', minRole: 'SUPER_ADMIN' },
-  { section: '회원관리', label: '회원등급관리', path: '/member-grades', minRole: 'ADMIN' },
+  { section: '회원관리', label: '등급 관리', path: '/member-grades', minRole: 'ADMIN' },
+  { section: '회원관리', label: '클럽 관리', path: '/clubs', minRole: 'ADMIN' },
 
   { section: '포인트관리', label: '포인트 이력조회', path: '/points/history', minRole: 'OPERATOR' },
   { section: '포인트관리', label: '정책관리', path: '/points/policies', minRole: 'ADMIN' },
   { section: '포인트관리', label: '포인트 수기 등록', path: '/points/manual/earn', minRole: 'SUPER_ADMIN' },
   { section: '포인트관리', label: '포인트 수기 차감', path: '/points/manual/deduct', minRole: 'SUPER_ADMIN' },
 
+  { section: '스탬프관리', label: '스탬프 정책', path: '/stamps/policies', minRole: 'ADMIN' },
+  { section: '스탬프관리', label: '스탬프 수기 지급', path: '/stamps/manual', minRole: 'ADMIN' },
+  { section: '스탬프관리', label: '스탬프 이력', path: '/stamps/history', minRole: 'ADMIN' },
+
   { section: '쿠폰관리', label: '쿠폰 이력', path: '/coupons/history', minRole: 'OPERATOR' },
   { section: '쿠폰관리', label: '쿠폰 발행', path: '/coupons/issue', minRole: 'SUPER_ADMIN' },
+  { section: '직원관리', label: '직원관리', path: '/employees', minRole: 'ADMIN' },
 
   { section: '리포트', label: '포인트 리포트', path: '/reports/points', minRole: 'OPERATOR' },
   { section: '리포트', label: '회원 리포트', path: '/reports/members', minRole: 'OPERATOR' },

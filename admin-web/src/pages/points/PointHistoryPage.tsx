@@ -127,7 +127,7 @@ export function PointHistoryPage() {
             {
               title: '구분',
               dataIndex: 'eventType',
-              width: 110,
+              width: 130,
               render: (v: string) => {
                 const color =
                   v === 'EARN' || v === 'ADJUST_EARN' ? 'green' : v === 'USE' || v === 'ADJUST_USE' ? 'volcano' : 'default'
@@ -139,6 +139,24 @@ export function PointHistoryPage() {
               dataIndex: 'amount',
               width: 120,
               render: (v: number) => `${v >= 0 ? '+' : ''}${v.toLocaleString('ko-KR')} P`,
+            },
+            {
+              title: '총 구매금액',
+              dataIndex: 'totalPurchaseAmount',
+              width: 120,
+              render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
+            },
+            {
+              title: '할인금액',
+              dataIndex: 'discountAmount',
+              width: 110,
+              render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
+            },
+            {
+              title: '적립 대상 금액',
+              dataIndex: 'purchaseAmount',
+              width: 120,
+              render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
             },
             { title: '포인트 유효기간', dataIndex: 'expiresAt', width: 180, render: (v: string | null) => formatDateTime(v) },
             { title: '승인번호', dataIndex: 'approvalNo', width: 170 },

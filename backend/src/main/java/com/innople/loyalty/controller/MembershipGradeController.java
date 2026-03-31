@@ -40,7 +40,8 @@ public class MembershipGradeController {
                         g.getId(),
                         String.valueOf(g.getLevel()),
                         g.getName(),
-                        g.getDescription()
+                        g.getDescription(),
+                        g.getEarnRatePercent()
                 ))
                 .toList();
     }
@@ -54,9 +55,10 @@ public class MembershipGradeController {
         var item = membershipGradeService.create(
                 body.name(),
                 body.level(),
-                body.description()
+                body.description(),
+                body.earnRatePercent()
         );
-        return new MembershipGradeResponse(item.id(), item.code(), item.name(), item.description());
+        return new MembershipGradeResponse(item.id(), item.code(), item.name(), item.description(), item.earnRatePercent());
     }
 
     @PutMapping("/{id}")
@@ -70,9 +72,10 @@ public class MembershipGradeController {
                 id,
                 body.name(),
                 body.level(),
-                body.description()
+                body.description(),
+                body.earnRatePercent()
         );
-        return new MembershipGradeResponse(item.id(), item.code(), item.name(), item.description());
+        return new MembershipGradeResponse(item.id(), item.code(), item.name(), item.description(), item.earnRatePercent());
     }
 
     @DeleteMapping("/{id}")
@@ -85,7 +88,8 @@ public class MembershipGradeController {
             UUID id,
             String code,
             String name,
-            String description
+            String description,
+            java.math.BigDecimal earnRatePercent
     ) {
     }
 }

@@ -48,12 +48,17 @@ public class PointServiceImpl implements PointService {
     @Override
     @Transactional
     public PointOperationResult earn(UUID memberId, long amount, Instant expiresAt, String reason, String approvalNo,
-                                     String referenceType, String referenceId) {
+                                     String referenceType, String referenceId,
+                                     Long purchaseAmount, Long totalPurchaseAmount, Long discountAmount,
+                                     String sourceChannel) {
         if (amount <= 0) {
             throw new InvalidPointAmountException("amount must be positive");
         }
         if (expiresAt == null) {
             throw new IllegalArgumentException("expiresAt must not be null");
+        }
+        if (sourceChannel == null || sourceChannel.isBlank()) {
+            throw new IllegalArgumentException("sourceChannel must not be blank");
         }
 
         UUID tenantId = TenantContext.requireTenantId();
@@ -75,10 +80,13 @@ public class PointServiceImpl implements PointService {
                         PointEventType.EARN,
                         amount,
                         reason,
-                        ADMIN_WEB_MANUAL_EARN,
+                        sourceChannel,
                         resolvedApprovalNo,
                         referenceInfo.referenceType(),
-                        referenceInfo.referenceId()
+                        referenceInfo.referenceId(),
+                        purchaseAmount,
+                        totalPurchaseAmount,
+                        discountAmount
                 )
         );
 

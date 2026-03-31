@@ -9,6 +9,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(
         name = "membership_grades",
@@ -30,16 +32,24 @@ public class MembershipGrade extends BaseEntity {
     @Column(nullable = true, length = 500)
     private String description;
 
-    public MembershipGrade(String name, int level, String description) {
+    /**
+     * 적립 대상 금액 대비 적립률(%). POS 등에서 적립 대상 금액을 받아 등급별로 포인트를 계산할 때 사용합니다.
+     */
+    @Column(nullable = false, precision = 5, scale = 2)
+    private BigDecimal earnRatePercent;
+
+    public MembershipGrade(String name, int level, String description, BigDecimal earnRatePercent) {
         this.name = name;
         this.level = level;
         this.description = description;
+        this.earnRatePercent = earnRatePercent != null ? earnRatePercent : BigDecimal.ZERO;
     }
 
-    public void update(String name, int level, String description) {
+    public void update(String name, int level, String description, BigDecimal earnRatePercent) {
         this.name = name;
         this.level = level;
         this.description = description;
+        this.earnRatePercent = earnRatePercent != null ? earnRatePercent : BigDecimal.ZERO;
     }
 }
 

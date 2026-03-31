@@ -122,7 +122,7 @@ export function MembersPage() {
             <Form.Item label="이름" name="name">
               <Input placeholder="이름" allowClear style={{ width: 180 }} />
             </Form.Item>
-            <Form.Item label="WEB ID" name="webId">
+            <Form.Item label="WEB ID(선택)" name="webId">
               <Input placeholder="WEB ID" allowClear style={{ width: 180 }} />
             </Form.Item>
             <Form.Item label="가입일" name="joinedRange">

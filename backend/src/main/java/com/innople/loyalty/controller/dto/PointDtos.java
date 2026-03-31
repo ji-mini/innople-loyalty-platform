@@ -4,6 +4,7 @@ import com.innople.loyalty.domain.points.PointEventType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
@@ -23,6 +24,9 @@ public final class PointDtos {
             String approvalNo,
             String referenceType,
             String referenceId,
+            Long purchaseAmount,
+            Long totalPurchaseAmount,
+            Long discountAmount,
             Instant createdAt
     ) {
     }
@@ -30,9 +34,18 @@ public final class PointDtos {
     private PointDtos() {
     }
 
+    /**
+     * @param amount                적립 포인트(직접 지정). {@code purchaseAmount}가 있으면 생략.
+     * @param purchaseAmount        적립 대상 금액(원). POS 연동 시 전달하면 회원 등급의 적립률로 포인트를 계산한다.
+     * @param totalPurchaseAmount   총 구매금액(원). POS 적립 시 선택.
+     * @param discountAmount        할인금액(원). POS 적립 시 선택.
+     */
     public record EarnRequest(
             @NotNull UUID memberId,
-            @Positive long amount,
+            Long amount,
+            Long purchaseAmount,
+            @PositiveOrZero Long totalPurchaseAmount,
+            @PositiveOrZero Long discountAmount,
             @NotNull Instant expiresAt,
             String reason,
             @Size(max = 12) @Pattern(regexp = "^[A-Za-z0-9]{1,12}$") String approvalNo,

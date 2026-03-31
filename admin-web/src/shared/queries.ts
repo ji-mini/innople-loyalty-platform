@@ -98,6 +98,8 @@ export type MemberGradeItem = {
   code: string
   name: string
   description: string | null
+  /** 적립 대상 금액 대비 적립률(%) — POS 연동 적립 시 사용 */
+  earnRatePercent: number
 }
 
 export type DashboardSummary = {

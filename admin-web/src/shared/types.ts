@@ -115,6 +115,12 @@ export type PointLedgerItem = {
   approvalNo: string
   referenceType: string | null
   referenceId: string | null
+  /** POS 등 적립 기준으로 전달된 적립 대상 금액(원). 수기 적립은 null */
+  purchaseAmount: number | null
+  /** 총 구매금액(원). POS 연동 시 선택 */
+  totalPurchaseAmount: number | null
+  /** 할인금액(원). POS 연동 시 선택 */
+  discountAmount: number | null
   createdAt: string
 }
 

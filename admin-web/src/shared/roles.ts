@@ -22,11 +22,17 @@ export function canAccessPath(role: AdminRole, pathname: string): boolean {
   if (pathname === '/members' || pathname.startsWith('/members/')) return true
   if (pathname.startsWith('/points/history')) return true
   if (pathname.startsWith('/coupons/history')) return true
+  // 구 경로 → /employees 리다이렉트용
+  if (pathname.startsWith('/coupons/employees')) return atLeast(role, 'ADMIN')
+
+  if (pathname.startsWith('/employees')) return atLeast(role, 'ADMIN')
   if (pathname.startsWith('/reports/points') || pathname.startsWith('/reports/members')) return true
 
   // Admin menus: ADMIN+
   if (pathname.startsWith('/member-grades')) return atLeast(role, 'ADMIN')
+  if (pathname.startsWith('/clubs')) return atLeast(role, 'ADMIN')
   if (pathname.startsWith('/points/policies')) return atLeast(role, 'ADMIN')
+  if (pathname.startsWith('/stamps/')) return atLeast(role, 'ADMIN')
   if (pathname.startsWith('/points/expiry')) return atLeast(role, 'ADMIN')
   if (pathname === '/tenants' || pathname.startsWith('/tenants/')) return atLeast(role, 'SUPER_ADMIN')
   if (pathname.startsWith('/system/')) return atLeast(role, 'ADMIN')

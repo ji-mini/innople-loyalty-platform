@@ -1,4 +1,14 @@
-import { BarChartOutlined, DashboardOutlined, GiftOutlined, LogoutOutlined, SettingOutlined, ShopOutlined, TeamOutlined } from '@ant-design/icons'
+import {
+  BarChartOutlined,
+  DashboardOutlined,
+  GiftOutlined,
+  LogoutOutlined,
+  SettingOutlined,
+  ShopOutlined,
+  StarOutlined,
+  TeamOutlined,
+  UserOutlined,
+} from '@ant-design/icons'
 import { Button, Layout, Menu, message, Select, Space, Tooltip, Typography } from 'antd'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import React from 'react'
@@ -17,13 +27,18 @@ type MenuKey =
   | 'members.list'
   | 'members.register'
   | 'members.grades'
+  | 'members.clubs'
   | 'points.policies'
   | 'points.manualEarn'
   | 'points.manualDeduct'
   | 'points.history'
   | 'points.expiry'
+  | 'stamps.policies'
+  | 'stamps.manual'
+  | 'stamps.history'
   | 'coupons.issue'
   | 'coupons.history'
+  | 'employees'
   | 'reports.points'
   | 'reports.members'
   | 'tenants.list'
@@ -38,13 +53,18 @@ const KEY_TO_PATH: Record<MenuKey, string> = {
   'members.list': '/members',
   'members.register': '/members/register',
   'members.grades': '/member-grades',
+  'members.clubs': '/clubs',
   'points.policies': '/points/policies',
   'points.manualEarn': '/points/manual/earn',
   'points.manualDeduct': '/points/manual/deduct',
   'points.history': '/points/history',
   'points.expiry': '/points/expiry',
+  'stamps.policies': '/stamps/policies',
+  'stamps.manual': '/stamps/manual',
+  'stamps.history': '/stamps/history',
   'coupons.issue': '/coupons/issue',
   'coupons.history': '/coupons/history',
+  employees: '/employees',
   'reports.points': '/reports/points',
   'reports.members': '/reports/members',
   'tenants.list': '/tenants',
@@ -64,6 +84,7 @@ function pickSelectedKey(pathname: string): MenuKey {
   if (pathname.startsWith('/members/register')) return 'members.register'
   if (pathname === '/members' || pathname.startsWith('/members/')) return 'members.list'
   if (pathname.startsWith('/member-grades')) return 'members.grades'
+  if (pathname.startsWith('/clubs')) return 'members.clubs'
 
   if (pathname.startsWith('/points/policies')) return 'points.policies'
   if (pathname.startsWith('/points/manual/earn')) return 'points.manualEarn'
@@ -71,6 +92,12 @@ function pickSelectedKey(pathname: string): MenuKey {
   if (pathname.startsWith('/points/manual')) return 'points.manualEarn'
   if (pathname.startsWith('/points/history')) return 'points.history'
   if (pathname.startsWith('/points/expiry')) return 'points.expiry'
+
+  if (pathname.startsWith('/stamps/policies')) return 'stamps.policies'
+  if (pathname.startsWith('/stamps/manual')) return 'stamps.manual'
+  if (pathname.startsWith('/stamps/history')) return 'stamps.history'
+
+  if (pathname.startsWith('/employees')) return 'employees'
 
   if (pathname.startsWith('/coupons/issue')) return 'coupons.issue'
   if (pathname.startsWith('/coupons/history')) return 'coupons.history'
@@ -204,8 +231,13 @@ export function AdminLayout() {
                     ? [
                         {
                           key: 'members.grades',
-                          label: '회원등급관리',
+                          label: '등급 관리',
                           onClick: () => nav(KEY_TO_PATH['members.grades']),
+                        },
+                        {
+                          key: 'members.clubs',
+                          label: '클럽 관리',
+                          onClick: () => nav(KEY_TO_PATH['members.clubs']),
                         },
                       ]
                     : []),
@@ -226,6 +258,20 @@ export function AdminLayout() {
                   { key: 'points.history', label: '포인트 이력조회', onClick: () => nav(KEY_TO_PATH['points.history']) },
                 ],
               },
+              ...(atLeast(role, 'ADMIN')
+                ? [
+                    {
+                      key: 'stamps',
+                      icon: <StarOutlined />,
+                      label: topMenuLabel('스탬프관리'),
+                      children: [
+                        { key: 'stamps.policies', label: '스탬프 정책', onClick: () => nav(KEY_TO_PATH['stamps.policies']) },
+                        { key: 'stamps.manual', label: '스탬프 수기 지급', onClick: () => nav(KEY_TO_PATH['stamps.manual']) },
+                        { key: 'stamps.history', label: '스탬프 이력', onClick: () => nav(KEY_TO_PATH['stamps.history']) },
+                      ],
+                    },
+                  ]
+                : []),
               {
                 key: 'coupons',
                 icon: <GiftOutlined />,
@@ -237,6 +283,16 @@ export function AdminLayout() {
                   { key: 'coupons.history', label: '쿠폰 이력', onClick: () => nav(KEY_TO_PATH['coupons.history']) },
                 ],
               },
+              ...(atLeast(role, 'ADMIN')
+                ? [
+                    {
+                      key: 'employees',
+                      icon: <UserOutlined />,
+                      label: topMenuLabel('직원관리'),
+                      onClick: () => nav(KEY_TO_PATH['employees']),
+                    },
+                  ]
+                : []),
               {
                 key: 'reports',
                 icon: <BarChartOutlined />,

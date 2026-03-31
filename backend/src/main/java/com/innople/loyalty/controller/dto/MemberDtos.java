@@ -3,7 +3,9 @@ package com.innople.loyalty.controller.dto;
 import com.innople.loyalty.domain.member.CalendarType;
 import com.innople.loyalty.domain.member.Gender;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
@@ -29,11 +31,11 @@ public final class MemberDtos {
     public record RegisterRequest(
             @NotBlank @Size(max = 50) String memberNo,
             @NotBlank @Size(max = 100) String name,
-            LocalDate birthDate,
+            @NotNull LocalDate birthDate,
             CalendarType calendarType,
-            Gender gender,
+            @NotNull Gender gender,
             @Size(max = 30) String phoneNumber,
-            @Size(max = 255) String email,
+            @NotBlank @Email @Size(max = 255) String email,
             @Valid AddressRequest address,
             @Size(max = 100) String webId,
             @Size(max = 50) String statusCode,

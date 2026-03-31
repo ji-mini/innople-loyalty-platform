@@ -60,8 +60,27 @@ public class PointLedger extends BaseEntity {
     @Column(length = 100)
     private String referenceId;
 
+    /** 적립 시 기준 적립 대상 금액(원). POS 연동 시 설정, 수기 적립은 null. */
+    @Column(nullable = true)
+    private Long purchaseAmount;
+
+    /** 총 구매금액(원). POS 연동 시 선택. */
+    @Column(nullable = true)
+    private Long totalPurchaseAmount;
+
+    /** 할인금액(원). POS 연동 시 선택. */
+    @Column(nullable = true)
+    private Long discountAmount;
+
     public PointLedger(UUID accountId, UUID memberId, PointEventType eventType, long amount, String reason,
                        String sourceChannel, String approvalNo, String referenceType, String referenceId) {
+        this(accountId, memberId, eventType, amount, reason, sourceChannel, approvalNo, referenceType, referenceId,
+                null, null, null);
+    }
+
+    public PointLedger(UUID accountId, UUID memberId, PointEventType eventType, long amount, String reason,
+                       String sourceChannel, String approvalNo, String referenceType, String referenceId,
+                       Long purchaseAmount, Long totalPurchaseAmount, Long discountAmount) {
         this.accountId = accountId;
         this.memberId = memberId;
         this.eventType = eventType;
@@ -71,6 +90,9 @@ public class PointLedger extends BaseEntity {
         this.approvalNo = approvalNo;
         this.referenceType = referenceType;
         this.referenceId = referenceId;
+        this.purchaseAmount = purchaseAmount;
+        this.totalPurchaseAmount = totalPurchaseAmount;
+        this.discountAmount = discountAmount;
     }
 }
 

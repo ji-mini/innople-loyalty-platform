@@ -17,6 +17,13 @@ import java.util.UUID;
 public interface MemberRepository extends JpaRepository<Member, UUID> {
     Optional<Member> findByTenantIdAndId(UUID tenantId, UUID id);
 
+    @Query("""
+            select m from Member m
+            left join fetch m.membershipGrade
+            where m.tenantId = :tenantId and m.id = :id
+            """)
+    Optional<Member> findByTenantIdAndIdWithMembershipGrade(@Param("tenantId") UUID tenantId, @Param("id") UUID id);
+
     @EntityGraph(attributePaths = {"address", "membershipGrade"})
     Optional<Member> findByTenantIdAndMemberNo(UUID tenantId, String memberNo);
 

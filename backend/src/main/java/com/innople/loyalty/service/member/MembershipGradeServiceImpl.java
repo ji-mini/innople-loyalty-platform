@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Service
@@ -17,7 +18,7 @@ public class MembershipGradeServiceImpl implements MembershipGradeService {
 
     @Override
     @Transactional
-    public MembershipGradeItem create(String name, int level, String description) {
+    public MembershipGradeItem create(String name, int level, String description, BigDecimal earnRatePercent) {
         UUID tenantId = TenantContext.requireTenantId();
         if (membershipGradeRepository.findByTenantIdAndLevel(tenantId, level).isPresent()) {
             throw new MembershipGradeExceptions.LevelAlreadyExistsException("해당 레벨의 등급이 이미 존재합니다: " + level);
@@ -25,7 +26,8 @@ public class MembershipGradeServiceImpl implements MembershipGradeService {
         MembershipGrade grade = new MembershipGrade(
                 name != null ? name.trim() : "",
                 level,
-                description != null ? description.trim() : null
+                description != null ? description.trim() : null,
+                earnRatePercent != null ? earnRatePercent : BigDecimal.ZERO
         );
         MembershipGrade saved = membershipGradeRepository.save(grade);
         return toItem(saved);
@@ -33,7 +35,7 @@ public class MembershipGradeServiceImpl implements MembershipGradeService {
 
     @Override
     @Transactional
-    public MembershipGradeItem update(UUID id, String name, int level, String description) {
+    public MembershipGradeItem update(UUID id, String name, int level, String description, BigDecimal earnRatePercent) {
         UUID tenantId = TenantContext.requireTenantId();
         MembershipGrade grade = membershipGradeRepository.findByTenantIdAndId(tenantId, id)
                 .orElseThrow(() -> new MembershipGradeExceptions.MembershipGradeNotFoundException("회원등급을 찾을 수 없습니다: " + id));
@@ -45,7 +47,8 @@ public class MembershipGradeServiceImpl implements MembershipGradeService {
         grade.update(
                 name != null ? name.trim() : grade.getName(),
                 level,
-                description != null ? description.trim() : grade.getDescription()
+                description != null ? description.trim() : grade.getDescription(),
+                earnRatePercent != null ? earnRatePercent : BigDecimal.ZERO
         );
         return toItem(membershipGradeRepository.save(grade));
     }
@@ -64,7 +67,8 @@ public class MembershipGradeServiceImpl implements MembershipGradeService {
                 g.getId(),
                 String.valueOf(g.getLevel()),
                 g.getName(),
-                g.getDescription()
+                g.getDescription(),
+                g.getEarnRatePercent()
         );
     }
 }

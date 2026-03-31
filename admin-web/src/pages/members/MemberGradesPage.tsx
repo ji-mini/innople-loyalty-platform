@@ -22,14 +22,15 @@ export function MemberGradesPage() {
       (g) =>
         g.code.toLowerCase().includes(k) ||
         (g.name?.toLowerCase().includes(k) ?? false) ||
-        (g.description?.toLowerCase().includes(k) ?? false)
+        (g.description?.toLowerCase().includes(k) ?? false) ||
+        String(g.earnRatePercent ?? '').includes(k)
     )
   }, [grades, keyword])
 
   const [open, setOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<MemberGradeItem | null>(null)
   const [saving, setSaving] = React.useState(false)
-  const [form] = Form.useForm<{ name: string; level: number; description?: string }>()
+  const [form] = Form.useForm<{ name: string; level: number; description?: string; earnRatePercent: number }>()
 
   const openCreate = () => {
     if (!canEdit) return
@@ -46,6 +47,7 @@ export function MemberGradesPage() {
       name: r.name,
       level: parseInt(r.code, 10) || 1,
       description: r.description ?? '',
+      earnRatePercent: r.earnRatePercent ?? 0,
     })
     setOpen(true)
   }
@@ -60,15 +62,17 @@ export function MemberGradesPage() {
           name: v.name,
           level: v.level,
           description: v.description || null,
+          earnRatePercent: v.earnRatePercent,
         })
-        message.success('회원등급이 수정되었습니다.')
+        message.success('등급이 수정되었습니다.')
       } else {
         await api.post('/api/v1/member-grades', {
           name: v.name,
           level: v.level,
           description: v.description || null,
+          earnRatePercent: v.earnRatePercent,
         })
-        message.success('회원등급이 등록되었습니다.')
+        message.success('등급이 등록되었습니다.')
       }
       setOpen(false)
       setEditing(null)
@@ -84,7 +88,7 @@ export function MemberGradesPage() {
     if (!canEdit) return
     try {
       await api.delete(`/api/v1/member-grades/${encodeURIComponent(id)}`)
-      message.success('회원등급이 삭제되었습니다.')
+      message.success('등급이 삭제되었습니다.')
       await queryClient.invalidateQueries({ queryKey: ['member-grades'] })
     } catch (e: any) {
       message.error(e?.response?.data?.message ?? e?.message ?? '삭제 실패')
@@ -93,11 +97,11 @@ export function MemberGradesPage() {
 
   return (
     <PageShell
-      title="회원등급관리"
+      title="등급 관리"
       extra={
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            회원 등급별 혜택 정책을 관리합니다.
+            등급별 적립 대상 금액 대비 적립률(%)을 설정합니다. POS에서 적립 대상 금액을 넘기면 이 비율로 적립 포인트가 계산됩니다.
           </Typography.Text>
           {canEdit ? (
             <Button type="primary" onClick={openCreate}>
@@ -129,8 +133,14 @@ export function MemberGradesPage() {
           pagination={false}
           columns={[
             { title: '코드', dataIndex: 'code', width: 160 },
-            { title: '등급명', dataIndex: 'name', width: 200 },
-            { title: '설명', dataIndex: 'description' },
+            { title: '등급명', dataIndex: 'name', width: 160 },
+            {
+              title: '적립률(%)',
+              dataIndex: 'earnRatePercent',
+              width: 120,
+              render: (v: number) => (v == null ? '-' : `${Number(v).toLocaleString('ko-KR')}%`),
+            },
+            { title: '설명', dataIndex: 'description', ellipsis: true },
             ...(canEdit
               ? [
                   {
@@ -143,7 +153,7 @@ export function MemberGradesPage() {
                           수정
                         </Button>
                         <Popconfirm
-                          title="이 회원등급을 삭제하시겠습니까?"
+                          title="이 등급을 삭제하시겠습니까?"
                           onConfirm={() => handleDelete(r.id)}
                         >
                           <Button size="small" danger>
@@ -162,7 +172,7 @@ export function MemberGradesPage() {
 
       <Modal
         open={open}
-        title={editing ? '회원등급 수정' : '회원등급 등록'}
+        title={editing ? '등급 수정' : '등급 등록'}
         okText={editing ? '수정' : '등록'}
         onOk={onSubmit}
         confirmLoading={saving}
@@ -183,6 +193,14 @@ export function MemberGradesPage() {
             extra="숫자가 클수록 높은 등급입니다."
           >
             <InputNumber style={{ width: '100%' }} min={1} />
+          </Form.Item>
+          <Form.Item
+            label="적립률(%)"
+            name="earnRatePercent"
+            rules={[{ required: true, message: '적립률을 입력하세요' }]}
+            extra="적립 대상 금액(원) × 적립률 ÷ 100으로 포인트가 산정됩니다. (소수점 이하는 버림)"
+          >
+            <InputNumber style={{ width: '100%' }} min={0} max={100} step={0.1} precision={2} placeholder="예: 1.5" />
           </Form.Item>
           <Form.Item label="설명" name="description">
             <Input.TextArea placeholder="등급 설명 (선택)" rows={3} />

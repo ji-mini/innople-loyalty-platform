@@ -43,6 +43,9 @@ public interface PointLedgerRepository extends JpaRepository<PointLedger, UUID> 
                 l.approvalNo,
                 l.referenceType,
                 l.referenceId,
+                l.purchaseAmount,
+                l.totalPurchaseAmount,
+                l.discountAmount,
                 l.createdAt
             ) from PointLedger l, com.innople.loyalty.domain.member.Member m
             where l.memberId = m.id and l.tenantId = m.tenantId

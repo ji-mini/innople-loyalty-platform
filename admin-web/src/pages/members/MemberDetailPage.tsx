@@ -8,6 +8,29 @@ import type { MemberAddress, MemberDetail, MemberLedger, PointLedgerItem } from 
 import { getSession } from '../../shared/storage'
 import { atLeast } from '../../shared/roles'
 
+/** 회원 상세 Descriptions 제목(라벨) 열 — 고정 너비 + 값 열과 아주 약간 구분되는 톤 */
+const MEMBER_DETAIL_LABEL_COL_STYLE: React.CSSProperties = {
+  width: 140,
+  minWidth: 140,
+  maxWidth: 140,
+  verticalAlign: 'top',
+  backgroundColor: '#f0f2f5',
+  color: 'rgba(0, 0, 0, 0.58)',
+}
+
+/** 2열 행에서 첫 번째 값 열만 고정 너비 */
+const MEMBER_DETAIL_CONTENT_FIRST_COL_STYLE: React.CSSProperties = {
+  width: 550,
+  minWidth: 550,
+  maxWidth: 550,
+  verticalAlign: 'top',
+}
+
+/** 두 번째 값 열·span=2 값 — 너비 고정 없음 */
+const MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE: React.CSSProperties = {
+  verticalAlign: 'top',
+}
+
 function formatAddress(addr: MemberAddress | null | undefined): string {
   if (!addr) return '-'
   const base = addr.roadAddress ?? addr.jibunAddress ?? ''
@@ -29,6 +52,8 @@ function formatPointSourceChannel(v: string | null | undefined): string {
   if (!v) return '-'
   return v === 'ADMIN_WEB_MANUAL_EARN'
     ? '관리자 웹 수기 적립'
+    : v === 'POS_PURCHASE_EARN'
+      ? 'POS 구매 적립'
     : v === 'ADMIN_WEB_MANUAL_USE'
       ? '관리자 웹 수기 차감'
       : v === 'ADMIN_WEB_MANUAL_EXPIRE'
@@ -310,14 +335,26 @@ export function MemberDetailPage() {
                       <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 12 }}>
                         계정 정보
                       </Typography.Title>
-                      <Descriptions bordered size="small" column={2}>
-                        <Descriptions.Item label="회원번호">{detail.data.memberNo ?? '-'}</Descriptions.Item>
-                        <Descriptions.Item label="상태">{getStatusName(detail.data.statusCode)}</Descriptions.Item>
-                        <Descriptions.Item label="등급">{detail.data.gradeName ?? '-'}</Descriptions.Item>
-                        <Descriptions.Item label="Web ID">{detail.data.webId ?? '-'}</Descriptions.Item>
-                        <Descriptions.Item label="가입일시">{detail.data.joinedAt ?? '-'}</Descriptions.Item>
-                        <Descriptions.Item label="휴면일시">{detail.data.dormantAt ?? '-'}</Descriptions.Item>
-                        <Descriptions.Item label="탈퇴일시" span={2}>
+                      <Descriptions bordered size="small" column={2} labelStyle={MEMBER_DETAIL_LABEL_COL_STYLE}>
+                        <Descriptions.Item label="회원번호" contentStyle={MEMBER_DETAIL_CONTENT_FIRST_COL_STYLE}>
+                          {detail.data.memberNo ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="상태" contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {getStatusName(detail.data.statusCode)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="등급" contentStyle={MEMBER_DETAIL_CONTENT_FIRST_COL_STYLE}>
+                          {detail.data.gradeName ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Web ID" contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {detail.data.webId ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="가입일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {detail.data.joinedAt ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="휴면일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {detail.data.dormantAt ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="탈퇴일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
                           {detail.data.withdrawnAt ?? '-'}
                         </Descriptions.Item>
                       </Descriptions>
@@ -327,18 +364,34 @@ export function MemberDetailPage() {
                       <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 12 }}>
                         회원 정보
                       </Typography.Title>
-                      <Descriptions bordered size="small" column={2}>
-                        <Descriptions.Item label="이름">{detail.data.name ?? '-'}</Descriptions.Item>
-                        <Descriptions.Item label="생년월일">{detail.data.birthDate ?? '-'}</Descriptions.Item>
-                        <Descriptions.Item label="양/음력">{formatCalendarType(detail.data.calendarType)}</Descriptions.Item>
-                        <Descriptions.Item label="성별">{formatGender(detail.data.gender)}</Descriptions.Item>
-                        <Descriptions.Item label="휴대폰">{detail.data.phoneNumber ?? '-'}</Descriptions.Item>
-                        <Descriptions.Item label="이메일">{detail.data.email ?? '-'}</Descriptions.Item>
-                        <Descriptions.Item label="주소" span={2}>
+                      <Descriptions bordered size="small" column={2} labelStyle={MEMBER_DETAIL_LABEL_COL_STYLE}>
+                        <Descriptions.Item label="이름" contentStyle={MEMBER_DETAIL_CONTENT_FIRST_COL_STYLE}>
+                          {detail.data.name ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="휴대폰" contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {detail.data.phoneNumber ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="양/음력" contentStyle={MEMBER_DETAIL_CONTENT_FIRST_COL_STYLE}>
+                          {formatCalendarType(detail.data.calendarType)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="이메일" contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {detail.data.email ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="생년월일" contentStyle={MEMBER_DETAIL_CONTENT_FIRST_COL_STYLE}>
+                          {detail.data.birthDate ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="성별" contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {formatGender(detail.data.gender)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="기념일" contentStyle={MEMBER_DETAIL_CONTENT_FIRST_COL_STYLE}>
+                          {detail.data.anniversaries ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="CI" contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {detail.data.ci ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="주소" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
                           {formatAddress(detail.data.address)}
                         </Descriptions.Item>
-                        <Descriptions.Item label="CI">{detail.data.ci ?? '-'}</Descriptions.Item>
-                        <Descriptions.Item label="기념일">{detail.data.anniversaries ?? '-'}</Descriptions.Item>
                       </Descriptions>
                     </div>
                   </Space>
@@ -350,55 +403,72 @@ export function MemberDetailPage() {
             key: 'points',
             label: '포인트 이력',
             children: (
-              <Card
-                title="포인트 이력 (최근 100건)"
-                extra={
+              <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                <Card size="small">
                   <Typography.Text strong>
                     현재 잔액 {detail.data?.pointBalance?.toLocaleString('ko-KR') ?? '0'} P
                   </Typography.Text>
-                }
-                loading={pointLedgers.isLoading}
-              >
-                <Table<PointLedgerItem>
-                  rowKey={(r) => r.id}
-                  size="small"
-                  pagination={false}
-                  dataSource={pointLedgers.data ?? []}
-                  columns={[
-                    {
-                      title: '구분',
-                      dataIndex: 'eventType',
-                      width: 100,
-                      render: (v: string) => {
-                        const color =
-                          v === 'EARN' || v === 'ADJUST_EARN'
-                            ? 'green'
-                            : v === 'USE' || v === 'ADJUST_USE'
-                              ? 'volcano'
-                              : 'default'
-                        return <Tag color={color}>{pointEventTypeLabel(v)}</Tag>
+                </Card>
+                <Card title="포인트 이력 (최근 100건)" loading={pointLedgers.isLoading}>
+                  <Table<PointLedgerItem>
+                    rowKey={(r) => r.id}
+                    size="small"
+                    pagination={false}
+                    dataSource={pointLedgers.data ?? []}
+                    columns={[
+                      {
+                        title: '구분',
+                        dataIndex: 'eventType',
+                        width: 100,
+                        render: (v: string) => {
+                          const color =
+                            v === 'EARN' || v === 'ADJUST_EARN'
+                              ? 'green'
+                              : v === 'USE' || v === 'ADJUST_USE'
+                                ? 'volcano'
+                                : 'default'
+                          return <Tag color={color}>{pointEventTypeLabel(v)}</Tag>
+                        },
                       },
-                    },
-                    {
-                      title: '포인트',
-                      dataIndex: 'amount',
-                      width: 110,
-                      render: (v: number) => `${v >= 0 ? '+' : ''}${v.toLocaleString('ko-KR')} P`,
-                    },
-                    {
-                      title: '경로',
-                      dataIndex: 'sourceChannel',
-                      width: 170,
-                      render: (v: string) => formatPointSourceChannel(v),
-                    },
-                    { title: '사유', dataIndex: 'reason', ellipsis: true },
-                    { title: '일시', dataIndex: 'createdAt', width: 170, render: (v: string) => formatDateTime(v) },
-                  ]}
-                  locale={{
-                    emptyText: <Typography.Text type="secondary">포인트 이력이 없습니다.</Typography.Text>,
-                  }}
-                />
-              </Card>
+                      {
+                        title: '포인트',
+                        dataIndex: 'amount',
+                        width: 110,
+                        render: (v: number) => `${v >= 0 ? '+' : ''}${v.toLocaleString('ko-KR')} P`,
+                      },
+                      {
+                        title: '총 구매금액',
+                        dataIndex: 'totalPurchaseAmount',
+                        width: 100,
+                        render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
+                      },
+                      {
+                        title: '할인금액',
+                        dataIndex: 'discountAmount',
+                        width: 90,
+                        render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
+                      },
+                      {
+                        title: '적립 대상 금액',
+                        dataIndex: 'purchaseAmount',
+                        width: 100,
+                        render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
+                      },
+                      {
+                        title: '경로',
+                        dataIndex: 'sourceChannel',
+                        width: 170,
+                        render: (v: string) => formatPointSourceChannel(v),
+                      },
+                      { title: '사유', dataIndex: 'reason', ellipsis: true },
+                      { title: '일시', dataIndex: 'createdAt', width: 170, render: (v: string) => formatDateTime(v) },
+                    ]}
+                    locale={{
+                      emptyText: <Typography.Text type="secondary">포인트 이력이 없습니다.</Typography.Text>,
+                    }}
+                  />
+                </Card>
+              </Space>
             ),
           },
           {

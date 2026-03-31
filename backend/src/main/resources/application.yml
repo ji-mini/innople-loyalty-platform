@@ -8,6 +8,8 @@ server:
   port: ${PORT:${SERVER_PORT:3201}}
 
 app:
+  stamp:
+    auto-redeem-cron: ${APP_STAMP_AUTO_REDEEM_CRON:0 0 * * * *}
   tenant:
     header-name: ${APP_TENANT_HEADER_NAME:X-Tenant-Id}
   juso:

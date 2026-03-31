@@ -12,13 +12,18 @@ const MemberDetailPage = React.lazy(async () => ({ default: (await import('../pa
 const MemberCreatePage = React.lazy(async () => ({ default: (await import('../pages/members/MemberCreatePage')).MemberCreatePage }))
 const DashboardPage = React.lazy(async () => ({ default: (await import('../pages/dashboard/DashboardPage')).DashboardPage }))
 const MemberGradesPage = React.lazy(async () => ({ default: (await import('../pages/members/MemberGradesPage')).MemberGradesPage }))
+const ClubManagementPage = React.lazy(async () => ({ default: (await import('../pages/members/ClubManagementPage')).ClubManagementPage }))
 const PointPoliciesPage = React.lazy(async () => ({ default: (await import('../pages/points/PointPoliciesPage')).PointPoliciesPage }))
 const PointManualEarnPage = React.lazy(async () => ({ default: (await import('../pages/points/PointManualEarnPage')).PointManualEarnPage }))
 const PointManualDeductPage = React.lazy(async () => ({ default: (await import('../pages/points/PointManualDeductPage')).PointManualDeductPage }))
 const PointHistoryPage = React.lazy(async () => ({ default: (await import('../pages/points/PointHistoryPage')).PointHistoryPage }))
 const PointExpiryPage = React.lazy(async () => ({ default: (await import('../pages/points/PointExpiryPage')).PointExpiryPage }))
+const StampPoliciesPage = React.lazy(async () => ({ default: (await import('../pages/stamps/StampPoliciesPage')).StampPoliciesPage }))
+const StampManualGrantPage = React.lazy(async () => ({ default: (await import('../pages/stamps/StampManualGrantPage')).StampManualGrantPage }))
+const StampHistoryPage = React.lazy(async () => ({ default: (await import('../pages/stamps/StampHistoryPage')).StampHistoryPage }))
 const CouponIssuePage = React.lazy(async () => ({ default: (await import('../pages/coupons/CouponIssuePage')).CouponIssuePage }))
 const CouponHistoryPage = React.lazy(async () => ({ default: (await import('../pages/coupons/CouponHistoryPage')).CouponHistoryPage }))
+const EmployeeManagementPage = React.lazy(async () => ({ default: (await import('../pages/coupons/EmployeeManagementPage')).EmployeeManagementPage }))
 const PointReportPage = React.lazy(async () => ({ default: (await import('../pages/reports/PointReportPage')).PointReportPage }))
 const MemberReportPage = React.lazy(async () => ({ default: (await import('../pages/reports/MemberReportPage')).MemberReportPage }))
 const TenantsPage = React.lazy(async () => ({ default: (await import('../pages/tenants/TenantsPage')).TenantsPage }))
@@ -101,7 +106,8 @@ export const router = createBrowserRouter([
                 element: withSuspense(<MemberDetailPage />),
                 handle: { crumbs: (p: any) => ['회원관리', '회원상세', p?.memberNo ?? '-'] },
               },
-              { path: '/member-grades', element: withSuspense(<MemberGradesPage />), handle: { crumbs: ['회원관리', '회원등급관리'] } },
+              { path: '/member-grades', element: withSuspense(<MemberGradesPage />), handle: { crumbs: ['회원관리', '등급 관리'] } },
+              { path: '/clubs', element: withSuspense(<ClubManagementPage />), handle: { crumbs: ['회원관리', '클럽 관리'] } },
 
               // Point management
               { path: '/points/policies', element: withSuspense(<PointPoliciesPage />), handle: { crumbs: ['포인트관리', '정책관리'] } },
@@ -111,9 +117,15 @@ export const router = createBrowserRouter([
               { path: '/points/history', element: withSuspense(<PointHistoryPage />), handle: { crumbs: ['포인트관리', '포인트 이력조회'] } },
               { path: '/points/expiry', element: withSuspense(<PointExpiryPage />), handle: { crumbs: ['포인트관리', '소멸관리'] } },
 
+              { path: '/stamps/policies', element: withSuspense(<StampPoliciesPage />), handle: { crumbs: ['스탬프관리', '스탬프 정책'] } },
+              { path: '/stamps/manual', element: withSuspense(<StampManualGrantPage />), handle: { crumbs: ['스탬프관리', '스탬프 수기 지급'] } },
+              { path: '/stamps/history', element: withSuspense(<StampHistoryPage />), handle: { crumbs: ['스탬프관리', '스탬프 이력'] } },
+
               // Coupon management
               { path: '/coupons/issue', element: withSuspense(<CouponIssuePage />), handle: { crumbs: ['쿠폰관리', '쿠폰 발행'] } },
               { path: '/coupons/history', element: withSuspense(<CouponHistoryPage />), handle: { crumbs: ['쿠폰관리', '쿠폰 이력'] } },
+              { path: '/coupons/employees', element: <Navigate to="/employees" replace /> },
+              { path: '/employees', element: withSuspense(<EmployeeManagementPage />), handle: { crumbs: ['직원관리'] } },
 
               // Reports
               { path: '/reports/points', element: withSuspense(<PointReportPage />), handle: { crumbs: ['리포트', '포인트 리포트'] } },

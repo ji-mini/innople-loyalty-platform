@@ -224,7 +224,7 @@ export function MemberCreatePage() {
         anniversaries: anniversaries ?? null,
         phoneNumber: v.phoneNumber?.trim() ? v.phoneNumber.trim() : null,
         ci: v.ci?.trim() ? v.ci.trim() : null,
-        email: v.email?.trim() ? v.email.trim() : null,
+        email: v.email!.trim(),
         webId: v.webId?.trim() ? v.webId.trim() : null,
         joinedAt: joinedAt ?? null,
         statusCode: v.statusCode ?? DEFAULT_STATUS,
@@ -292,101 +292,15 @@ export function MemberCreatePage() {
             statusCode: DEFAULT_STATUS,
             address: INITIAL_ADDRESS,
           }}
-          requiredMark={false}
         >
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <Space wrap size={16} align="start">
               <Form.Item label="회원번호" name="memberNo" rules={[{ required: true, message: '회원번호를 입력하세요' }]}>
                 <Input placeholder="휴대폰번호 입력 시 자동 생성" style={{ width: 240 }} disabled readOnly />
               </Form.Item>
-            </Space>
-
-            <Space wrap size={16} align="start">
-              <Form.Item label="이름" name="name" rules={[{ required: true, message: '이름을 입력하세요' }]}>
-                <Input placeholder="예: 홍길동" style={{ width: 220 }} />
-              </Form.Item>
-
-              <Form.Item label="생년월일" name="birthDate">
-                <DatePicker style={{ width: 180 }} placeholder="선택" />
-              </Form.Item>
-
-              <Form.Item label="양/음력" name="calendarType">
-                <Select
-                  style={{ width: 120 }}
-                  placeholder="선택"
-                  allowClear
-                  options={[
-                    { value: 'SOLAR', label: '양력' },
-                    { value: 'LUNAR', label: '음력' },
-                  ]}
-                />
-              </Form.Item>
-
-              <Form.Item label="기념일(선택)" name="anniversaries">
-                <DatePicker style={{ width: 180 }} placeholder="선택" />
-              </Form.Item>
-
-              <Form.Item label="성별" name="gender">
-                <Select
-                  style={{ width: 120 }}
-                  placeholder="선택"
-                  allowClear
-                  options={[
-                    { value: 'MALE', label: '남성' },
-                    { value: 'FEMALE', label: '여성' },
-                    { value: 'UNKNOWN', label: '미선택' },
-                  ]}
-                />
-              </Form.Item>
-            </Space>
-
-            <Space wrap size={16} align="start">
-              <Form.Item
-                label="휴대폰번호"
-                name="phoneNumber"
-                rules={[{ required: true, message: '휴대폰 번호를 입력하세요' }]}
-                getValueFromEvent={(e) => String(e?.target?.value ?? '').replace(/\D/g, '')}
-              >
-                <Input placeholder="01000000000" style={{ width: 220 }} allowClear inputMode="numeric" suffix={memberNoLoading ? '...' : undefined} />
-              </Form.Item>
-
-              <Form.Item label="휴대폰번호 인증(선택)">
-                <Space>
-                  <Form.Item name="ci" noStyle>
-                    <Input style={{ display: 'none' }} />
-                  </Form.Item>
-                  <Button type="default" onClick={() => message.info('휴대폰번호 인증 기능은 준비 중입니다.')}>
-                    인증하기
-                  </Button>
-                </Space>
-              </Form.Item>
-
-              <Form.Item
-                label="이메일"
-                name="email"
-                rules={[{ type: 'email', message: '올바른 이메일 형식을 입력하세요' }]}
-              >
-                <Input placeholder="예: user@example.com" style={{ width: 240 }} allowClear />
-              </Form.Item>
-
-              <Form.Item
-                label="WEB ID"
-                name="webId"
-                rules={[
-                  {
-                    pattern: /^[A-Za-z0-9_-]+$/,
-                    message: 'WEB ID는 영문/숫자와 -, _ 만 사용할 수 있습니다.',
-                  },
-                ]}
-                validateTrigger={['onChange', 'onBlur']}
-              >
-                <Input placeholder="예: web_123" style={{ width: 220 }} allowClear />
-              </Form.Item>
-
               <Form.Item label="가입일" name="joinedAt">
                 <DatePicker style={{ width: 180 }} disabled inputReadOnly />
               </Form.Item>
-
               <Form.Item label="상태" name="statusCode">
                 <Select
                   style={{ width: 200 }}
@@ -395,6 +309,112 @@ export function MemberCreatePage() {
                   options={(statusCodes.data ?? []).map((c) => ({ value: c.code, label: c.name }))}
                 />
               </Form.Item>
+            </Space>
+
+            <Space direction="vertical" size={16} style={{ width: '100%' }}>
+              <Space wrap size={16} align="start">
+                <Form.Item label="이름" name="name" rules={[{ required: true, message: '이름을 입력하세요' }]}>
+                  <Input placeholder="예: 홍길동" style={{ width: 220 }} />
+                </Form.Item>
+                <Form.Item
+                  label="WEB ID(선택)"
+                  name="webId"
+                  rules={[
+                    {
+                      pattern: /^[A-Za-z0-9_-]+$/,
+                      message: 'WEB ID는 영문/숫자와 -, _ 만 사용할 수 있습니다.',
+                    },
+                  ]}
+                  validateTrigger={['onChange', 'onBlur']}
+                >
+                  <Input placeholder="예: web_123" style={{ width: 220 }} allowClear />
+                </Form.Item>
+              </Space>
+
+              <Space wrap size={16} align="start">
+                <Form.Item
+                  label="생년월일"
+                  name="birthDate"
+                  rules={[{ required: true, message: '생년월일을 선택하세요' }]}
+                >
+                  <DatePicker style={{ width: 180 }} placeholder="선택" />
+                </Form.Item>
+
+                <Form.Item label="양/음력" name="calendarType">
+                  <Select
+                    style={{ width: 120 }}
+                    placeholder="선택"
+                    allowClear
+                    options={[
+                      { value: 'SOLAR', label: '양력' },
+                      { value: 'LUNAR', label: '음력' },
+                    ]}
+                  />
+                </Form.Item>
+
+                <Form.Item
+                  label="성별"
+                  name="gender"
+                  rules={[{ required: true, message: '성별을 선택하세요' }]}
+                >
+                  <Select
+                    style={{ width: 120 }}
+                    placeholder="선택"
+                    options={[
+                      { value: 'MALE', label: '남성' },
+                      { value: 'FEMALE', label: '여성' },
+                      { value: 'UNKNOWN', label: '미선택' },
+                    ]}
+                  />
+                </Form.Item>
+
+                <Form.Item label="기념일(선택)" name="anniversaries">
+                  <DatePicker style={{ width: 180 }} placeholder="선택" />
+                </Form.Item>
+              </Space>
+            </Space>
+
+            <Space direction="vertical" size={16} style={{ width: '100%' }}>
+              <Space wrap size={16} align="start">
+                <Form.Item
+                  label="휴대폰번호"
+                  name="phoneNumber"
+                  rules={[{ required: true, message: '휴대폰 번호를 입력하세요' }]}
+                  getValueFromEvent={(e) => String(e?.target?.value ?? '').replace(/\D/g, '')}
+                >
+                  <Input placeholder="01000000000" style={{ width: 220 }} allowClear inputMode="numeric" suffix={memberNoLoading ? '...' : undefined} />
+                </Form.Item>
+
+                <Form.Item label="휴대폰번호 인증(선택)">
+                  <Space>
+                    <Form.Item name="ci" noStyle>
+                      <Input style={{ display: 'none' }} />
+                    </Form.Item>
+                    <Button type="default" onClick={() => message.info('휴대폰번호 인증 기능은 준비 중입니다.')}>
+                      인증하기
+                    </Button>
+                  </Space>
+                </Form.Item>
+              </Space>
+
+              <Space wrap size={16} align="start">
+                <Form.Item
+                  label="이메일"
+                  name="email"
+                  rules={[
+                    { required: true, message: '이메일을 입력하세요' },
+                    { type: 'email', message: '올바른 이메일 형식을 입력하세요' },
+                  ]}
+                >
+                  <Input placeholder="예: user@example.com" style={{ width: 240 }} allowClear />
+                </Form.Item>
+
+                <Form.Item label="이메일 인증(선택)">
+                  <Button type="default" onClick={() => message.info('이메일 인증 기능은 준비 중입니다.')}>
+                    인증하기
+                  </Button>
+                </Form.Item>
+              </Space>
             </Space>
           </Space>
 
