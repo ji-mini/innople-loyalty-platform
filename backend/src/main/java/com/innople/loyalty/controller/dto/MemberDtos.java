@@ -41,7 +41,10 @@ public final class MemberDtos {
             @Size(max = 50) String statusCode,
             LocalDate joinedAt,
             @Size(max = 200) String ci,
-            @Size(max = 1000) String anniversaries
+            @Size(max = 1000) String anniversaries,
+            Boolean appLoginAllowed,
+            @Size(min = 8, max = 100) String initialPassword,
+            Boolean autoGeneratePassword
     ) {
     }
 
@@ -68,6 +71,13 @@ public final class MemberDtos {
     public record WithdrawRequest(
             LocalDate withdrawnAt,
             @Size(max = 500) String reason
+    ) {
+    }
+
+    public record UpdateAppLoginRequest(
+            @NotNull Boolean enabled,
+            @Size(min = 8, max = 100) String initialPassword,
+            Boolean autoGeneratePassword
     ) {
     }
 
@@ -101,7 +111,18 @@ public final class MemberDtos {
             LocalDate dormantAt,
             LocalDate withdrawnAt,
             String ci,
-            String anniversaries
+            String anniversaries,
+            boolean appLoginEnabled,
+            String appLoginId,
+            String generatedPassword
+    ) {
+    }
+
+    public record AppLoginResponse(
+            String memberNo,
+            boolean appLoginEnabled,
+            String appLoginId,
+            String generatedPassword
     ) {
     }
 

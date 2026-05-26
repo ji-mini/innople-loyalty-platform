@@ -93,6 +93,8 @@ export type MemberDetail = {
   withdrawnAt: string | null
   ci: string | null
   anniversaries: string | null
+  appLoginEnabled: boolean
+  appLoginId: string | null
 }
 
 export type MemberLedger = {
@@ -100,6 +102,16 @@ export type MemberLedger = {
   eventType: string
   statusCodeBefore: string
   statusCodeAfter: string
+  createdAt: string
+}
+
+export type MemberLoginHistory = {
+  id: string
+  loginId: string
+  deviceName: string | null
+  osName: string | null
+  ip: string | null
+  userAgent: string | null
   createdAt: string
 }
 

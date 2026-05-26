@@ -1,10 +1,10 @@
-import { Alert, Button, Card, DatePicker, Descriptions, Form, Input, Modal, Select, Space, Table, Tabs, Tag, Typography, message } from 'antd'
+import { Alert, Button, Card, DatePicker, Descriptions, Form, Input, Modal, Radio, Select, Space, Table, Tabs, Tag, Typography, message } from 'antd'
 import dayjs from 'dayjs'
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../shared/api'
-import { useCommonCodes, useMemberDetail, useMemberLedgers, usePointLedgers } from '../../shared/queries'
-import type { MemberAddress, MemberDetail, MemberLedger, PointLedgerItem } from '../../shared/types'
+import { useCommonCodes, useMemberDetail, useMemberLedgers, useMemberLoginHistories, usePointLedgers } from '../../shared/queries'
+import type { MemberAddress, MemberDetail, MemberLedger, MemberLoginHistory, PointLedgerItem } from '../../shared/types'
 import { getSession } from '../../shared/storage'
 import { atLeast } from '../../shared/roles'
 
@@ -253,6 +253,79 @@ function MemberEditModal({
   )
 }
 
+function MemberAppLoginModal({
+  open,
+  loading,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean
+  loading: boolean
+  onClose: () => void
+  onSubmit: (value: { initialPassword?: string; autoGeneratePassword: boolean }) => Promise<void>
+}) {
+  const [form] = Form.useForm<{ passwordMode: 'manual' | 'auto'; initialPassword?: string }>()
+
+  React.useEffect(() => {
+    if (!open) return
+    form.setFieldsValue({ passwordMode: 'manual', initialPassword: '' })
+  }, [open, form])
+
+  return (
+    <Modal title="앱 로그인 활성화" open={open} onCancel={onClose} footer={null} destroyOnClose>
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={async (value) => {
+          await onSubmit({
+            initialPassword: value.passwordMode === 'manual' ? value.initialPassword?.trim() : undefined,
+            autoGeneratePassword: value.passwordMode === 'auto',
+          })
+        }}
+      >
+        <Form.Item label="초기 비밀번호 방식" name="passwordMode" initialValue="manual">
+          <Radio.Group
+            optionType="button"
+            buttonStyle="solid"
+            options={[
+              { label: '직접 입력', value: 'manual' },
+              { label: '자동 생성', value: 'auto' },
+            ]}
+          />
+        </Form.Item>
+        <Form.Item shouldUpdate={(prev, cur) => prev.passwordMode !== cur.passwordMode} noStyle>
+          {({ getFieldValue }) =>
+            getFieldValue('passwordMode') !== 'auto' ? (
+              <Form.Item
+                label="초기 비밀번호"
+                name="initialPassword"
+                rules={[
+                  { required: true, message: '초기 비밀번호를 입력하세요' },
+                  { min: 8, message: '비밀번호는 8자 이상이어야 합니다.' },
+                ]}
+              >
+                <Input.Password placeholder="초기 비밀번호" />
+              </Form.Item>
+            ) : (
+              <Typography.Text type="secondary">
+                저장 후 자동 생성된 초기 비밀번호를 1회 표시합니다.
+              </Typography.Text>
+            )
+          }
+        </Form.Item>
+        <Form.Item style={{ marginBottom: 0, marginTop: 16 }}>
+          <Space>
+            <Button type="primary" htmlType="submit" loading={loading}>
+              활성화
+            </Button>
+            <Button onClick={onClose}>취소</Button>
+          </Space>
+        </Form.Item>
+      </Form>
+    </Modal>
+  )
+}
+
 export function MemberDetailPage() {
   const nav = useNavigate()
   const params = useParams()
@@ -261,6 +334,7 @@ export function MemberDetailPage() {
 
   const detail = useMemberDetail(memberNo)
   const ledgers = useMemberLedgers(memberNo, 100)
+  const loginHistories = useMemberLoginHistories(memberNo, 50)
   const pointLedgers = usePointLedgers({ memberNo: memberNo || undefined, limit: 100 })
   const statusCodes = useCommonCodes('MEMBER_STATUS')
 
@@ -277,6 +351,9 @@ export function MemberDetailPage() {
   const [editOpen, setEditOpen] = React.useState(false)
   const [editLoading, setEditLoading] = React.useState(false)
   const [editForm] = Form.useForm()
+  const [appLoginOpen, setAppLoginOpen] = React.useState(false)
+  const [appLoginLoading, setAppLoginLoading] = React.useState(false)
+  const latestLogin = loginHistories.data?.[0]
 
   const getStatusName = (code: string | null | undefined) =>
     code ? (statusCodes.data?.find((c) => c.code === code)?.name ?? code) : '-'
@@ -286,6 +363,15 @@ export function MemberDetailPage() {
     { title: '이벤트', dataIndex: 'eventType', render: (v: string) => <Tag>{v}</Tag> },
     { title: '상태(전)', dataIndex: 'statusCodeBefore', render: getStatusName },
     { title: '상태(후)', dataIndex: 'statusCodeAfter', render: getStatusName },
+  ]
+
+  const loginHistoryCols = [
+    { title: '로그인 일시', dataIndex: 'createdAt', render: (v: string) => formatDateTime(v) },
+    { title: '로그인 ID', dataIndex: 'loginId', render: (v: string | null | undefined) => v || '-' },
+    { title: '기기', dataIndex: 'deviceName', render: (v: string | null | undefined) => v || '-' },
+    { title: 'OS', dataIndex: 'osName', render: (v: string | null | undefined) => v || '-' },
+    { title: 'IP', dataIndex: 'ip', render: (v: string | null | undefined) => v || '-' },
+    { title: 'User-Agent', dataIndex: 'userAgent', ellipsis: true, render: (v: string | null | undefined) => v || '-' },
   ]
 
   return (
@@ -351,6 +437,18 @@ export function MemberDetailPage() {
                         <Descriptions.Item label="가입일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
                           {detail.data.joinedAt ?? '-'}
                         </Descriptions.Item>
+                        <Descriptions.Item label="앱 로그인" contentStyle={MEMBER_DETAIL_CONTENT_FIRST_COL_STYLE}>
+                          {detail.data.appLoginEnabled ? <Tag color="green">허용</Tag> : <Tag>미허용</Tag>}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="로그인 ID" contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {detail.data.appLoginId ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="최근 앱 로그인" contentStyle={MEMBER_DETAIL_CONTENT_FIRST_COL_STYLE}>
+                          {latestLogin ? formatDateTime(latestLogin.createdAt) : '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="최근 로그인 기기" contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {latestLogin ? `${latestLogin.deviceName ?? '-'} / ${latestLogin.osName ?? '-'}` : '-'}
+                        </Descriptions.Item>
                         <Descriptions.Item label="휴면일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
                           {detail.data.dormantAt ?? '-'}
                         </Descriptions.Item>
@@ -361,6 +459,32 @@ export function MemberDetailPage() {
                     </div>
 
                     <div>
+                      {atLeast(role, 'ADMIN') ? (
+                        <Space style={{ marginBottom: 12 }}>
+                          {detail.data.appLoginEnabled ? (
+                            <Button
+                              danger
+                              onClick={async () => {
+                                try {
+                                  await api.put(`/api/v1/members/${encodeURIComponent(memberNo)}/app-login`, {
+                                    enabled: false,
+                                  })
+                                  message.success('앱 로그인이 비활성화되었습니다.')
+                                  detail.refetch()
+                                } catch (e: any) {
+                                  message.error(e?.response?.data?.message ?? e?.message ?? '앱 로그인 비활성화 실패')
+                                }
+                              }}
+                            >
+                              앱 로그인 비활성화
+                            </Button>
+                          ) : (
+                            <Button type="primary" onClick={() => setAppLoginOpen(true)}>
+                              앱 로그인 활성화
+                            </Button>
+                          )}
+                        </Space>
+                      ) : null}
                       <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 12 }}>
                         회원 정보
                       </Typography.Title>
@@ -484,15 +608,29 @@ export function MemberDetailPage() {
             key: 'activity',
             label: '활동 로그',
             children: (
-              <Card title="회원 원장(최근 100건)" loading={ledgers.isLoading}>
-                <Table<MemberLedger>
-                  rowKey={(r) => r.id}
-                  columns={ledgerCols as any}
-                  dataSource={ledgers.data ?? []}
-                  pagination={false}
-                  size="small"
-                />
-              </Card>
+              <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                <Card title="앱 로그인 이력 (최근 50건)" loading={loginHistories.isLoading}>
+                  <Table<MemberLoginHistory>
+                    rowKey={(r) => r.id}
+                    columns={loginHistoryCols as any}
+                    dataSource={loginHistories.data ?? []}
+                    pagination={false}
+                    size="small"
+                    locale={{
+                      emptyText: <Typography.Text type="secondary">앱 로그인 이력이 없습니다.</Typography.Text>,
+                    }}
+                  />
+                </Card>
+                <Card title="회원 원장(최근 100건)" loading={ledgers.isLoading}>
+                  <Table<MemberLedger>
+                    rowKey={(r) => r.id}
+                    columns={ledgerCols as any}
+                    dataSource={ledgers.data ?? []}
+                    pagination={false}
+                    size="small"
+                  />
+                </Card>
+              </Space>
             ),
           },
         ]}
@@ -565,6 +703,48 @@ export function MemberDetailPage() {
               message.error(e?.response?.data?.message ?? e?.message ?? '수정 실패')
             } finally {
               setEditLoading(false)
+            }
+          }}
+        />
+      )}
+
+      {atLeast(role, 'ADMIN') && (
+        <MemberAppLoginModal
+          open={appLoginOpen}
+          loading={appLoginLoading}
+          onClose={() => setAppLoginOpen(false)}
+          onSubmit={async (value) => {
+            setAppLoginLoading(true)
+            try {
+              const res = await api.put<{ generatedPassword?: string | null }>(
+                `/api/v1/members/${encodeURIComponent(memberNo)}/app-login`,
+                {
+                  enabled: true,
+                  initialPassword: value.autoGeneratePassword ? null : value.initialPassword,
+                  autoGeneratePassword: value.autoGeneratePassword,
+                }
+              )
+              setAppLoginOpen(false)
+              detail.refetch()
+              if (res.data?.generatedPassword) {
+                Modal.success({
+                  title: '앱 로그인이 활성화되었습니다.',
+                  content: (
+                    <Space direction="vertical" size={4}>
+                      <Typography.Text>자동 생성된 초기 비밀번호입니다.</Typography.Text>
+                      <Typography.Text copyable strong>
+                        {res.data.generatedPassword}
+                      </Typography.Text>
+                    </Space>
+                  ),
+                })
+              } else {
+                message.success('앱 로그인이 활성화되었습니다.')
+              }
+            } catch (e: any) {
+              message.error(e?.response?.data?.message ?? e?.message ?? '앱 로그인 활성화 실패')
+            } finally {
+              setAppLoginLoading(false)
             }
           }}
         />

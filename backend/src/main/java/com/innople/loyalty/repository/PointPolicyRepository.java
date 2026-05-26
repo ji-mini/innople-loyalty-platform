@@ -12,6 +12,8 @@ public interface PointPolicyRepository extends JpaRepository<PointPolicy, UUID> 
 
     Optional<PointPolicy> findByTenantIdAndId(UUID tenantId, UUID id);
 
+    Optional<PointPolicy> findFirstByTenantIdAndEnabledTrueOrderByUpdatedAtDesc(UUID tenantId);
+
     boolean existsByTenantIdAndPointType(UUID tenantId, String pointType);
 
     boolean existsByTenantIdAndPointTypeAndIdNot(UUID tenantId, String pointType, UUID id);

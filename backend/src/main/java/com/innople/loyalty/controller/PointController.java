@@ -8,8 +8,6 @@ import com.innople.loyalty.domain.member.Member;
 import com.innople.loyalty.domain.user.AdminUser;
 import com.innople.loyalty.repository.MemberRepository;
 import com.innople.loyalty.repository.PointLedgerRepository;
-import com.innople.loyalty.domain.member.MembershipGrade;
-import com.innople.loyalty.service.points.PointEarnCalculator;
 import com.innople.loyalty.service.points.PointOperationResult;
 import com.innople.loyalty.service.points.PointService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,6 +32,7 @@ public class PointController {
 
     private static final String SOURCE_ADMIN_MANUAL_EARN = "ADMIN_WEB_MANUAL_EARN";
     private static final String SOURCE_POS_PURCHASE_EARN = "POS_PURCHASE_EARN";
+    private static final String SOURCE_ADMIN_MANUAL_USE = "ADMIN_WEB_MANUAL_USE";
 
     private final PointService pointService;
     private final PointLedgerRepository pointLedgerRepository;
@@ -57,57 +55,46 @@ public class PointController {
 
     @PostMapping("/earn")
     public PointDtos.PointOperationResponse earn(@Valid @RequestBody PointDtos.EarnRequest request, HttpServletRequest httpRequest) {
-        UUID tenantId = TenantContext.requireTenantId();
-        long resolvedAmount;
-        Long purchaseAmountForLedger = null;
-        Long totalPurchaseAmountForLedger = null;
-        Long discountAmountForLedger = null;
-        String sourceChannel;
+        long auditAmount;
+        PointOperationResult result;
 
         if (request.purchaseAmount() != null) {
             if (request.amount() != null) {
                 throw new IllegalArgumentException("amount와 purchaseAmount는 동시에 지정할 수 없습니다.");
             }
-            if (request.purchaseAmount() <= 0) {
-                throw new IllegalArgumentException("purchaseAmount는 양수여야 합니다.");
-            }
-            Member member = memberRepository.findByTenantIdAndIdWithMembershipGrade(tenantId, request.memberId())
-                    .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
-            MembershipGrade grade = member.getMembershipGrade();
-            if (grade == null) {
-                throw new IllegalArgumentException("회원 등급이 없어 적립 대상 금액 기준 적립을 할 수 없습니다.");
-            }
-            BigDecimal rate = grade.getEarnRatePercent();
-            resolvedAmount = PointEarnCalculator.pointsFromPurchase(request.purchaseAmount(), rate);
-            if (resolvedAmount <= 0) {
-                throw new IllegalArgumentException("적립 포인트가 0 이하입니다. 적립률·적립 대상 금액을 확인하세요.");
-            }
-            purchaseAmountForLedger = request.purchaseAmount();
-            totalPurchaseAmountForLedger = request.totalPurchaseAmount();
-            discountAmountForLedger = request.discountAmount();
-            sourceChannel = SOURCE_POS_PURCHASE_EARN;
+            result = pointService.earnFromPurchase(
+                    request.memberId(),
+                    request.purchaseAmount(),
+                    request.totalPurchaseAmount(),
+                    request.discountAmount(),
+                    request.expiresAt(),
+                    request.reason(),
+                    request.approvalNo(),
+                    request.referenceType(),
+                    request.referenceId(),
+                    SOURCE_POS_PURCHASE_EARN
+            );
         } else {
             if (request.amount() == null || request.amount() <= 0) {
                 throw new IllegalArgumentException("amount는 양수이거나, purchaseAmount로 적립 대상 금액 기준 적립을 지정하세요.");
             }
-            resolvedAmount = request.amount();
-            sourceChannel = SOURCE_ADMIN_MANUAL_EARN;
+            result = pointService.earn(
+                    request.memberId(),
+                    request.amount(),
+                    request.expiresAt(),
+                    request.reason(),
+                    request.approvalNo(),
+                    request.referenceType(),
+                    request.referenceId(),
+                    null,
+                    null,
+                    null,
+                    SOURCE_ADMIN_MANUAL_EARN
+            );
         }
 
-        PointOperationResult result = pointService.earn(
-                request.memberId(),
-                resolvedAmount,
-                request.expiresAt(),
-                request.reason(),
-                request.approvalNo(),
-                request.referenceType(),
-                request.referenceId(),
-                purchaseAmountForLedger,
-                totalPurchaseAmountForLedger,
-                discountAmountForLedger,
-                sourceChannel
-        );
-        setPointAuditMessage(httpRequest, request.memberId(), "지급", resolvedAmount, true);
+        auditAmount = result.amount();
+        setPointAuditMessage(httpRequest, request.memberId(), "지급", auditAmount, true);
         return new PointDtos.PointOperationResponse(
                 result.ledgerId(),
                 result.approvalNo(),
@@ -126,7 +113,8 @@ public class PointController {
                 request.reason(),
                 request.approvalNo(),
                 request.referenceType(),
-                request.referenceId()
+                request.referenceId(),
+                SOURCE_ADMIN_MANUAL_USE
         );
         setPointAuditMessage(httpRequest, request.memberId(), "차감", request.amount(), false);
         return new PointDtos.PointOperationResponse(

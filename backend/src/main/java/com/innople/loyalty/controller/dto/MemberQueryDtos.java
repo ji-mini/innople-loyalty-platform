@@ -45,7 +45,20 @@ public final class MemberQueryDtos {
             LocalDate dormantAt,
             LocalDate withdrawnAt,
             String ci,
-            String anniversaries
+            String anniversaries,
+            boolean appLoginEnabled,
+            String appLoginId
+    ) {
+    }
+
+    public record MeResponse(
+            UUID id,
+            String memberNo,
+            String name,
+            String email,
+            String phone,
+            String gradeName,
+            long pointBalance
     ) {
     }
 
@@ -54,6 +67,17 @@ public final class MemberQueryDtos {
             String eventType,
             String statusCodeBefore,
             String statusCodeAfter,
+            Instant createdAt
+    ) {
+    }
+
+    public record MemberLoginHistoryResponse(
+            UUID id,
+            String loginId,
+            String deviceName,
+            String osName,
+            String ip,
+            String userAgent,
             Instant createdAt
     ) {
     }

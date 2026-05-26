@@ -28,6 +28,7 @@ public class CommonCodeSeedRunner implements ApplicationRunner {
                 seedAdminRole();
                 seedMemberStatus();
                 seedPointReason();
+                seedPointReferenceType();
             } finally {
                 TenantContext.clear();
             }
@@ -58,6 +59,11 @@ public class CommonCodeSeedRunner implements ApplicationRunner {
         upsert("POINT_REASON", "EVENT", "이벤트", true, 30);
         upsert("POINT_REASON", "PURCHASE", "구매", true, 40);
         upsert("POINT_REASON", "SIGNUP", "신규가입", true, 50);
+    }
+
+    private void seedPointReferenceType() {
+        upsert("POINT_REFERENCE_TYPE", "POS_EARN_TXN", "POS 적립 거래", true, 10);
+        upsert("POINT_REFERENCE_TYPE", "POS_USE_TXN", "POS 사용 거래", true, 20);
     }
 
     private void upsert(String codeGroup, String code, String name, boolean active, int sortOrder) {

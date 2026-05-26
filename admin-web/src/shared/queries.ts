@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from './api'
-import type { MemberDetail, MemberLedger, MemberSummary, PagedResponse, PointLedgerItem } from './types'
+import type { MemberDetail, MemberLedger, MemberLoginHistory, MemberSummary, PagedResponse, PointLedgerItem } from './types'
 
 export type CommonCodeItem = {
   id: string
@@ -88,6 +88,19 @@ export function useMemberLedgers(memberNo: string, limit = 50) {
         params: { limit },
       })
       return res.data
+    },
+    enabled: !!memberNo,
+  })
+}
+
+export function useMemberLoginHistories(memberNo: string, limit = 20) {
+  return useQuery({
+    queryKey: ['members', 'login-histories', memberNo, limit],
+    queryFn: async () => {
+      const res = await api.get<MemberLoginHistory[]>(`/api/v1/members/${encodeURIComponent(memberNo)}/login-histories`, {
+        params: { limit },
+      })
+      return res.data ?? []
     },
     enabled: !!memberNo,
   })

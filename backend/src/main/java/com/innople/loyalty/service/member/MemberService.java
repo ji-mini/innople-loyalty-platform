@@ -5,15 +5,20 @@ import com.innople.loyalty.domain.member.CalendarType;
 import com.innople.loyalty.domain.member.Gender;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 public interface MemberService {
     MemberResult register(RegisterCommand command);
+
+    MemberResult updateMyProfile(UUID memberId, UpdateInfoCommand command);
 
     MemberResult updateInfo(String memberNo, UpdateInfoCommand command);
 
     MemberResult updateStatus(String memberNo, UpdateStatusCommand command);
 
     MemberResult withdraw(String memberNo, WithdrawCommand command);
+
+    AppLoginResult updateAppLogin(String memberNo, UpdateAppLoginCommand command);
 
     record RegisterCommand(
             String memberNo,
@@ -28,7 +33,10 @@ public interface MemberService {
             String statusCode,
             LocalDate joinedAt,
             String ci,
-            String anniversaries
+            String anniversaries,
+            Boolean appLoginAllowed,
+            String initialPassword,
+            Boolean autoGeneratePassword
     ) {
     }
 
@@ -55,6 +63,21 @@ public interface MemberService {
     record WithdrawCommand(
             LocalDate withdrawnAt,
             String reason
+    ) {
+    }
+
+    record UpdateAppLoginCommand(
+            boolean enabled,
+            String initialPassword,
+            Boolean autoGeneratePassword
+    ) {
+    }
+
+    record AppLoginResult(
+            String memberNo,
+            boolean appLoginEnabled,
+            String appLoginId,
+            String generatedPassword
     ) {
     }
 }

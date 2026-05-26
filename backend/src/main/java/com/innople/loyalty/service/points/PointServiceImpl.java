@@ -1,12 +1,15 @@
 package com.innople.loyalty.service.points;
 
 import com.innople.loyalty.config.TenantContext;
+import com.innople.loyalty.domain.member.Member;
+import com.innople.loyalty.domain.member.MembershipGrade;
 import com.innople.loyalty.repository.CommonCodeRepository;
 import com.innople.loyalty.domain.points.PointAccount;
 import com.innople.loyalty.domain.points.PointAllocation;
 import com.innople.loyalty.domain.points.PointEventType;
 import com.innople.loyalty.domain.points.PointLedger;
 import com.innople.loyalty.domain.points.PointLot;
+import com.innople.loyalty.repository.MemberRepository;
 import com.innople.loyalty.repository.PointAccountRepository;
 import com.innople.loyalty.repository.PointAllocationRepository;
 import com.innople.loyalty.repository.PointLedgerRepository;
@@ -21,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 import static com.innople.loyalty.service.points.PointExceptions.InsufficientPointsException;
 import static com.innople.loyalty.service.points.PointExceptions.InvalidPointAmountException;
@@ -35,10 +39,10 @@ public class PointServiceImpl implements PointService {
     private static final int REFERENCE_ID_MAX_LENGTH = 100;
     private static final String POINT_REFERENCE_TYPE_GROUP = "POINT_REFERENCE_TYPE";
     private static final String ADMIN_WEB_MANUAL_EARN = "ADMIN_WEB_MANUAL_EARN";
-    private static final String ADMIN_WEB_MANUAL_USE = "ADMIN_WEB_MANUAL_USE";
     private static final String ADMIN_WEB_MANUAL_EXPIRE = "ADMIN_WEB_MANUAL_EXPIRE";
     private static final String SYSTEM_AUTO_EXPIRE = "SYSTEM_AUTO_EXPIRE";
 
+    private final MemberRepository memberRepository;
     private final PointAccountRepository pointAccountRepository;
     private final PointLotRepository pointLotRepository;
     private final PointLedgerRepository pointLedgerRepository;
@@ -107,10 +111,51 @@ public class PointServiceImpl implements PointService {
 
     @Override
     @Transactional
+    public PointOperationResult earnFromPurchase(UUID memberId, long purchaseAmount, Long totalPurchaseAmount, Long discountAmount,
+                                                 Instant expiresAt, String reason, String approvalNo,
+                                                 String referenceType, String referenceId, String sourceChannel) {
+        if (purchaseAmount <= 0) {
+            throw new IllegalArgumentException("purchaseAmount must be positive");
+        }
+
+        UUID tenantId = TenantContext.requireTenantId();
+        Member member = memberRepository.findByTenantIdAndIdWithMembershipGrade(tenantId, memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+        MembershipGrade grade = member.getMembershipGrade();
+        if (grade == null) {
+            throw new IllegalArgumentException("회원 등급이 없어 적립 대상 금액 기준 적립을 할 수 없습니다.");
+        }
+
+        BigDecimal rate = grade.getEarnRatePercent();
+        long resolvedAmount = PointEarnCalculator.pointsFromPurchase(purchaseAmount, rate);
+        if (resolvedAmount <= 0) {
+            throw new IllegalArgumentException("적립 포인트가 0 이하입니다. 적립률·적립 대상 금액을 확인하세요.");
+        }
+
+        return earn(
+                memberId,
+                resolvedAmount,
+                expiresAt,
+                reason,
+                approvalNo,
+                referenceType,
+                referenceId,
+                purchaseAmount,
+                totalPurchaseAmount,
+                discountAmount,
+                sourceChannel
+        );
+    }
+
+    @Override
+    @Transactional
     public PointOperationResult use(UUID memberId, long amount, String reason, String approvalNo,
-                                    String referenceType, String referenceId) {
+                                    String referenceType, String referenceId, String sourceChannel) {
         if (amount <= 0) {
             throw new InvalidPointAmountException("amount must be positive");
+        }
+        if (sourceChannel == null || sourceChannel.isBlank()) {
+            throw new IllegalArgumentException("sourceChannel must not be blank");
         }
 
         UUID tenantId = TenantContext.requireTenantId();
@@ -132,7 +177,7 @@ public class PointServiceImpl implements PointService {
                         PointEventType.USE,
                         -amount,
                         reason,
-                        ADMIN_WEB_MANUAL_USE,
+                        sourceChannel,
                         resolvedApprovalNo,
                         referenceInfo.referenceType(),
                         referenceInfo.referenceId()

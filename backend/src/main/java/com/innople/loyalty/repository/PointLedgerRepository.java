@@ -18,6 +18,14 @@ public interface PointLedgerRepository extends JpaRepository<PointLedger, UUID> 
 
     boolean existsByTenantIdAndApprovalNo(UUID tenantId, String approvalNo);
 
+    boolean existsByTenantIdAndReferenceTypeAndReferenceId(UUID tenantId, String referenceType, String referenceId);
+
+    Optional<PointLedger> findFirstByTenantIdAndReferenceTypeAndReferenceIdOrderByCreatedAtDesc(
+            UUID tenantId,
+            String referenceType,
+            String referenceId
+    );
+
     List<PointLedger> findTop50ByTenantIdAndAccountIdOrderByCreatedAtDesc(UUID tenantId, UUID accountId);
 
     @Query("""

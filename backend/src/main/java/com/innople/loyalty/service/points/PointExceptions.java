@@ -21,5 +21,11 @@ public final class PointExceptions {
             super(message);
         }
     }
+
+    public static class DuplicatePointTransactionException extends RuntimeException {
+        public DuplicatePointTransactionException(String message) {
+            super(message);
+        }
+    }
 }
 

@@ -1,32 +1,27 @@
 package com.innople.loyalty.service.member;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innople.loyalty.config.TenantContext;
 import com.innople.loyalty.controller.dto.MemberDtos.AddressRequest;
 import com.innople.loyalty.controller.dto.MemberDtos.AddressResponse;
 import com.innople.loyalty.domain.code.CommonCode;
 import com.innople.loyalty.domain.member.Address;
 import com.innople.loyalty.domain.member.Member;
-import com.innople.loyalty.domain.member.MemberLedger;
 import com.innople.loyalty.domain.member.MemberLedgerEventType;
 import com.innople.loyalty.domain.member.MembershipGrade;
 import com.innople.loyalty.domain.member.MemberStatusCodes;
 import com.innople.loyalty.repository.AddressRepository;
 import com.innople.loyalty.repository.CommonCodeRepository;
-import com.innople.loyalty.repository.MemberLedgerRepository;
 import com.innople.loyalty.repository.MemberRepository;
 import com.innople.loyalty.repository.MembershipGradeRepository;
+import com.innople.loyalty.service.memberauth.MemberCredentialService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import static com.innople.loyalty.service.member.MemberExceptions.InvalidMemberStatusException;
 import static com.innople.loyalty.service.member.MemberExceptions.MemberAlreadyExistsException;
@@ -39,10 +34,10 @@ public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
     private final AddressRepository addressRepository;
-    private final MemberLedgerRepository memberLedgerRepository;
+    private final MemberLedgerService memberLedgerService;
     private final MembershipGradeRepository membershipGradeRepository;
     private final CommonCodeRepository commonCodeRepository;
-    private final ObjectMapper objectMapper;
+    private final MemberCredentialService memberCredentialService;
     private static final Pattern WEB_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
 
     @Override
@@ -67,6 +62,10 @@ public class MemberServiceImpl implements MemberService {
         String normalizedWebId = normalizeWebIdOrNull(command.webId());
         if (normalizedWebId != null && memberRepository.existsByTenantIdAndWebId(tenantId, normalizedWebId)) {
             throw new MemberAlreadyExistsException("webId already exists");
+        }
+        boolean appLoginAllowed = Boolean.TRUE.equals(command.appLoginAllowed());
+        if (appLoginAllowed && normalizedPhone == null) {
+            throw new IllegalArgumentException("앱 로그인을 허용하려면 휴대폰 번호가 필요합니다.");
         }
 
         Address savedAddress = null;
@@ -108,15 +107,22 @@ public class MemberServiceImpl implements MemberService {
 
         try {
             Member saved = memberRepository.save(member);
-            memberLedgerRepository.save(MemberLedger.of(
-                    saved.getId(),
-                    saved.getMemberNo(),
-                    MemberLedgerEventType.REGISTER,
-                    statusCode,
-                    statusCode,
-                    toSnapshotJson(saved)
-            ));
-            return toResult(saved);
+            memberLedgerService.record(saved, MemberLedgerEventType.REGISTER, statusCode, statusCode);
+            String generatedPassword = null;
+            if (appLoginAllowed) {
+                InitialPasswordResolution initialPasswordResolution = resolveInitialPassword(
+                        command.initialPassword(),
+                        command.autoGeneratePassword()
+                );
+                memberCredentialService.provision(
+                        saved.getId(),
+                        normalizedPhone,
+                        saved.getEmail(),
+                        initialPasswordResolution.password()
+                );
+                generatedPassword = initialPasswordResolution.generatedPassword();
+            }
+            return toResult(saved, generatedPassword);
         } catch (DataIntegrityViolationException e) {
             throw new MemberAlreadyExistsException("unique constraint violated (memberNo/webId/ci)");
         }
@@ -130,11 +136,23 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
+    public MemberResult updateMyProfile(UUID memberId, UpdateInfoCommand command) {
+        UUID tenantId = TenantContext.requireTenantId();
+        Member member = memberRepository.findByTenantIdAndId(tenantId, memberId)
+                .orElseThrow(() -> new MemberNotFoundException("member not found"));
+        return updateMemberInfo(member, command);
+    }
+
+    @Override
+    @Transactional
     public MemberResult updateInfo(String memberNo, UpdateInfoCommand command) {
         UUID tenantId = TenantContext.requireTenantId();
         Member member = memberRepository.findByTenantIdAndMemberNo(tenantId, memberNo)
                 .orElseThrow(() -> new MemberNotFoundException("member not found"));
+        return updateMemberInfo(member, command);
+    }
 
+    private MemberResult updateMemberInfo(Member member, UpdateInfoCommand command) {
         String beforeStatus = member.getStatusCode();
 
         Address savedAddress = null;
@@ -168,15 +186,14 @@ public class MemberServiceImpl implements MemberService {
 
         try {
             Member saved = memberRepository.save(member);
-            memberLedgerRepository.save(MemberLedger.of(
-                    saved.getId(),
-                    saved.getMemberNo(),
-                    MemberLedgerEventType.UPDATE_INFO,
-                    beforeStatus,
-                    saved.getStatusCode(),
-                    toSnapshotJson(saved)
-            ));
-            return toResult(saved);
+            if (memberCredentialService.findByMemberId(saved.getId()).isPresent()) {
+                if (normalizePhoneOrNull(command.phoneNumber()) == null) {
+                    throw new IllegalArgumentException("앱 로그인 설정이 있는 회원은 휴대폰 번호를 비울 수 없습니다.");
+                }
+                memberCredentialService.syncProfile(saved.getId(), saved.getPhoneNumber(), saved.getEmail());
+            }
+            memberLedgerService.record(saved, MemberLedgerEventType.UPDATE_INFO, beforeStatus, saved.getStatusCode());
+            return toResult(saved, null);
         } catch (DataIntegrityViolationException e) {
             throw new MemberAlreadyExistsException("unique constraint violated (webId/ci)");
         }
@@ -208,15 +225,8 @@ public class MemberServiceImpl implements MemberService {
 
         member.updateStatus(newStatus, dormantAt, withdrawnAt);
         Member saved = memberRepository.save(member);
-        memberLedgerRepository.save(MemberLedger.of(
-                saved.getId(),
-                saved.getMemberNo(),
-                MemberLedgerEventType.UPDATE_STATUS,
-                beforeStatus,
-                saved.getStatusCode(),
-                toSnapshotJson(saved)
-        ));
-        return toResult(saved);
+        memberLedgerService.record(saved, MemberLedgerEventType.UPDATE_STATUS, beforeStatus, saved.getStatusCode());
+        return toResult(saved, null);
     }
 
     @Override
@@ -233,15 +243,44 @@ public class MemberServiceImpl implements MemberService {
         member.updateStatus(MemberStatusCodes.WITHDRAWN, member.getDormantAt(), withdrawnAt);
 
         Member saved = memberRepository.save(member);
-        memberLedgerRepository.save(MemberLedger.of(
-                saved.getId(),
-                saved.getMemberNo(),
-                MemberLedgerEventType.WITHDRAW,
-                beforeStatus,
-                saved.getStatusCode(),
-                toSnapshotJson(saved)
-        ));
-        return toResult(saved);
+        memberLedgerService.record(saved, MemberLedgerEventType.WITHDRAW, beforeStatus, saved.getStatusCode());
+        return toResult(saved, null);
+    }
+
+    @Override
+    @Transactional
+    public AppLoginResult updateAppLogin(String memberNo, UpdateAppLoginCommand command) {
+        UUID tenantId = TenantContext.requireTenantId();
+        Member member = memberRepository.findByTenantIdAndMemberNo(tenantId, memberNo)
+                .orElseThrow(() -> new MemberNotFoundException("member not found"));
+
+        if (!command.enabled()) {
+            memberCredentialService.disable(member.getId());
+            return new AppLoginResult(member.getMemberNo(), false, null, null);
+        }
+
+        String normalizedPhone = normalizePhoneOrNull(member.getPhoneNumber());
+        if (normalizedPhone == null) {
+            throw new IllegalArgumentException("앱 로그인을 활성화하려면 휴대폰 번호가 필요합니다.");
+        }
+
+        InitialPasswordResolution initialPasswordResolution = resolveInitialPassword(
+                command.initialPassword(),
+                command.autoGeneratePassword()
+        );
+        MemberCredentialService.CredentialInfo credentialInfo = memberCredentialService.provision(
+                member.getId(),
+                normalizedPhone,
+                member.getEmail(),
+                initialPasswordResolution.password()
+        );
+
+        return new AppLoginResult(
+                member.getMemberNo(),
+                credentialInfo.appLoginEnabled(),
+                credentialInfo.loginId(),
+                initialPasswordResolution.generatedPassword()
+        );
     }
 
     private void validateStatusCode(UUID tenantId, String statusCode) {
@@ -278,7 +317,7 @@ public class MemberServiceImpl implements MemberService {
         return digits.isEmpty() ? null : digits;
     }
 
-    private MemberResult toResult(Member member) {
+    private MemberResult toResult(Member member, String generatedPassword) {
         return new MemberResult(
                 member.getId(),
                 member.getMemberNo(),
@@ -295,8 +334,28 @@ public class MemberServiceImpl implements MemberService {
                 member.getDormantAt(),
                 member.getWithdrawnAt(),
                 member.getCi(),
-                member.getAnniversaries()
+                member.getAnniversaries(),
+                memberCredentialService.isAppLoginEnabled(member.getId()),
+                memberCredentialService.getLoginId(member.getId()),
+                generatedPassword
         );
+    }
+
+    private InitialPasswordResolution resolveInitialPassword(String initialPassword, Boolean autoGeneratePassword) {
+        if (initialPassword != null && !initialPassword.isBlank()) {
+            return new InitialPasswordResolution(initialPassword.trim(), null);
+        }
+        if (Boolean.TRUE.equals(autoGeneratePassword)) {
+            String generatedPassword = "App" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+            return new InitialPasswordResolution(generatedPassword, generatedPassword);
+        }
+        throw new IllegalArgumentException("초기 비밀번호를 입력하거나 자동 생성 옵션을 선택해주세요.");
+    }
+
+    private record InitialPasswordResolution(
+            String password,
+            String generatedPassword
+    ) {
     }
 
     private AddressResponse toAddressResponse(Address address) {
@@ -315,43 +374,5 @@ public class MemberServiceImpl implements MemberService {
         );
     }
 
-    private String toSnapshotJson(Member member) {
-        Address addr = member.getAddress();
-        String addressSnapshot = addr != null
-                ? Map.of(
-                        "zipCode", addr.getZipCode(),
-                        "roadAddress", addr.getRoadAddress(),
-                        "jibunAddress", addr.getJibunAddress() != null ? addr.getJibunAddress() : "",
-                        "detailAddress", addr.getDetailAddress() != null ? addr.getDetailAddress() : "",
-                        "buildingName", addr.getBuildingName() != null ? addr.getBuildingName() : "",
-                        "siDo", addr.getSiDo() != null ? addr.getSiDo() : "",
-                        "siGunGu", addr.getSiGunGu() != null ? addr.getSiGunGu() : "",
-                        "eupMyeonDong", addr.getEupMyeonDong() != null ? addr.getEupMyeonDong() : "",
-                        "legalDongCode", addr.getLegalDongCode() != null ? addr.getLegalDongCode() : ""
-                ).toString()
-                : null;
-
-        Map<String, Object> snapshot = new HashMap<>();
-        snapshot.put("memberNo", member.getMemberNo());
-        snapshot.put("name", member.getName());
-        snapshot.put("birthDate", member.getBirthDate());
-        snapshot.put("calendarType", member.getCalendarType());
-        snapshot.put("gender", member.getGender());
-        snapshot.put("phoneNumber", member.getPhoneNumber());
-        snapshot.put("email", member.getEmail());
-        snapshot.put("address", addressSnapshot);
-        snapshot.put("webId", member.getWebId());
-        snapshot.put("statusCode", member.getStatusCode());
-        snapshot.put("joinedAt", member.getJoinedAt());
-        snapshot.put("dormantAt", member.getDormantAt());
-        snapshot.put("withdrawnAt", member.getWithdrawnAt());
-        snapshot.put("ci", member.getCi());
-        snapshot.put("anniversaries", member.getAnniversaries());
-        try {
-            return objectMapper.writeValueAsString(snapshot);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("failed to serialize member snapshot", e);
-        }
-    }
 }
 

@@ -59,6 +59,8 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
     boolean existsByTenantIdAndMemberNo(UUID tenantId, String memberNo);
     boolean existsByTenantIdAndPhoneNumber(UUID tenantId, String phoneNumber);
     boolean existsByTenantIdAndWebId(UUID tenantId, String webId);
+    boolean existsByTenantIdAndEmail(UUID tenantId, String email);
+    Optional<Member> findByTenantIdAndEmail(UUID tenantId, String email);
 
     @Query("""
             select max(m.memberNo)

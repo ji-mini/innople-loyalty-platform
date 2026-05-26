@@ -1,4 +1,4 @@
-import { Button, Card, DatePicker, Form, Input, Modal, Select, Space, Typography, message } from 'antd'
+import { Button, Card, Checkbox, DatePicker, Form, Input, Modal, Radio, Select, Space, Typography, message } from 'antd'
 import dayjs from 'dayjs'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -52,6 +52,9 @@ type FormValues = {
   joinedAt?: any
   statusCode?: string
   address?: AddressForm
+  appLoginAllowed?: boolean
+  appLoginPasswordMode?: 'manual' | 'auto'
+  initialPassword?: string
 }
 
 const DEFAULT_STATUS = 'ACTIVE'
@@ -215,7 +218,9 @@ export function MemberCreatePage() {
       const anniversaries = v.anniversaries?.format?.('YYYY-MM-DD')
       const addr = v.address
       const hasAddress = addr?.zipCode?.trim() && addr?.roadAddress?.trim()
-      await api.post('/api/v1/members', {
+      const appLoginAllowed = !!v.appLoginAllowed
+      const autoGeneratePassword = appLoginAllowed && v.appLoginPasswordMode === 'auto'
+      const res = await api.post<{ memberNo: string; generatedPassword?: string | null }>('/api/v1/members', {
         memberNo: v.memberNo.trim(),
         name: v.name.trim(),
         birthDate: birthDate ?? null,
@@ -228,6 +233,9 @@ export function MemberCreatePage() {
         webId: v.webId?.trim() ? v.webId.trim() : null,
         joinedAt: joinedAt ?? null,
         statusCode: v.statusCode ?? DEFAULT_STATUS,
+        appLoginAllowed,
+        autoGeneratePassword,
+        initialPassword: appLoginAllowed && !autoGeneratePassword ? v.initialPassword?.trim() || null : null,
         address: hasAddress
           ? {
               zipCode: addr!.zipCode.trim(),
@@ -242,8 +250,23 @@ export function MemberCreatePage() {
             }
           : null,
       })
-      message.success('회원이 등록되었습니다.')
-      nav(`/members/${encodeURIComponent(v.memberNo.trim())}`, { replace: true })
+      if (res.data?.generatedPassword) {
+        Modal.success({
+          title: '회원이 등록되었습니다.',
+          content: (
+            <Space direction="vertical" size={4}>
+              <Typography.Text>앱 로그인 초기 비밀번호가 자동 생성되었습니다.</Typography.Text>
+              <Typography.Text copyable strong>
+                {res.data.generatedPassword}
+              </Typography.Text>
+            </Space>
+          ),
+          onOk: () => nav(`/members/${encodeURIComponent(v.memberNo.trim())}`, { replace: true }),
+        })
+      } else {
+        message.success('회원이 등록되었습니다.')
+        nav(`/members/${encodeURIComponent(v.memberNo.trim())}`, { replace: true })
+      }
     } catch (e: any) {
       const data = e?.response?.data
       const msg = data?.message ?? data?.detail ?? e?.message ?? '회원 등록 실패'
@@ -291,6 +314,9 @@ export function MemberCreatePage() {
             joinedAt: dayjs(),
             statusCode: DEFAULT_STATUS,
             address: INITIAL_ADDRESS,
+            appLoginAllowed: false,
+            appLoginPasswordMode: 'manual',
+            initialPassword: '',
           }}
         >
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
@@ -416,6 +442,49 @@ export function MemberCreatePage() {
                 </Form.Item>
               </Space>
             </Space>
+
+            <Card size="small" title="앱 로그인 설정">
+              <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                <Form.Item name="appLoginAllowed" valuePropName="checked" style={{ marginBottom: 0 }}>
+                  <Checkbox>앱 로그인 허용</Checkbox>
+                </Form.Item>
+                <Form.Item shouldUpdate={(prev, cur) => prev.appLoginAllowed !== cur.appLoginAllowed || prev.appLoginPasswordMode !== cur.appLoginPasswordMode} noStyle>
+                  {({ getFieldValue }) =>
+                    getFieldValue('appLoginAllowed') ? (
+                      <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                        <Form.Item name="appLoginPasswordMode" label="초기 비밀번호 방식" style={{ marginBottom: 0 }}>
+                          <Radio.Group
+                            optionType="button"
+                            buttonStyle="solid"
+                            options={[
+                              { label: '직접 입력', value: 'manual' },
+                              { label: '자동 생성', value: 'auto' },
+                            ]}
+                          />
+                        </Form.Item>
+                        {getFieldValue('appLoginPasswordMode') !== 'auto' ? (
+                          <Form.Item
+                            label="초기 비밀번호"
+                            name="initialPassword"
+                            rules={[
+                              { required: true, message: '초기 비밀번호를 입력하세요' },
+                              { min: 8, message: '비밀번호는 8자 이상이어야 합니다.' },
+                            ]}
+                            style={{ marginBottom: 0 }}
+                          >
+                            <Input.Password placeholder="앱 로그인 비밀번호" style={{ width: 260 }} />
+                          </Form.Item>
+                        ) : (
+                          <Typography.Text type="secondary">
+                            등록 시 초기 비밀번호를 자동 생성해 1회 표시합니다.
+                          </Typography.Text>
+                        )}
+                      </Space>
+                    ) : null
+                  }
+                </Form.Item>
+              </Space>
+            </Card>
           </Space>
 
           <Form.Item label="주소(선택)">

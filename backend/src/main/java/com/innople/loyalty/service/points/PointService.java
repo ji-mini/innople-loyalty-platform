@@ -15,8 +15,12 @@ public interface PointService {
                               Long purchaseAmount, Long totalPurchaseAmount, Long discountAmount,
                               String sourceChannel);
 
+    PointOperationResult earnFromPurchase(UUID memberId, long purchaseAmount, Long totalPurchaseAmount, Long discountAmount,
+                                          Instant expiresAt, String reason, String approvalNo,
+                                          String referenceType, String referenceId, String sourceChannel);
+
     PointOperationResult use(UUID memberId, long amount, String reason, String approvalNo,
-                             String referenceType, String referenceId);
+                             String referenceType, String referenceId, String sourceChannel);
 
     PointOperationResult manualExpire(UUID memberId, Instant referenceAt, String reason, String approvalNo,
                                       String referenceType, String referenceId);

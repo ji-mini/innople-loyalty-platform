@@ -6,6 +6,7 @@ import com.innople.loyalty.service.admin.AdminAuthExceptions;
 import com.innople.loyalty.service.admin.AdminUserManagementExceptions;
 import com.innople.loyalty.service.code.CommonCodeExceptions;
 import com.innople.loyalty.service.member.MemberExceptions;
+import com.innople.loyalty.service.memberauth.MemberAuthExceptions;
 import com.innople.loyalty.service.member.MembershipGradeExceptions;
 import com.innople.loyalty.service.points.PointExceptions;
 import com.innople.loyalty.service.points.PointPolicyExceptions;
@@ -56,6 +57,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             PointExceptions.InsufficientPointsException.class,
             PointExceptions.PointAccountNotFoundException.class,
+            PointExceptions.DuplicatePointTransactionException.class,
             MemberExceptions.MemberAlreadyExistsException.class,
             MemberExceptions.MemberNotFoundException.class,
             MemberExceptions.InvalidMemberStatusException.class,
@@ -66,7 +68,9 @@ public class GlobalExceptionHandler {
             PointPolicyExceptions.PointPolicyAlreadyExistsException.class,
             PointPolicyExceptions.PointPolicyNotFoundException.class,
             TenantAdminExceptions.TenantNotFoundException.class,
-            TenantAdminExceptions.TenantDeleteConflictException.class
+            TenantAdminExceptions.TenantDeleteConflictException.class,
+            MemberAuthExceptions.MemberAlreadyExistsException.class,
+            MemberAuthExceptions.MemberCredentialAlreadyExistsException.class
     })
     public ResponseEntity<ApiErrorResponse> handleBusiness(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(ex.getMessage()));
@@ -74,6 +78,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AdminAuthExceptions.InvalidCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleUnauthorized(AdminAuthExceptions.InvalidCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiErrorResponse.of(ex.getMessage()));
+    }
+
+    @ExceptionHandler({
+            MemberAuthExceptions.InvalidCredentialsException.class,
+            MemberAuthExceptions.MemberCredentialNotFoundException.class,
+            MemberAuthExceptions.AppLoginDisabledException.class
+    })
+    public ResponseEntity<ApiErrorResponse> handleMemberUnauthorized(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiErrorResponse.of(ex.getMessage()));
     }
 

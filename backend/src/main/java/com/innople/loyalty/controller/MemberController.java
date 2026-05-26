@@ -62,7 +62,10 @@ public class MemberController {
                 request.statusCode(),
                 request.joinedAt(),
                 request.ci(),
-                request.anniversaries()
+                request.anniversaries(),
+                request.appLoginAllowed(),
+                request.initialPassword(),
+                request.autoGeneratePassword()
         ));
         setMemberAuditMessage(httpRequest, "회원 생성", result.memberNo());
         return toResponse(result);
@@ -118,6 +121,29 @@ public class MemberController {
         return toResponse(result);
     }
 
+    @PutMapping("/{memberNo}/app-login")
+    public MemberDtos.AppLoginResponse updateAppLogin(
+            @PathVariable String memberNo,
+            @Valid @RequestBody MemberDtos.UpdateAppLoginRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        MemberService.AppLoginResult result = memberService.updateAppLogin(
+                memberNo,
+                new MemberService.UpdateAppLoginCommand(
+                        request.enabled(),
+                        request.initialPassword(),
+                        request.autoGeneratePassword()
+                )
+        );
+        setMemberAuditMessage(httpRequest, request.enabled() ? "앱 로그인 활성화" : "앱 로그인 비활성화", memberNo);
+        return new MemberDtos.AppLoginResponse(
+                result.memberNo(),
+                result.appLoginEnabled(),
+                result.appLoginId(),
+                result.generatedPassword()
+        );
+    }
+
     private void setMemberAuditMessage(HttpServletRequest httpRequest, String action, String memberNo) {
         AdminUser admin = adminRoleResolver.resolve(httpRequest);
         String adminName = admin != null ? admin.getName() : "관리자";
@@ -141,7 +167,10 @@ public class MemberController {
                 r.dormantAt(),
                 r.withdrawnAt(),
                 r.ci(),
-                r.anniversaries()
+                r.anniversaries(),
+                r.appLoginEnabled(),
+                r.appLoginId(),
+                r.generatedPassword()
         );
     }
 }

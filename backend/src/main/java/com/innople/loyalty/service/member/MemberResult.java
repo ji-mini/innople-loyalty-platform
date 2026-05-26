@@ -23,7 +23,10 @@ public record MemberResult(
         LocalDate dormantAt,
         LocalDate withdrawnAt,
         String ci,
-        String anniversaries
+        String anniversaries,
+        boolean appLoginEnabled,
+        String appLoginId,
+        String generatedPassword
 ) {
 }
 
