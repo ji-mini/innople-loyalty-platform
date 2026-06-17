@@ -32,7 +32,18 @@ public class TenantContextFilter extends OncePerRequestFilter {
         if ("/error".equals(uri)) {
             return true;
         }
+        if (isSwaggerPath(uri)) {
+            return true;
+        }
         return uri != null && uri.startsWith("/api/v1/public/");
+    }
+
+    private boolean isSwaggerPath(String uri) {
+        return uri != null
+                && (uri.startsWith("/swagger-ui/")
+                || uri.equals("/swagger-ui.html")
+                || uri.equals("/v3/api-docs")
+                || uri.startsWith("/v3/api-docs/"));
     }
 
     @Override
