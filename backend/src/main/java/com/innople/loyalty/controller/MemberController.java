@@ -65,7 +65,8 @@ public class MemberController {
                 request.anniversaries(),
                 request.appLoginAllowed(),
                 request.initialPassword(),
-                request.autoGeneratePassword()
+                request.autoGeneratePassword(),
+                request.sendInitialPasswordLink()
         ));
         setMemberAuditMessage(httpRequest, "회원 생성", result.memberNo());
         return toResponse(result);

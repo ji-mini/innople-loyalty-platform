@@ -18,6 +18,10 @@ app:
     header-name: ${APP_TENANT_HEADER_NAME:X-Tenant-Id}
   juso:
     search-confm-key: ${APP_JUSO_SEARCH_CONFM_KEY:U01TX0FVVEgyMDI2MDMxMzEzNTcyNzExNzcyNTY=}
+  member:
+    initial-password-link:
+      login-url: ${APP_MEMBER_INITIAL_PASSWORD_LINK_LOGIN_URL:http://localhost:8081}
+      from: ${APP_MEMBER_INITIAL_PASSWORD_LINK_FROM:no-reply@innople.local}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:8081,http://127.0.0.1:8081,http://localhost:8090}
     allow-credentials: ${APP_CORS_ALLOW_CREDENTIALS:false}

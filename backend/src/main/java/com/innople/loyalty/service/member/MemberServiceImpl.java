@@ -38,6 +38,7 @@ public class MemberServiceImpl implements MemberService {
     private final MembershipGradeRepository membershipGradeRepository;
     private final CommonCodeRepository commonCodeRepository;
     private final MemberCredentialService memberCredentialService;
+    private final InitialPasswordLinkSender initialPasswordLinkSender;
     private static final Pattern WEB_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
 
     @Override
@@ -120,6 +121,9 @@ public class MemberServiceImpl implements MemberService {
                         saved.getEmail(),
                         initialPasswordResolution.password()
                 );
+                if (Boolean.TRUE.equals(command.sendInitialPasswordLink())) {
+                    initialPasswordLinkSender.send(saved, initialPasswordResolution.password());
+                }
                 generatedPassword = initialPasswordResolution.generatedPassword();
             }
             return toResult(saved, generatedPassword);

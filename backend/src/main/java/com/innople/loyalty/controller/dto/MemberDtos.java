@@ -44,7 +44,8 @@ public final class MemberDtos {
             @Size(max = 1000) String anniversaries,
             Boolean appLoginAllowed,
             @Size(min = 8, max = 100) String initialPassword,
-            Boolean autoGeneratePassword
+            Boolean autoGeneratePassword,
+            Boolean sendInitialPasswordLink
     ) {
     }
 

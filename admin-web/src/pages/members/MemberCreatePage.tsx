@@ -1,4 +1,4 @@
-import { Button, Card, Checkbox, DatePicker, Form, Input, Modal, Radio, Select, Space, Typography, message } from 'antd'
+import { Button, Card, DatePicker, Form, Input, Modal, Radio, Select, Space, Switch, Typography, message } from 'antd'
 import dayjs from 'dayjs'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -55,9 +55,77 @@ type FormValues = {
   appLoginAllowed?: boolean
   appLoginPasswordMode?: 'manual' | 'auto'
   initialPassword?: string
+  sendInitialPasswordLink?: boolean
 }
 
 const DEFAULT_STATUS = 'ACTIVE'
+
+const SECTION_CARD_STYLE: React.CSSProperties = {
+  borderRadius: 16,
+  border: '1px solid #e5e7eb',
+  boxShadow: '0 10px 30px rgba(15, 23, 42, 0.04)',
+}
+
+const SECTION_HEADER_STYLE: React.CSSProperties = {
+  marginBottom: 20,
+}
+
+const SECTION_TITLE_STYLE: React.CSSProperties = {
+  margin: 0,
+  fontSize: 16,
+  fontWeight: 700,
+  color: '#0f172a',
+}
+
+const SECTION_DESCRIPTION_STYLE: React.CSSProperties = {
+  display: 'block',
+  marginTop: 4,
+  fontSize: 13,
+}
+
+const GRID_STYLE: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  columnGap: 20,
+  rowGap: 4,
+}
+
+const FULL_WIDTH_CONTROL_STYLE: React.CSSProperties = {
+  width: '100%',
+  height: 40,
+}
+
+const ACTION_BAR_STYLE: React.CSSProperties = {
+  position: 'sticky',
+  bottom: 0,
+  zIndex: 2,
+  display: 'flex',
+  justifyContent: 'flex-end',
+  padding: '16px 0 4px',
+  background: 'linear-gradient(180deg, rgba(248, 250, 252, 0), #f8fafc 32%)',
+}
+
+function SectionCard({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description: string
+  children: React.ReactNode
+}) {
+  return (
+    <Card bordered={false} style={SECTION_CARD_STYLE} styles={{ body: { padding: 24 } }}>
+      <div style={SECTION_HEADER_STYLE}>
+        <h2 style={SECTION_TITLE_STYLE}>{title}</h2>
+        <Typography.Text type="secondary" style={SECTION_DESCRIPTION_STYLE}>
+          {description}
+        </Typography.Text>
+      </div>
+      {children}
+    </Card>
+  )
+}
 
 export function MemberCreatePage() {
   const nav = useNavigate()
@@ -230,12 +298,13 @@ export function MemberCreatePage() {
         phoneNumber: v.phoneNumber?.trim() ? v.phoneNumber.trim() : null,
         ci: v.ci?.trim() ? v.ci.trim() : null,
         email: v.email!.trim(),
-        webId: v.webId?.trim() ? v.webId.trim() : null,
+        webId: appLoginAllowed && v.webId?.trim() ? v.webId.trim() : null,
         joinedAt: joinedAt ?? null,
         statusCode: v.statusCode ?? DEFAULT_STATUS,
         appLoginAllowed,
         autoGeneratePassword,
         initialPassword: appLoginAllowed && !autoGeneratePassword ? v.initialPassword?.trim() || null : null,
+        sendInitialPasswordLink: appLoginAllowed && !!v.sendInitialPasswordLink,
         address: hasAddress
           ? {
               zipCode: addr!.zipCode.trim(),
@@ -297,9 +366,28 @@ export function MemberCreatePage() {
         </Typography.Text>
       }
     >
-      <Card>
+      <div style={{ margin: '-8px -8px 0', padding: 24, borderRadius: 18, background: '#f8fafc' }}>
+        <style>
+          {`
+            .member-create-form .ant-form-item-label > label {
+              font-weight: 650;
+              color: #334155;
+            }
+            .member-create-form .ant-form-item-required::before {
+              color: #dc2626 !important;
+            }
+            .member-create-form .ant-input,
+            .member-create-form .ant-input-affix-wrapper,
+            .member-create-form .ant-picker,
+            .member-create-form .ant-select-selector,
+            .member-create-form .ant-btn {
+              border-radius: 10px;
+            }
+          `}
+        </style>
         <Form<FormValues>
           form={form}
+          className="member-create-form"
           layout="vertical"
           onFinish={onFinish}
           initialValues={{
@@ -317,58 +405,28 @@ export function MemberCreatePage() {
             appLoginAllowed: false,
             appLoginPasswordMode: 'manual',
             initialPassword: '',
+            sendInitialPasswordLink: false,
           }}
         >
-          <Space direction="vertical" size={16} style={{ width: '100%' }}>
-            <Space wrap size={16} align="start">
-              <Form.Item label="회원번호" name="memberNo" rules={[{ required: true, message: '회원번호를 입력하세요' }]}>
-                <Input placeholder="휴대폰번호 입력 시 자동 생성" style={{ width: 240 }} disabled readOnly />
-              </Form.Item>
-              <Form.Item label="가입일" name="joinedAt">
-                <DatePicker style={{ width: 180 }} disabled inputReadOnly />
-              </Form.Item>
-              <Form.Item label="상태" name="statusCode">
-                <Select
-                  style={{ width: 200 }}
-                  loading={statusCodes.isLoading}
-                  disabled
-                  options={(statusCodes.data ?? []).map((c) => ({ value: c.code, label: c.name }))}
-                />
-              </Form.Item>
-            </Space>
-
-            <Space direction="vertical" size={16} style={{ width: '100%' }}>
-              <Space wrap size={16} align="start">
+          <Space direction="vertical" size={20} style={{ width: '100%' }}>
+            <SectionCard title="기본 정보" description="회원 식별과 상태 관리를 위한 핵심 정보를 입력합니다.">
+              <div style={GRID_STYLE}>
+                <Form.Item label="회원번호" name="memberNo" rules={[{ required: true, message: '회원번호를 입력하세요' }]}>
+                  <Input placeholder="휴대폰번호 입력 시 자동 생성" style={FULL_WIDTH_CONTROL_STYLE} disabled readOnly />
+                </Form.Item>
                 <Form.Item label="이름" name="name" rules={[{ required: true, message: '이름을 입력하세요' }]}>
-                  <Input placeholder="예: 홍길동" style={{ width: 220 }} />
+                  <Input placeholder="예: 홍길동" style={FULL_WIDTH_CONTROL_STYLE} />
                 </Form.Item>
-                <Form.Item
-                  label="WEB ID(선택)"
-                  name="webId"
-                  rules={[
-                    {
-                      pattern: /^[A-Za-z0-9_-]+$/,
-                      message: 'WEB ID는 영문/숫자와 -, _ 만 사용할 수 있습니다.',
-                    },
-                  ]}
-                  validateTrigger={['onChange', 'onBlur']}
-                >
-                  <Input placeholder="예: web_123" style={{ width: 220 }} allowClear />
-                </Form.Item>
-              </Space>
-
-              <Space wrap size={16} align="start">
                 <Form.Item
                   label="생년월일"
                   name="birthDate"
                   rules={[{ required: true, message: '생년월일을 선택하세요' }]}
                 >
-                  <DatePicker style={{ width: 180 }} placeholder="선택" />
+                  <DatePicker style={FULL_WIDTH_CONTROL_STYLE} placeholder="선택" />
                 </Form.Item>
-
                 <Form.Item label="양/음력" name="calendarType">
                   <Select
-                    style={{ width: 120 }}
+                    style={{ width: '100%', height: 40 }}
                     placeholder="선택"
                     allowClear
                     options={[
@@ -377,14 +435,13 @@ export function MemberCreatePage() {
                     ]}
                   />
                 </Form.Item>
-
                 <Form.Item
                   label="성별"
                   name="gender"
                   rules={[{ required: true, message: '성별을 선택하세요' }]}
                 >
                   <Select
-                    style={{ width: 120 }}
+                    style={{ width: '100%', height: 40 }}
                     placeholder="선택"
                     options={[
                       { value: 'MALE', label: '남성' },
@@ -393,121 +450,191 @@ export function MemberCreatePage() {
                     ]}
                   />
                 </Form.Item>
-
-                <Form.Item label="기념일(선택)" name="anniversaries">
-                  <DatePicker style={{ width: 180 }} placeholder="선택" />
+                <Form.Item label="가입일" name="joinedAt">
+                  <DatePicker style={FULL_WIDTH_CONTROL_STYLE} disabled inputReadOnly />
                 </Form.Item>
-              </Space>
-            </Space>
-
-            <Space direction="vertical" size={16} style={{ width: '100%' }}>
-              <Space wrap size={16} align="start">
-                <Form.Item
-                  label="휴대폰번호"
-                  name="phoneNumber"
-                  rules={[{ required: true, message: '휴대폰 번호를 입력하세요' }]}
-                  getValueFromEvent={(e) => String(e?.target?.value ?? '').replace(/\D/g, '')}
-                >
-                  <Input placeholder="01000000000" style={{ width: 220 }} allowClear inputMode="numeric" suffix={memberNoLoading ? '...' : undefined} />
+                <Form.Item label="상태" name="statusCode">
+                  <Select
+                    style={{ width: '100%', height: 40 }}
+                    loading={statusCodes.isLoading}
+                    disabled
+                    options={(statusCodes.data ?? []).map((c) => ({ value: c.code, label: c.name }))}
+                  />
                 </Form.Item>
+                <Form.Item label="기념일" name="anniversaries">
+                  <DatePicker style={FULL_WIDTH_CONTROL_STYLE} placeholder="선택" />
+                </Form.Item>
+              </div>
+            </SectionCard>
 
-                <Form.Item label="휴대폰번호 인증(선택)">
-                  <Space>
-                    <Form.Item name="ci" noStyle>
-                      <Input style={{ display: 'none' }} />
+            <SectionCard title="연락처 정보" description="회원 연락처와 인증 정보를 관리합니다.">
+              <div style={GRID_STYLE}>
+                <Form.Item label="휴대폰번호" required>
+                  <Space.Compact style={{ width: '100%' }}>
+                    <Form.Item
+                      name="phoneNumber"
+                      rules={[{ required: true, message: '휴대폰 번호를 입력하세요' }]}
+                      getValueFromEvent={(e) => String(e?.target?.value ?? '').replace(/\D/g, '')}
+                      noStyle
+                    >
+                      <Input
+                        placeholder="01000000000"
+                        style={FULL_WIDTH_CONTROL_STYLE}
+                        allowClear
+                        inputMode="numeric"
+                        suffix={memberNoLoading ? '...' : undefined}
+                      />
                     </Form.Item>
-                    <Button type="default" onClick={() => message.info('휴대폰번호 인증 기능은 준비 중입니다.')}>
+                    <Button style={{ height: 40 }} onClick={() => message.info('휴대폰번호 인증 기능은 준비 중입니다.')}>
                       인증하기
                     </Button>
-                  </Space>
-                </Form.Item>
-              </Space>
-
-              <Space wrap size={16} align="start">
-                <Form.Item
-                  label="이메일"
-                  name="email"
-                  rules={[
-                    { required: true, message: '이메일을 입력하세요' },
-                    { type: 'email', message: '올바른 이메일 형식을 입력하세요' },
-                  ]}
-                >
-                  <Input placeholder="예: user@example.com" style={{ width: 240 }} allowClear />
+                  </Space.Compact>
+                  <Form.Item name="ci" noStyle>
+                    <Input style={{ display: 'none' }} />
+                  </Form.Item>
                 </Form.Item>
 
-                <Form.Item label="이메일 인증(선택)">
-                  <Button type="default" onClick={() => message.info('이메일 인증 기능은 준비 중입니다.')}>
-                    인증하기
-                  </Button>
+                <Form.Item label="이메일" required>
+                  <Space.Compact style={{ width: '100%' }}>
+                    <Form.Item
+                      name="email"
+                      rules={[
+                        { required: true, message: '이메일을 입력하세요' },
+                        { type: 'email', message: '올바른 이메일 형식을 입력하세요' },
+                      ]}
+                      noStyle
+                    >
+                      <Input placeholder="예: user@example.com" style={FULL_WIDTH_CONTROL_STYLE} allowClear />
+                    </Form.Item>
+                    <Button style={{ height: 40 }} onClick={() => message.info('이메일 인증 기능은 준비 중입니다.')}>
+                      인증하기
+                    </Button>
+                  </Space.Compact>
                 </Form.Item>
-              </Space>
-            </Space>
+              </div>
+            </SectionCard>
 
-            <Card size="small" title="앱 로그인 설정">
-              <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                <Form.Item name="appLoginAllowed" valuePropName="checked" style={{ marginBottom: 0 }}>
-                  <Checkbox>앱 로그인 허용</Checkbox>
-                </Form.Item>
-                <Form.Item shouldUpdate={(prev, cur) => prev.appLoginAllowed !== cur.appLoginAllowed || prev.appLoginPasswordMode !== cur.appLoginPasswordMode} noStyle>
-                  {({ getFieldValue }) =>
-                    getFieldValue('appLoginAllowed') ? (
-                      <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                        <Form.Item name="appLoginPasswordMode" label="초기 비밀번호 방식" style={{ marginBottom: 0 }}>
-                          <Radio.Group
-                            optionType="button"
-                            buttonStyle="solid"
-                            options={[
-                              { label: '직접 입력', value: 'manual' },
-                              { label: '자동 생성', value: 'auto' },
-                            ]}
+            <SectionCard title="앱 로그인 설정" description="고객 앱 로그인 허용 여부와 로그인 식별 정보를 설정합니다.">
+              <Form.Item shouldUpdate={(prev, cur) => prev.appLoginAllowed !== cur.appLoginAllowed || prev.appLoginPasswordMode !== cur.appLoginPasswordMode} noStyle>
+                {({ getFieldValue }) => {
+                  const appLoginEnabled = !!getFieldValue('appLoginAllowed')
+                  return (
+                    <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                      <div style={GRID_STYLE}>
+                        <Form.Item label="앱 로그인 허용" style={{ marginBottom: 0 }}>
+                          <Form.Item name="appLoginAllowed" valuePropName="checked" noStyle>
+                            <Switch checkedChildren="ON" unCheckedChildren="OFF" />
+                          </Form.Item>
+                        </Form.Item>
+                        <Form.Item
+                          label="WEB ID"
+                          name="webId"
+                          rules={
+                            appLoginEnabled
+                              ? [
+                                  { required: true, message: 'WEB ID를 입력하세요' },
+                                  {
+                                    pattern: /^[A-Za-z0-9_-]+$/,
+                                    message: 'WEB ID는 영문/숫자와 -, _ 만 사용할 수 있습니다.',
+                                  },
+                                ]
+                              : []
+                          }
+                          validateTrigger={['onChange', 'onBlur']}
+                          style={{ marginBottom: 0 }}
+                        >
+                          <Input
+                            placeholder={appLoginEnabled ? '예: web_123' : '앱 로그인 허용 시 입력 가능'}
+                            style={FULL_WIDTH_CONTROL_STYLE}
+                            allowClear
+                            disabled={!appLoginEnabled}
                           />
                         </Form.Item>
-                        {getFieldValue('appLoginPasswordMode') !== 'auto' ? (
-                          <Form.Item
-                            label="초기 비밀번호"
-                            name="initialPassword"
-                            rules={[
-                              { required: true, message: '초기 비밀번호를 입력하세요' },
-                              { min: 8, message: '비밀번호는 8자 이상이어야 합니다.' },
-                            ]}
-                            style={{ marginBottom: 0 }}
-                          >
-                            <Input.Password placeholder="앱 로그인 비밀번호" style={{ width: 260 }} />
-                          </Form.Item>
-                        ) : (
-                          <Typography.Text type="secondary">
-                            등록 시 초기 비밀번호를 자동 생성해 1회 표시합니다.
+                      </div>
+
+                      {appLoginEnabled ? (
+                        <div
+                          style={{
+                            padding: 16,
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 14,
+                            background: '#f9fafb',
+                          }}
+                        >
+                          <Typography.Text strong style={{ display: 'block', marginBottom: 12 }}>
+                            초기 비밀번호 설정
                           </Typography.Text>
-                        )}
-                      </Space>
-                    ) : null
-                  }
+                          <div style={GRID_STYLE}>
+                            <Form.Item name="appLoginPasswordMode" label="초기 비밀번호 방식" style={{ marginBottom: 0 }}>
+                              <Radio.Group
+                                optionType="button"
+                                buttonStyle="solid"
+                                options={[
+                                  { label: '직접 입력', value: 'manual' },
+                                  { label: '자동 생성', value: 'auto' },
+                                ]}
+                              />
+                            </Form.Item>
+
+                            {getFieldValue('appLoginPasswordMode') !== 'auto' ? (
+                              <Form.Item
+                                label="초기 비밀번호"
+                                name="initialPassword"
+                                rules={[
+                                  { required: true, message: '초기 비밀번호를 입력하세요' },
+                                  { min: 8, message: '비밀번호는 8자 이상이어야 합니다.' },
+                                ]}
+                                style={{ marginBottom: 0 }}
+                              >
+                                <Input.Password placeholder="앱 로그인 비밀번호" style={FULL_WIDTH_CONTROL_STYLE} />
+                              </Form.Item>
+                            ) : (
+                              <div style={{ alignSelf: 'end', minHeight: 40, display: 'flex', alignItems: 'center' }}>
+                                <Typography.Text type="secondary">
+                                  등록 시 초기 비밀번호를 자동 생성해 1회 표시합니다.
+                                </Typography.Text>
+                              </div>
+                            )}
+
+                            <Form.Item
+                              name="sendInitialPasswordLink"
+                              valuePropName="checked"
+                              label="초기 비밀번호 링크 발송"
+                              style={{ marginBottom: 0 }}
+                            >
+                              <Switch checkedChildren="발송" unCheckedChildren="미발송" />
+                            </Form.Item>
+                          </div>
+                        </div>
+                      ) : null}
+                    </Space>
+                  )
+                }}
+              </Form.Item>
+            </SectionCard>
+
+            <SectionCard title="주소 정보" description="주소 검색으로 기본 주소를 불러오고 상세주소를 입력합니다.">
+              <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                <Space.Compact style={{ width: 320, maxWidth: '100%' }}>
+                  <Form.Item name={['address', 'zipCode']} noStyle>
+                    <Input placeholder="우편번호" readOnly style={FULL_WIDTH_CONTROL_STYLE} />
+                  </Form.Item>
+                  <Button style={{ height: 40 }} onClick={openAddressSearch}>
+                    주소 검색
+                  </Button>
+                </Space.Compact>
+                <Form.Item name={['address', 'roadAddress']} noStyle>
+                  <Input placeholder="도로명주소" readOnly style={FULL_WIDTH_CONTROL_STYLE} />
+                </Form.Item>
+                <Form.Item name={['address', 'jibunAddress']} noStyle>
+                  <Input placeholder="지번주소" readOnly style={FULL_WIDTH_CONTROL_STYLE} />
+                </Form.Item>
+                <Form.Item name={['address', 'detailAddress']} noStyle>
+                  <Input placeholder="상세주소 (직접 입력)" allowClear style={FULL_WIDTH_CONTROL_STYLE} />
                 </Form.Item>
               </Space>
-            </Card>
+            </SectionCard>
           </Space>
-
-          <Form.Item label="주소(선택)">
-            <Space orientation="vertical" style={{ width: '100%' }} size={8}>
-              <Space.Compact>
-                <Form.Item name={['address', 'zipCode']} noStyle>
-                  <Input placeholder="우편번호" readOnly style={{ width: 140 }} />
-                </Form.Item>
-                <Button type="default" onClick={openAddressSearch}>
-                  주소 검색
-                </Button>
-              </Space.Compact>
-              <Form.Item name={['address', 'roadAddress']} noStyle>
-                <Input placeholder="도로명주소" readOnly style={{ width: 400 }} />
-              </Form.Item>
-              <Form.Item name={['address', 'jibunAddress']} noStyle>
-                <Input placeholder="지번주소" readOnly style={{ width: 400 }} />
-              </Form.Item>
-              <Form.Item name={['address', 'detailAddress']} noStyle>
-                <Input placeholder="상세주소 (직접 입력)" allowClear style={{ width: 400 }} />
-              </Form.Item>
-            </Space>
-          </Form.Item>
 
           <Modal
             title="주소 검색"
@@ -575,21 +702,26 @@ export function MemberCreatePage() {
             </Space>
           </Modal>
 
-          <Space>
-            <Button type="primary" htmlType="submit" loading={loading}>
-              등록
-            </Button>
-            <Button
-              onClick={() => {
-                form.resetFields()
-              }}
-            >
-              초기화
-            </Button>
-            <Button onClick={() => nav('/members')}>목록으로</Button>
-          </Space>
+          <div style={ACTION_BAR_STYLE}>
+            <Space>
+              <Button style={{ height: 40 }} onClick={() => nav('/members')}>
+                목록으로
+              </Button>
+              <Button
+                style={{ height: 40 }}
+                onClick={() => {
+                  form.resetFields()
+                }}
+              >
+                초기화
+              </Button>
+              <Button type="primary" htmlType="submit" loading={loading} style={{ height: 40, minWidth: 104 }}>
+                회원 등록
+              </Button>
+            </Space>
+          </div>
         </Form>
-      </Card>
+      </div>
     </PageShell>
   )
 }

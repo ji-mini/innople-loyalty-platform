@@ -36,7 +36,8 @@ public interface MemberService {
             String anniversaries,
             Boolean appLoginAllowed,
             String initialPassword,
-            Boolean autoGeneratePassword
+            Boolean autoGeneratePassword,
+            Boolean sendInitialPasswordLink
     ) {
     }
 
