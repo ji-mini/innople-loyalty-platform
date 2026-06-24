@@ -8,10 +8,14 @@ import com.innople.loyalty.service.admin.AdminRegisterResult;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/auth")
@@ -25,6 +29,24 @@ public class AdminAuthController {
         AdminLoginResult result = adminAuthService.login(request.phoneNumber(), request.password());
         httpServletRequest.setAttribute(ApiAuditLogInterceptor.AUTHENTICATED_ADMIN_USER_ID_ATTRIBUTE, result.adminUserId());
         ApiAuditLogInterceptor.setAuditMessage(httpServletRequest, "로그인 (" + result.name() + ")");
+        return new AdminAuthDtos.LoginResponse(
+                result.adminUserId(),
+                result.phoneNumber(),
+                result.email(),
+                result.name(),
+                result.role(),
+                result.accessToken()
+        );
+    }
+
+    @PostMapping("/refresh")
+    public AdminAuthDtos.LoginResponse refresh(HttpServletRequest httpServletRequest) {
+        Object attr = httpServletRequest.getAttribute("adminUserId");
+        if (!(attr instanceof UUID adminUserId)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid session");
+        }
+        AdminLoginResult result = adminAuthService.refresh(adminUserId);
+        httpServletRequest.setAttribute(ApiAuditLogInterceptor.AUTHENTICATED_ADMIN_USER_ID_ATTRIBUTE, result.adminUserId());
         return new AdminAuthDtos.LoginResponse(
                 result.adminUserId(),
                 result.phoneNumber(),

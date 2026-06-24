@@ -1,10 +1,10 @@
-import { Button, Card, Form, Input, Modal, Select, Space, Table, Tag, Typography, message } from 'antd'
+import { Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Typography, message } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import React from 'react'
 import { PageShell } from '../common/PageShell'
 import { api } from '../../shared/api'
-import type { AdminRole } from '../../shared/types'
+import type { AdminRole, AdminUserStatus } from '../../shared/types'
 import { atLeast } from '../../shared/roles'
 import { getSession } from '../../shared/storage'
 import { listPublicTenants } from '../../shared/tenants'
@@ -17,8 +17,15 @@ type Row = {
   phoneNumber: string
   email: string | null
   role: AdminRole
+  status: AdminUserStatus
   createdAt: string
   updatedAt: string
+}
+
+const STATUS_META: Record<AdminUserStatus, { label: string; color: string }> = {
+  PENDING: { label: '승인 대기', color: 'orange' },
+  ACTIVE: { label: '활성', color: 'green' },
+  INACTIVE: { label: '비활성', color: 'default' },
 }
 
 export function AdminAccountsPage() {
@@ -90,6 +97,22 @@ export function AdminAccountsPage() {
       role: r.role,
     })
     setOpen(true)
+  }
+
+  const [statusUpdatingId, setStatusUpdatingId] = React.useState<string | null>(null)
+
+  const onChangeStatus = async (r: Row, status: Extract<AdminUserStatus, 'ACTIVE' | 'INACTIVE'>) => {
+    if (!canEdit) return
+    setStatusUpdatingId(r.id)
+    try {
+      await api.patch(`/api/v1/admin/users/${encodeURIComponent(r.id)}/status`, { status })
+      message.success(status === 'ACTIVE' ? '계정이 활성화되었습니다.' : '계정이 비활성화되었습니다.')
+      await q.refetch()
+    } catch (e: any) {
+      message.error(e?.response?.data?.message ?? e?.message ?? '상태 변경 실패')
+    } finally {
+      setStatusUpdatingId(null)
+    }
   }
 
   const onSubmit = async () => {
@@ -188,6 +211,15 @@ export function AdminAccountsPage() {
               render: (v: Row['role']) => <Tag>{roleName.get(v) ?? v}</Tag>,
             },
             {
+              title: '상태',
+              dataIndex: 'status',
+              width: 110,
+              render: (v: Row['status']) => {
+                const meta = STATUS_META[v] ?? { label: v, color: 'default' }
+                return <Tag color={meta.color}>{meta.label}</Tag>
+              },
+            },
+            {
               title: '수정일시',
               dataIndex: 'updatedAt',
               width: 190,
@@ -198,11 +230,50 @@ export function AdminAccountsPage() {
                   {
                     title: '관리',
                     key: 'actions',
-                    width: 110,
+                    width: 220,
                     render: (_: any, r: Row) => (
-                      <Button size="small" onClick={() => openEdit(r)}>
-                        수정
-                      </Button>
+                      <Space size={8} wrap>
+                        <Button size="small" onClick={() => openEdit(r)}>
+                          수정
+                        </Button>
+                        {r.status === 'PENDING' && (
+                          <Popconfirm
+                            title="이 계정을 승인하시겠습니까?"
+                            okText="승인"
+                            cancelText="취소"
+                            onConfirm={() => onChangeStatus(r, 'ACTIVE')}
+                          >
+                            <Button size="small" type="primary" loading={statusUpdatingId === r.id}>
+                              승인
+                            </Button>
+                          </Popconfirm>
+                        )}
+                        {r.status === 'ACTIVE' && (
+                          <Popconfirm
+                            title="이 계정을 비활성화하시겠습니까?"
+                            okText="비활성화"
+                            cancelText="취소"
+                            okButtonProps={{ danger: true }}
+                            onConfirm={() => onChangeStatus(r, 'INACTIVE')}
+                          >
+                            <Button size="small" danger loading={statusUpdatingId === r.id}>
+                              비활성화
+                            </Button>
+                          </Popconfirm>
+                        )}
+                        {r.status === 'INACTIVE' && (
+                          <Popconfirm
+                            title="이 계정을 다시 활성화하시겠습니까?"
+                            okText="활성화"
+                            cancelText="취소"
+                            onConfirm={() => onChangeStatus(r, 'ACTIVE')}
+                          >
+                            <Button size="small" type="primary" loading={statusUpdatingId === r.id}>
+                              활성화
+                            </Button>
+                          </Popconfirm>
+                        )}
+                      </Space>
                     ),
                   },
                 ]

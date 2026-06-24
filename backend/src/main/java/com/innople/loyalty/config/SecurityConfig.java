@@ -1,5 +1,6 @@
 package com.innople.loyalty.config;
 
+import com.innople.loyalty.config.auth.AdminAuthFilter;
 import com.innople.loyalty.config.auth.MemberAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,9 +20,11 @@ import org.springframework.web.cors.CorsUtils;
 @EnableWebSecurity
 public class SecurityConfig {
     private final MemberAuthFilter memberAuthFilter;
+    private final AdminAuthFilter adminAuthFilter;
 
-    public SecurityConfig(MemberAuthFilter memberAuthFilter) {
+    public SecurityConfig(MemberAuthFilter memberAuthFilter, AdminAuthFilter adminAuthFilter) {
         this.memberAuthFilter = memberAuthFilter;
+        this.adminAuthFilter = adminAuthFilter;
     }
 
     @Bean
@@ -40,11 +43,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/members/me", "/api/v1/members/me/**").authenticated()
+                        .requestMatchers("/api/v1/admin/auth/login", "/api/v1/admin/auth/register").permitAll()
+                        .requestMatchers("/api/v1/admin/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .addFilterBefore(memberAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(adminAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

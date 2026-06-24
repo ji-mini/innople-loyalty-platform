@@ -2,6 +2,7 @@ package com.innople.loyalty.service.member;
 
 import com.innople.loyalty.domain.member.Member;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class InitialPasswordLinkSender {
 
-    private final JavaMailSender mailSender;
+    private final ObjectProvider<JavaMailSender> mailSenderProvider;
 
     @Value("${app.member.initial-password-link.login-url}")
     private String loginUrl;
@@ -26,6 +27,11 @@ public class InitialPasswordLinkSender {
         }
         if (initialPassword == null || initialPassword.isBlank()) {
             throw new IllegalArgumentException("초기 비밀번호 링크를 발송하려면 초기 비밀번호가 필요합니다.");
+        }
+
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            throw new IllegalStateException("메일 발송 설정이 필요합니다. spring.mail.host 설정을 확인해주세요.");
         }
 
         SimpleMailMessage message = new SimpleMailMessage();

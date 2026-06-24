@@ -13,10 +13,10 @@ import { Button, Layout, Menu, message, Select, Space, Tooltip, Typography } fro
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import React from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { extendSession, getSession, setSession } from '../../shared/storage'
+import { getSession, setSession } from '../../shared/storage'
 import { useSessionActivity } from '../../shared/useSessionActivity'
 import { useSessionRemaining } from '../../shared/useSessionRemaining'
-import { logout } from '../../shared/auth'
+import { logout, refreshSession } from '../../shared/auth'
 import { atLeast } from '../../shared/roles'
 import { getTenantById, listPublicTenants } from '../../shared/tenants'
 import { AdminBreadcrumbs } from './AdminBreadcrumbs'
@@ -371,11 +371,14 @@ export function AdminLayout() {
                     size="small"
                     type="link"
                     style={{ padding: 0, height: 'auto', fontSize: 12 }}
-                    onClick={() => {
-                      if (session) {
-                        const next = extendSession(session)
+                    onClick={async () => {
+                      if (!session) return
+                      const next = await refreshSession()
+                      if (next) {
                         setSessionState(next)
                         message.success('세션이 30분 연장되었습니다.')
+                      } else {
+                        message.error('세션 연장에 실패했습니다. 다시 로그인해 주세요.')
                       }
                     }}
                   >

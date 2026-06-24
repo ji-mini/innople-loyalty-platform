@@ -5,6 +5,8 @@ export type AdminLoginRequest = {
 
 export type AdminRole = 'OPERATOR' | 'ADMIN' | 'SUPER_ADMIN'
 
+export type AdminUserStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE'
+
 export type AdminLoginResponse = {
   adminUserId: string
   phoneNumber: string

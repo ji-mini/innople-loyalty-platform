@@ -26,13 +26,13 @@ public class AdminUserManagementController {
     @GetMapping
     public List<AdminUserManagementDtos.AdminUserResponse> list(@RequestParam(required = false) String keyword) {
         return adminUserManagementService.list(keyword).stream()
-                .map(this::toResponse)
+                .map(AdminUserManagementDtos.AdminUserResponse::from)
                 .toList();
     }
 
     @PostMapping
     public AdminUserManagementDtos.AdminUserResponse create(@Valid @RequestBody AdminUserManagementDtos.CreateRequest request) {
-        return toResponse(adminUserManagementService.create(
+        return AdminUserManagementDtos.AdminUserResponse.from(adminUserManagementService.create(
                 request.phoneNumber(),
                 request.email(),
                 request.name(),
@@ -46,26 +46,13 @@ public class AdminUserManagementController {
             @PathVariable UUID adminUserId,
             @Valid @RequestBody AdminUserManagementDtos.UpdateRequest request
     ) {
-        return toResponse(adminUserManagementService.update(
+        return AdminUserManagementDtos.AdminUserResponse.from(adminUserManagementService.update(
                 adminUserId,
                 request.phoneNumber(),
                 request.email(),
                 request.name(),
                 request.role()
         ));
-    }
-
-    private AdminUserManagementDtos.AdminUserResponse toResponse(AdminUserManagementService.AdminUserItem i) {
-        return new AdminUserManagementDtos.AdminUserResponse(
-                i.id(),
-                i.tenantId(),
-                i.phoneNumber(),
-                i.email(),
-                i.name(),
-                i.role(),
-                i.createdAt(),
-                i.updatedAt()
-        );
     }
 }
 

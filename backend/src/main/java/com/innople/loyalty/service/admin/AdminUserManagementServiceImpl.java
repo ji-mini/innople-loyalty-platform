@@ -3,6 +3,7 @@ package com.innople.loyalty.service.admin;
 import com.innople.loyalty.config.TenantContext;
 import com.innople.loyalty.domain.user.AdminRole;
 import com.innople.loyalty.domain.user.AdminUser;
+import com.innople.loyalty.domain.user.AdminUserStatus;
 import com.innople.loyalty.repository.AdminUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -51,6 +52,8 @@ public class AdminUserManagementServiceImpl implements AdminUserManagementServic
 
         AdminUser adminUser = new AdminUser(p, e, n, passwordEncoder.encode(password));
         adminUser.changeRole(r);
+        // SUPER_ADMIN이 직접 등록하는 계정은 승인 절차 없이 즉시 활성화한다.
+        adminUser.changeStatus(AdminUserStatus.ACTIVE);
         try {
             AdminUser saved = adminUserRepository.save(adminUser);
             return toItem(saved);
@@ -84,6 +87,23 @@ public class AdminUserManagementServiceImpl implements AdminUserManagementServic
         }
     }
 
+    @Override
+    @Transactional
+    public AdminUserItem updateStatus(UUID adminUserId, AdminUserStatus status) {
+        UUID tenantId = TenantContext.requireTenantId();
+        if (status == null) {
+            throw new IllegalArgumentException("status must not be null");
+        }
+        if (status != AdminUserStatus.ACTIVE && status != AdminUserStatus.INACTIVE) {
+            throw new IllegalArgumentException("status must be ACTIVE or INACTIVE");
+        }
+        AdminUser adminUser = adminUserRepository.findByTenantIdAndId(tenantId, adminUserId)
+                .orElseThrow(() -> new AdminUserNotFoundException("admin user not found"));
+
+        adminUser.changeStatus(status);
+        return toItem(adminUserRepository.save(adminUser));
+    }
+
     private AdminUserItem toItem(AdminUser a) {
         return new AdminUserItem(
                 a.getId(),
@@ -92,6 +112,7 @@ public class AdminUserManagementServiceImpl implements AdminUserManagementServic
                 a.getEmail(),
                 a.getName(),
                 (a.getRole() == null) ? AdminRole.OPERATOR : a.getRole(),
+                (a.getStatus() == null) ? AdminUserStatus.PENDING : a.getStatus(),
                 a.getCreatedAt(),
                 a.getUpdatedAt()
         );

@@ -1,8 +1,10 @@
 package com.innople.loyalty.service.admin;
 
 import com.innople.loyalty.config.TenantContext;
+import com.innople.loyalty.config.auth.AdminJwtTokenProvider;
 import com.innople.loyalty.domain.user.AdminRole;
 import com.innople.loyalty.domain.user.AdminUser;
+import com.innople.loyalty.domain.user.AdminUserStatus;
 import com.innople.loyalty.repository.AdminUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -22,6 +24,7 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
     private final AdminUserRepository adminUserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AdminJwtTokenProvider adminJwtTokenProvider;
 
     @Override
     @Transactional
@@ -30,16 +33,24 @@ public class AdminAuthServiceImpl implements AdminAuthService {
 
         String normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
         if (normalizedPhoneNumber == null || password == null || password.isBlank()) {
-            throw new InvalidCredentialsException("Invalid credentials");
+            throw new InvalidCredentialsException("휴대폰 번호 또는 비밀번호가 올바르지 않습니다.");
         }
 
         AdminUser admin = adminUserRepository
                 .findByTenantIdAndPhoneNumber(tenantId, normalizedPhoneNumber)
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
+                .orElseThrow(() -> new InvalidCredentialsException("휴대폰 번호 또는 비밀번호가 올바르지 않습니다."));
 
         String storedHash = admin.getPasswordHash();
         if (!matches(password, storedHash)) {
-            throw new InvalidCredentialsException("Invalid credentials");
+            throw new InvalidCredentialsException("휴대폰 번호 또는 비밀번호가 올바르지 않습니다.");
+        }
+
+        AdminUserStatus status = admin.getStatus();
+        if (status == AdminUserStatus.PENDING) {
+            throw new InvalidCredentialsException("승인 대기 중인 계정입니다.");
+        }
+        if (status == AdminUserStatus.INACTIVE) {
+            throw new InvalidCredentialsException("비활성화된 계정입니다. 관리자에게 문의하세요.");
         }
 
         if (shouldUpgradeToBcrypt(storedHash)) {
@@ -47,8 +58,6 @@ public class AdminAuthServiceImpl implements AdminAuthService {
             adminUserRepository.save(admin);
         }
 
-        // NOTE: Security is not implemented yet. This token is for UI session only.
-        String token = UUID.randomUUID().toString();
         AdminRole role = admin.getRole();
         if (role == null) {
             role = AdminRole.SUPER_ADMIN;
@@ -63,6 +72,22 @@ public class AdminAuthServiceImpl implements AdminAuthService {
                 adminUserRepository.save(admin);
             }
         }
+
+        String token = adminJwtTokenProvider.createAccessToken(tenantId, admin.getId(), role);
+        return new AdminLoginResult(admin.getId(), admin.getPhoneNumber(), admin.getEmail(), admin.getName(), role, token);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdminLoginResult refresh(UUID adminUserId) {
+        UUID tenantId = TenantContext.requireTenantId();
+
+        AdminUser admin = adminUserRepository
+                .findByTenantIdAndId(tenantId, adminUserId)
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid session"));
+
+        AdminRole role = admin.getRole() != null ? admin.getRole() : AdminRole.OPERATOR;
+        String token = adminJwtTokenProvider.createAccessToken(tenantId, admin.getId(), role);
         return new AdminLoginResult(admin.getId(), admin.getPhoneNumber(), admin.getEmail(), admin.getName(), role, token);
     }
 

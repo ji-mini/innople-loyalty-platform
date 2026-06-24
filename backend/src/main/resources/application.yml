@@ -12,6 +12,10 @@ app:
     jwt:
       secret: ${APP_AUTH_JWT_SECRET:innople-member-jwt-secret-change-me-please-32-bytes}
       expiration-seconds: ${APP_AUTH_JWT_EXPIRATION_SECONDS:86400}
+    admin-jwt:
+      secret: ${APP_AUTH_ADMIN_JWT_SECRET:${APP_AUTH_JWT_SECRET:innople-admin-jwt-secret-change-me-please-32-bytes}}
+      # 어드민 콘솔 세션 만료(기본 30분). 프론트 UI 타이머와 일치시킵니다.
+      expiration-seconds: ${APP_AUTH_ADMIN_JWT_EXPIRATION_SECONDS:1800}
   stamp:
     auto-redeem-cron: ${APP_STAMP_AUTO_REDEEM_CRON:0 0 * * * *}
   tenant:

@@ -1,6 +1,7 @@
 package com.innople.loyalty.service.admin;
 
 import com.innople.loyalty.domain.user.AdminRole;
+import com.innople.loyalty.domain.user.AdminUserStatus;
 
 import java.time.Instant;
 import java.util.List;
@@ -14,6 +15,8 @@ public interface AdminUserManagementService {
 
     AdminUserItem update(UUID adminUserId, String phoneNumber, String email, String name, AdminRole role);
 
+    AdminUserItem updateStatus(UUID adminUserId, AdminUserStatus status);
+
     record AdminUserItem(
             UUID id,
             UUID tenantId,
@@ -21,6 +24,7 @@ public interface AdminUserManagementService {
             String email,
             String name,
             AdminRole role,
+            AdminUserStatus status,
             Instant createdAt,
             Instant updatedAt
     ) {

@@ -41,6 +41,10 @@ public class AdminUser extends BaseEntity {
     @Column(nullable = true, length = 30)
     private AdminRole role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private AdminUserStatus status;
+
     public AdminUser(String phoneNumber, String email, String name, String passwordHash) {
         this.phoneNumber = phoneNumber;
         this.email = email;
@@ -52,6 +56,9 @@ public class AdminUser extends BaseEntity {
     void prePersistAdminUser() {
         if (role == null) {
             role = AdminRole.OPERATOR;
+        }
+        if (status == null) {
+            status = AdminUserStatus.PENDING;
         }
     }
 
@@ -73,6 +80,13 @@ public class AdminUser extends BaseEntity {
 
     public void changeRole(AdminRole role) {
         this.role = role;
+    }
+
+    public void changeStatus(AdminUserStatus status) {
+        if (status == null) {
+            throw new IllegalArgumentException("status must not be null");
+        }
+        this.status = status;
     }
 }
 

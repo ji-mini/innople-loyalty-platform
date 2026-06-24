@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { clearSession, getSession, touchSession } from './storage'
+import { clearSession, getSession } from './storage'
 
 type RuntimeAppConfig = {
   API_BASE_URL?: string
@@ -34,17 +34,16 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const session = getSession()
   if (session) {
-    const s = touchSession(session)
     config.headers = config.headers ?? {}
     const h = config.headers as any
     if (h['X-Tenant-Id'] == null && h['x-tenant-id'] == null) {
-      h['X-Tenant-Id'] = s.tenantId
+      h['X-Tenant-Id'] = session.tenantId
     }
     if (h['Authorization'] == null && h['authorization'] == null) {
-      h['Authorization'] = `Bearer ${s.accessToken}`
+      h['Authorization'] = `Bearer ${session.accessToken}`
     }
     if (h['X-Admin-User-Id'] == null && h['x-admin-user-id'] == null) {
-      h['X-Admin-User-Id'] = s.adminUserId
+      h['X-Admin-User-Id'] = session.adminUserId
     }
   }
   return config

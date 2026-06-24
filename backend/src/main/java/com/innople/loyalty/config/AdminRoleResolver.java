@@ -37,14 +37,33 @@ public class AdminRoleResolver {
     }
 
     public AdminUser resolve(HttpServletRequest request) {
+        UUID adminUserId = resolveAdminUserId(request);
+        if (adminUserId == null) {
+            return null;
+        }
+        try {
+            UUID tenantId = TenantContext.requireTenantId();
+            return adminUserRepository.findByTenantIdAndId(tenantId, adminUserId).orElse(null);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    /**
+     * JWT 검증 필터(AdminAuthFilter)가 설정한 검증된 adminUserId를 우선 사용하고,
+     * 없을 경우에만 클라이언트 헤더로 폴백한다(위변조 방지).
+     */
+    private UUID resolveAdminUserId(HttpServletRequest request) {
+        Object verified = request.getAttribute("adminUserId");
+        if (verified instanceof UUID uuid) {
+            return uuid;
+        }
         String raw = request.getHeader(adminUserHeaderName);
         if (raw == null || raw.isBlank()) {
             return null;
         }
         try {
-            UUID adminUserId = UUID.fromString(raw.trim());
-            UUID tenantId = TenantContext.requireTenantId();
-            return adminUserRepository.findByTenantIdAndId(tenantId, adminUserId).orElse(null);
+            return UUID.fromString(raw.trim());
         } catch (IllegalArgumentException e) {
             return null;
         }
