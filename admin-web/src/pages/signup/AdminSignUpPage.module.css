@@ -1,0 +1,131 @@
+/* 직원 계정 등록 전용 독립 레이아웃 (로그인 화면과 분리, 브랜드 톤만 공유) */
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  color: var(--ink);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.card {
+  width: min(440px, 100%);
+  box-sizing: border-box;
+  padding: 28px 28px 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 24px 70px rgba(17, 24, 39, 0.12);
+  backdrop-filter: blur(14px);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.badge {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  color: var(--brand-coral);
+  background: color-mix(in srgb, var(--brand-coral) 16%, white);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.title {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.subtitle {
+  font-family: 'Pretendard', sans-serif;
+  margin: 6px 0 0;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  color: rgba(31, 42, 55, 0.65);
+}
+
+.headerDivider {
+  height: 1px;
+  border: 0;
+  margin: 18px 0 16px;
+  background: rgba(31, 42, 55, 0.1);
+}
+
+/* 섹션 라벨 칩 + 좌우 구분선 */
+.sectionRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 14px;
+}
+
+.sectionRow + .sectionRow {
+  margin-top: 18px;
+}
+
+.sectionChip {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: color-mix(in srgb, var(--ink) 70%, var(--brand-mint));
+  background: color-mix(in srgb, var(--brand-mint) 20%, white);
+  border-radius: 999px;
+  padding: 3px 12px;
+}
+
+.sectionLine {
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(31, 42, 55, 0.08);
+}
+
+.primaryBtn {
+  margin-top: 18px;
+  font-weight: 700;
+  background: var(--brand-coral);
+  border: none;
+  color: #fff;
+  box-shadow: 0 14px 26px rgba(255, 139, 122, 0.35);
+}
+
+.primaryBtn:hover,
+.primaryBtn:focus {
+  background: color-mix(in srgb, var(--brand-coral) 88%, black) !important;
+  color: #fff !important;
+}
+
+.secondaryBtn {
+  margin-top: 10px;
+  font-weight: 700;
+  background: transparent;
+  border: 1px solid var(--brand-mint);
+  color: color-mix(in srgb, var(--ink) 62%, var(--brand-mint));
+}
+
+.secondaryBtn:hover,
+.secondaryBtn:focus {
+  background: color-mix(in srgb, var(--brand-mint) 14%, white) !important;
+  border-color: var(--brand-mint) !important;
+  color: color-mix(in srgb, var(--ink) 50%, var(--brand-mint)) !important;
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 20px 12px;
+  }
+  .card {
+    padding: 22px 18px 18px;
+  }
+}

@@ -1,10 +1,11 @@
-import { Alert, Button, Card, Form, Input, Select, Typography, message } from 'antd'
+import { Alert, Button, Form, Input, Select, message } from 'antd'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LockOutlined, MailOutlined, PhoneOutlined, UserOutlined } from '@ant-design/icons'
+import { LockOutlined, MailOutlined, PhoneOutlined, ShopOutlined, UserAddOutlined, UserOutlined } from '@ant-design/icons'
 import { registerAdmin } from '../../shared/auth'
 import { listPublicTenants } from '../../shared/tenants'
 import type { TenantPublicItem } from '../../shared/types'
+import styles from './AdminSignUpPage.module.css'
 
 type FormValues = {
   tenantId: string
@@ -91,14 +92,17 @@ export function AdminSignUpPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
-      <Card style={{ width: 460, maxWidth: '100%' }} bordered={false}>
-        <Typography.Title level={3} style={{ marginTop: 0, marginBottom: 6 }}>
-          직원 계정 등록
-        </Typography.Title>
-        <Typography.Paragraph type="secondary" style={{ marginTop: 0 }}>
-          테넌트별 어드민(직원) 계정을 생성합니다.
-        </Typography.Paragraph>
+    <div className={`brand-gradient-bg ${styles.page}`}>
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <div className={styles.badge}>
+            <UserAddOutlined />
+          </div>
+          <h1 className={styles.title}>직원 계정 등록</h1>
+          <p className={styles.subtitle}>테넌트별 어드민(직원) 계정을 생성합니다.</p>
+        </div>
+
+        <hr className={styles.headerDivider} />
 
         {tenantsNotice && <Alert type="info" message={tenantsNotice} showIcon style={{ marginBottom: 14 }} />}
         {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 14 }} />}
@@ -112,6 +116,11 @@ export function AdminSignUpPage() {
           size="large"
           scrollToFirstError
         >
+          <div className={styles.sectionRow}>
+            <span className={styles.sectionChip}>기본 정보</span>
+            <span className={styles.sectionLine} />
+          </div>
+
           <Form.Item
             label="Tenant"
             name="tenantId"
@@ -124,14 +133,15 @@ export function AdminSignUpPage() {
                 options={tenants.map((t) => ({ value: t.tenantId, label: t.name }))}
                 showSearch
                 optionFilterProp="label"
+                suffixIcon={<ShopOutlined style={{ opacity: 0.55 }} />}
               />
             ) : (
-              <Input placeholder="예: 11111111-1111-1111-1111-111111111111" />
+              <Input placeholder="예: 11111111-1111-1111-1111-111111111111" prefix={<ShopOutlined style={{ opacity: 0.55 }} />} />
             )}
           </Form.Item>
 
           <Form.Item label="이름" name="name" rules={[{ required: true, message: '이름을 입력하세요' }]}>
-            <Input placeholder="홍길동" prefix={<UserOutlined />} />
+            <Input placeholder="홍길동" prefix={<UserOutlined style={{ opacity: 0.55 }} />} />
           </Form.Item>
 
           <Form.Item
@@ -140,15 +150,20 @@ export function AdminSignUpPage() {
             rules={[{ required: true, message: '휴대폰 번호를 입력하세요' }]}
             getValueFromEvent={(e) => String(e?.target?.value ?? '').replace(/\D/g, '')}
           >
-            <Input placeholder="예: 01000000000" prefix={<PhoneOutlined />} inputMode="numeric" />
+            <Input placeholder="예: 01000000000" prefix={<PhoneOutlined style={{ opacity: 0.55 }} />} inputMode="numeric" />
           </Form.Item>
 
+          <div className={styles.sectionRow}>
+            <span className={styles.sectionChip}>계정 정보</span>
+            <span className={styles.sectionLine} />
+          </div>
+
           <Form.Item label="이메일(선택)" name="email" rules={[{ type: 'email' }]}>
-            <Input placeholder="admin@company.com" prefix={<MailOutlined />} />
+            <Input placeholder="admin@company.com" prefix={<MailOutlined style={{ opacity: 0.55 }} />} />
           </Form.Item>
 
           <Form.Item label="비밀번호" name="password" rules={[{ required: true, message: '비밀번호를 입력하세요' }]}>
-            <Input.Password placeholder="비밀번호" prefix={<LockOutlined />} />
+            <Input.Password placeholder="비밀번호" prefix={<LockOutlined style={{ opacity: 0.55 }} />} />
           </Form.Item>
 
           <Form.Item
@@ -165,18 +180,18 @@ export function AdminSignUpPage() {
               }),
             ]}
           >
-            <Input.Password placeholder="비밀번호 확인" prefix={<LockOutlined />} />
+            <Input.Password placeholder="비밀번호 확인" prefix={<LockOutlined style={{ opacity: 0.55 }} />} />
           </Form.Item>
 
-          <Button type="primary" htmlType="submit" loading={loading} block style={{ marginTop: 6 }}>
+          <Button type="primary" htmlType="submit" loading={loading} block className={styles.primaryBtn}>
             계정 생성
           </Button>
 
-          <Button block style={{ marginTop: 10 }} onClick={() => nav('/login')}>
+          <Button block className={styles.secondaryBtn} onClick={() => nav('/login')}>
             로그인으로 돌아가기
           </Button>
         </Form>
-      </Card>
+      </div>
     </div>
   )
 }
