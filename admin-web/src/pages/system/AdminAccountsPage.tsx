@@ -1,4 +1,4 @@
-import { Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Typography, message } from 'antd'
+import { Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Table, Tabs, Tag, Tooltip, Typography, message } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import React from 'react'
@@ -26,10 +26,14 @@ const STATUS_META: Record<AdminUserStatus, { label: string; color: string }> = {
   PENDING: { label: '승인 대기', color: 'orange' },
   ACTIVE: { label: '활성', color: 'green' },
   INACTIVE: { label: '비활성', color: 'default' },
+  REJECTED: { label: '거절', color: 'red' },
 }
+
+type StatusFilter = 'ALL' | AdminUserStatus
 
 export function AdminAccountsPage() {
   const [keyword, setKeyword] = React.useState('')
+  const [statusFilter, setStatusFilter] = React.useState<StatusFilter>('PENDING')
   const role = getSession()?.role ?? 'OPERATOR'
   const canEdit = atLeast(role, 'SUPER_ADMIN')
   const tenantsQuery = useQuery({
@@ -59,6 +63,39 @@ export function AdminAccountsPage() {
   })
 
   const rows = q.data ?? []
+
+  const statusCounts = React.useMemo(() => {
+    const counts: Record<StatusFilter, number> = {
+      ALL: rows.length,
+      PENDING: 0,
+      ACTIVE: 0,
+      INACTIVE: 0,
+      REJECTED: 0,
+    }
+    for (const r of rows) counts[r.status] = (counts[r.status] ?? 0) + 1
+    return counts
+  }, [rows])
+
+  const filteredRows = React.useMemo(
+    () => (statusFilter === 'ALL' ? rows : rows.filter((r) => r.status === statusFilter)),
+    [rows, statusFilter],
+  )
+
+  // 최초 1회: 데이터 로드 후 승인대기 건수에 따라 기본 탭을 자동 결정한다.
+  // (승인대기 1건 이상 → PENDING, 0건 → ALL). 이후 refetch/수동 변경 시엔 덮어쓰지 않는다.
+  const autoTabAppliedRef = React.useRef(false)
+  React.useEffect(() => {
+    if (autoTabAppliedRef.current) return
+    if (!q.isSuccess) return
+    autoTabAppliedRef.current = true
+    setStatusFilter(statusCounts.PENDING > 0 ? 'PENDING' : 'ALL')
+  }, [q.isSuccess, statusCounts.PENDING])
+
+  const onChangeStatusFilter = (next: StatusFilter) => {
+    // 사용자가 직접 탭을 바꾸면 자동 결정 로직이 다시 개입하지 않도록 잠근다.
+    autoTabAppliedRef.current = true
+    setStatusFilter(next)
+  }
 
   const [open, setOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<Row | null>(null)
@@ -100,18 +137,56 @@ export function AdminAccountsPage() {
   }
 
   const [statusUpdatingId, setStatusUpdatingId] = React.useState<string | null>(null)
+  const [rejectTarget, setRejectTarget] = React.useState<Row | null>(null)
+  const [rejectReason, setRejectReason] = React.useState('')
+  const [rejecting, setRejecting] = React.useState(false)
 
-  const onChangeStatus = async (r: Row, status: Extract<AdminUserStatus, 'ACTIVE' | 'INACTIVE'>) => {
-    if (!canEdit) return
+  const onChangeStatus = async (
+    r: Row,
+    status: Extract<AdminUserStatus, 'ACTIVE' | 'INACTIVE' | 'REJECTED'>,
+    options?: { successMessage?: string; reason?: string },
+  ): Promise<boolean> => {
+    if (!canEdit) return false
     setStatusUpdatingId(r.id)
     try {
-      await api.patch(`/api/v1/admin/users/${encodeURIComponent(r.id)}/status`, { status })
-      message.success(status === 'ACTIVE' ? '계정이 활성화되었습니다.' : '계정이 비활성화되었습니다.')
+      const reason = options?.reason?.trim()
+      await api.patch(`/api/v1/admin/users/${encodeURIComponent(r.id)}/status`, {
+        status,
+        ...(reason ? { reason } : {}),
+      })
+      message.success(
+        options?.successMessage ?? (status === 'ACTIVE' ? '계정이 활성화되었습니다.' : '계정이 비활성화되었습니다.'),
+      )
       await q.refetch()
+      return true
     } catch (e: any) {
       message.error(e?.response?.data?.message ?? e?.message ?? '상태 변경 실패')
+      return false
     } finally {
       setStatusUpdatingId(null)
+    }
+  }
+
+  const openReject = (r: Row) => {
+    if (!canEdit) return
+    setRejectTarget(r)
+    setRejectReason('')
+  }
+
+  const submitReject = async () => {
+    if (!rejectTarget) return
+    setRejecting(true)
+    try {
+      const ok = await onChangeStatus(rejectTarget, 'REJECTED', {
+        successMessage: '계정이 거절되었습니다.',
+        reason: rejectReason,
+      })
+      if (ok) {
+        setRejectTarget(null)
+        setRejectReason('')
+      }
+    } finally {
+      setRejecting(false)
     }
   }
 
@@ -180,9 +255,20 @@ export function AdminAccountsPage() {
       </Card>
 
       <Card>
+        <Tabs
+          activeKey={statusFilter}
+          onChange={(k) => onChangeStatusFilter(k as StatusFilter)}
+          items={[
+            { key: 'PENDING', label: `승인대기 (${statusCounts.PENDING})` },
+            { key: 'ACTIVE', label: `승인완료 (${statusCounts.ACTIVE})` },
+            { key: 'REJECTED', label: `거절 (${statusCounts.REJECTED})` },
+            { key: 'INACTIVE', label: `비활성 (${statusCounts.INACTIVE})` },
+            { key: 'ALL', label: `전체 (${statusCounts.ALL})` },
+          ]}
+        />
         <Table<Row>
           rowKey={(r) => r.id}
-          dataSource={rows}
+          dataSource={filteredRows}
           loading={q.isLoading}
           pagination={{ pageSize: 20 }}
           columns={[
@@ -198,10 +284,13 @@ export function AdminAccountsPage() {
             {
               title: '사용자ID',
               dataIndex: 'id',
+              width: 120,
               render: (v: string) => (
-                <Space size={8}>
-                  <Typography.Text copyable={{ text: v }}>{v}</Typography.Text>
-                </Space>
+                <Tooltip title={v}>
+                  <Typography.Text copyable={{ text: v }} style={{ whiteSpace: 'nowrap' }}>
+                    {v.slice(0, 8)}…
+                  </Typography.Text>
+                </Tooltip>
               ),
             },
             {
@@ -209,6 +298,12 @@ export function AdminAccountsPage() {
               dataIndex: 'role',
               width: 140,
               render: (v: Row['role']) => <Tag>{roleName.get(v) ?? v}</Tag>,
+            },
+            {
+              title: '신청일시',
+              dataIndex: 'createdAt',
+              width: 190,
+              render: (v: string) => (v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : '-'),
             },
             {
               title: '상태',
@@ -237,20 +332,30 @@ export function AdminAccountsPage() {
                           수정
                         </Button>
                         {r.status === 'PENDING' && (
-                          <Popconfirm
-                            title="이 계정을 승인하시겠습니까?"
-                            okText="승인"
-                            cancelText="취소"
-                            onConfirm={() => onChangeStatus(r, 'ACTIVE')}
-                          >
-                            <Button size="small" type="primary" loading={statusUpdatingId === r.id}>
-                              승인
+                          <>
+                            <Popconfirm
+                              title={`${r.name} 계정을 승인하시겠습니까?`}
+                              okText="승인"
+                              cancelText="취소"
+                              onConfirm={() => onChangeStatus(r, 'ACTIVE', { successMessage: '계정이 승인되었습니다.' })}
+                            >
+                              <Button size="small" type="primary" loading={statusUpdatingId === r.id}>
+                                승인
+                              </Button>
+                            </Popconfirm>
+                            <Button
+                              size="small"
+                              danger
+                              loading={statusUpdatingId === r.id}
+                              onClick={() => openReject(r)}
+                            >
+                              거절
                             </Button>
-                          </Popconfirm>
+                          </>
                         )}
                         {r.status === 'ACTIVE' && (
                           <Popconfirm
-                            title="이 계정을 비활성화하시겠습니까?"
+                            title={`${r.name} 계정을 비활성화하시겠습니까?`}
                             okText="비활성화"
                             cancelText="취소"
                             okButtonProps={{ danger: true }}
@@ -263,7 +368,7 @@ export function AdminAccountsPage() {
                         )}
                         {r.status === 'INACTIVE' && (
                           <Popconfirm
-                            title="이 계정을 다시 활성화하시겠습니까?"
+                            title={`${r.name} 계정을 다시 활성화하시겠습니까?`}
                             okText="활성화"
                             cancelText="취소"
                             onConfirm={() => onChangeStatus(r, 'ACTIVE')}
@@ -342,6 +447,35 @@ export function AdminAccountsPage() {
             />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        open={rejectTarget != null}
+        title={rejectTarget ? `${rejectTarget.name} 계정을 거절하시겠습니까?` : '계정 거절'}
+        okText="거절"
+        okButtonProps={{ danger: true }}
+        cancelText="취소"
+        confirmLoading={rejecting}
+        onOk={submitReject}
+        onCancel={() => {
+          setRejectTarget(null)
+          setRejectReason('')
+        }}
+        destroyOnClose
+      >
+        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          <Typography.Text type="secondary">
+            거절 시 해당 계정은 로그인할 수 없는 거절 상태로 전환되며, 재승인할 수 없습니다.
+          </Typography.Text>
+          <Input.TextArea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="거절 사유 (선택)"
+            rows={3}
+            maxLength={500}
+            showCount
+          />
+        </Space>
       </Modal>
     </PageShell>
   )

@@ -15,5 +15,11 @@ public final class AdminUserManagementExceptions {
             super(message);
         }
     }
+
+    public static class InvalidAdminUserStatusTransitionException extends RuntimeException {
+        public InvalidAdminUserStatusTransitionException(String message) {
+            super(message);
+        }
+    }
 }
 

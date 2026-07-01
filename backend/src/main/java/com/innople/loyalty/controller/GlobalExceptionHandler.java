@@ -48,7 +48,8 @@ public class GlobalExceptionHandler {
             IllegalArgumentException.class,
             TenantMismatchException.class,
             PointExceptions.InvalidPointAmountException.class,
-            AdminUserManagementExceptions.InvalidAdminUserPhoneNumberException.class
+            AdminUserManagementExceptions.InvalidAdminUserPhoneNumberException.class,
+            AdminUserManagementExceptions.InvalidAdminUserStatusTransitionException.class
     })
     public ResponseEntity<ApiErrorResponse> handleBadRequest(RuntimeException ex) {
         return ResponseEntity.badRequest().body(ApiErrorResponse.of(ex.getMessage()));

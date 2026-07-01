@@ -31,7 +31,8 @@ public final class AdminUserManagementDtos {
     }
 
     public record UpdateStatusRequest(
-            @NotNull AdminUserStatus status
+            @NotNull AdminUserStatus status,
+            String reason
     ) {
     }
 

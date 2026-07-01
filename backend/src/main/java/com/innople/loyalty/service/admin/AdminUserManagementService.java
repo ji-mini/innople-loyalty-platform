@@ -15,7 +15,7 @@ public interface AdminUserManagementService {
 
     AdminUserItem update(UUID adminUserId, String phoneNumber, String email, String name, AdminRole role);
 
-    AdminUserItem updateStatus(UUID adminUserId, AdminUserStatus status);
+    AdminUserItem updateStatus(UUID adminUserId, AdminUserStatus status, UUID changedBy, String reason);
 
     record AdminUserItem(
             UUID id,

@@ -3,6 +3,7 @@ package com.innople.loyalty.controller;
 import com.innople.loyalty.config.AdminRoleResolver;
 import com.innople.loyalty.controller.dto.AdminUserManagementDtos;
 import com.innople.loyalty.domain.user.AdminRole;
+import com.innople.loyalty.domain.user.AdminUser;
 import com.innople.loyalty.service.admin.AdminUserManagementService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -34,8 +35,10 @@ public class AdminUserStatusController {
             HttpServletRequest httpServletRequest
     ) {
         adminRoleResolver.requireAtLeast(httpServletRequest, AdminRole.SUPER_ADMIN);
+        AdminUser actor = adminRoleResolver.resolve(httpServletRequest);
+        UUID changedBy = (actor != null) ? actor.getId() : null;
         return AdminUserManagementDtos.AdminUserResponse.from(
-                adminUserManagementService.updateStatus(adminUserId, request.status())
+                adminUserManagementService.updateStatus(adminUserId, request.status(), changedBy, request.reason())
         );
     }
 }
