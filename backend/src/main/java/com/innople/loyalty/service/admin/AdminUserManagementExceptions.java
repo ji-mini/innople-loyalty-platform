@@ -21,5 +21,11 @@ public final class AdminUserManagementExceptions {
             super(message);
         }
     }
+
+    public static class InvalidAdminUserRoleChangeException extends RuntimeException {
+        public InvalidAdminUserRoleChangeException(String message) {
+            super(message);
+        }
+    }
 }
 

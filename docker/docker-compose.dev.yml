@@ -5,3 +5,5 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: dev
       SERVER_PORT: "3201"
+      # 개발 환경에서는 휴대폰/이메일 인증을 우회한다(인증 인프라 미구현). 운영에서만 true로 강제.
+      APP_MEMBER_VERIFICATION_REQUIRED: "false"

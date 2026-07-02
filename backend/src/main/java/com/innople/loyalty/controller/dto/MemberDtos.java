@@ -45,7 +45,11 @@ public final class MemberDtos {
             Boolean appLoginAllowed,
             @Size(min = 8, max = 100) String initialPassword,
             Boolean autoGeneratePassword,
-            Boolean sendInitialPasswordLink
+            Boolean sendInitialPasswordLink,
+            // 인증 상태 placeholder. 실제 인증 인프라(SMS/이메일) 연동 전까지는 클라이언트가 보내지 않을 수 있으며,
+            // verification-required=false(개발)에서는 값이 없어도 등록이 정상 동작한다.
+            Boolean phoneVerified,
+            Boolean emailVerified
     ) {
     }
 

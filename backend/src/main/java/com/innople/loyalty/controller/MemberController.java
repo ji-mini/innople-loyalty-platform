@@ -66,7 +66,9 @@ public class MemberController {
                 request.appLoginAllowed(),
                 request.initialPassword(),
                 request.autoGeneratePassword(),
-                request.sendInitialPasswordLink()
+                request.sendInitialPasswordLink(),
+                request.phoneVerified(),
+                request.emailVerified()
         ));
         setMemberAuditMessage(httpRequest, "회원 생성", result.memberNo());
         return toResponse(result);

@@ -29,6 +29,7 @@ export function PointManualEarnPage() {
   const queryClient = useQueryClient()
   const selectedReasonCode = Form.useWatch('reasonCode', form)
   const previousReasonCodeRef = React.useRef<string | undefined>(undefined)
+  const autoLookupMemberNoRef = React.useRef<string | null>(null)
 
   const policyByPointType = React.useMemo(() => {
     return new Map((pointPolicies.data ?? []).filter((policy) => policy.enabled).map((policy) => [policy.pointType, policy]))
@@ -54,13 +55,17 @@ export function PointManualEarnPage() {
     }
   }
 
+  // URL 쿼리파라미터(memberNo)로 진입 시 자동 조회.
+  // StrictMode 개발 이중 마운트 및 리렌더에서도 회원번호당 1회만 조회되도록 ref로 가드한다.
   React.useEffect(() => {
     const m = sp.get('memberNo')
     if (!m) return
+    if (autoLookupMemberNoRef.current === m) return
+    autoLookupMemberNoRef.current = m
     form.setFieldsValue({ memberNo: m })
     onLookup()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [sp])
 
   React.useEffect(() => {
     const reasonCode = typeof selectedReasonCode === 'string' ? selectedReasonCode : undefined

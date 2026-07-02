@@ -24,6 +24,7 @@ export function PointManualDeductPage() {
   const reasons = useCommonCodes('POINT_REASON')
   const referenceTypes = useCommonCodes('POINT_REFERENCE_TYPE')
   const queryClient = useQueryClient()
+  const autoLookupMemberNoRef = React.useRef<string | null>(null)
 
   const onLookup = async () => {
     const memberNo = String(form.getFieldValue('memberNo') ?? '').trim()
@@ -45,13 +46,17 @@ export function PointManualDeductPage() {
     }
   }
 
+  // URL 쿼리파라미터(memberNo)로 진입 시 자동 조회.
+  // StrictMode 개발 이중 마운트 및 리렌더에서도 회원번호당 1회만 조회되도록 ref로 가드한다.
   React.useEffect(() => {
     const m = sp.get('memberNo')
     if (!m) return
+    if (autoLookupMemberNoRef.current === m) return
+    autoLookupMemberNoRef.current = m
     form.setFieldsValue({ memberNo: m })
     onLookup()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [sp])
 
   const onReset = () => {
     form.resetFields()

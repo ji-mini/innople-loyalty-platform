@@ -1,13 +1,11 @@
 import { Alert, Button, Card, DatePicker, Form, Input, Select, Space, Table, Tag, Typography } from 'antd'
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import type { MemberSummary } from '../../shared/types'
 import { useCommonCodes, useMemberList } from '../../shared/queries'
-import { getSession } from '../../shared/storage'
+import { col } from '../../shared/tableColumns'
 
 export function MembersPage() {
-  const nav = useNavigate()
-  const role = getSession()?.role ?? 'OPERATOR'
   const statusCodes = useCommonCodes('MEMBER_STATUS')
   const [form] = Form.useForm()
   const [filters, setFilters] = React.useState<{
@@ -28,10 +26,7 @@ export function MembersPage() {
     size,
   })
 
-  const centerTitle = (text: string) => <div style={{ textAlign: 'center' }}>{text}</div>
-
-  const col = (title: string, extra?: object) => ({ title: centerTitle(title), align: 'center' as const, ...extra })
-
+  // 고정폭을 두지 않아 컬럼들이 컨테이너 폭을 자동 분배한다. (헤더/셀 정렬은 공통 col() 헬퍼로 일치)
   const columns = [
     {
       ...col('회원번호'),
@@ -49,39 +44,19 @@ export function MembersPage() {
         return <Tag>{name}</Tag>
       },
     },
+    {
+      ...col('앱 로그인', 'center', { width: 110 }),
+      dataIndex: 'appLoginEnabled',
+      render: (v: boolean) => (v ? <Tag color="green">허용</Tag> : <Tag>미허용</Tag>),
+    },
     { ...col('휴대폰'), dataIndex: 'phoneNumber' },
     { ...col('Web ID'), dataIndex: 'webId' },
-    { ...col('가입일'), dataIndex: 'joinedAt' },
+    { ...col('가입일', 'right'), dataIndex: 'joinedAt' },
     {
-      ...col('포인트 잔액', { width: 140 }),
+      ...col('포인트 잔액', 'right'),
       dataIndex: 'pointBalance',
       render: (v: number) => `${Number(v ?? 0).toLocaleString('ko-KR')} P`,
     },
-    ...(role === 'SUPER_ADMIN'
-      ? [
-          {
-            ...col('포인트 작업', { width: 210 }),
-            key: 'actions',
-            render: (_: any, r: MemberSummary) => (
-              <Space>
-                <Button
-                  size="small"
-                  onClick={() => nav(`/points/manual/earn?memberNo=${encodeURIComponent(r.memberNo)}`)}
-                >
-                  적립
-                </Button>
-                <Button
-                  size="small"
-                  danger
-                  onClick={() => nav(`/points/manual/deduct?memberNo=${encodeURIComponent(r.memberNo)}`)}
-                >
-                  차감
-                </Button>
-              </Space>
-            ),
-          },
-        ]
-      : []),
   ]
 
   return (
@@ -186,6 +161,8 @@ export function MembersPage() {
           columns={columns as any}
           dataSource={query.data?.items ?? []}
           loading={query.isLoading}
+          tableLayout="auto"
+          style={{ width: '100%' }}
           pagination={{
             current: (query.data?.page ?? 0) + 1,
             pageSize: size,

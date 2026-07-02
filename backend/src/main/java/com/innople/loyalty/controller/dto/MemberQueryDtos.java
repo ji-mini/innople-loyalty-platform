@@ -23,7 +23,8 @@ public final class MemberQueryDtos {
             String webId,
             LocalDate joinedAt,
             LocalDate dormantAt,
-            LocalDate withdrawnAt
+            LocalDate withdrawnAt,
+            boolean appLoginEnabled
     ) {
     }
 

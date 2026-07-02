@@ -90,6 +90,26 @@ const GRID_STYLE: React.CSSProperties = {
   rowGap: 4,
 }
 
+// 연락처 필드는 입력 내용 폭에 맞춰 좌측으로 패킹하고, 넓은 화면에서 과도하게 늘어나지 않도록
+// 각 필드에 max-width 상한을 둔다. 기본 정보 그리드와 동일한 columnGap/rowGap을 유지한다.
+const CONTACT_GRID_STYLE: React.CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  columnGap: 20,
+  rowGap: 4,
+  alignItems: 'flex-start',
+}
+
+const CONTACT_PHONE_ITEM_STYLE: React.CSSProperties = {
+  flex: '1 1 260px',
+  maxWidth: 320,
+}
+
+const CONTACT_EMAIL_ITEM_STYLE: React.CSSProperties = {
+  flex: '1 1 280px',
+  maxWidth: 360,
+}
+
 const FULL_WIDTH_CONTROL_STYLE: React.CSSProperties = {
   width: '100%',
   height: 40,
@@ -468,8 +488,8 @@ export function MemberCreatePage() {
             </SectionCard>
 
             <SectionCard title="연락처 정보" description="회원 연락처와 인증 정보를 관리합니다.">
-              <div style={GRID_STYLE}>
-                <Form.Item label="휴대폰번호" required>
+              <div style={CONTACT_GRID_STYLE}>
+                <Form.Item label="휴대폰번호" required style={CONTACT_PHONE_ITEM_STYLE}>
                   <Space.Compact style={{ width: '100%' }}>
                     <Form.Item
                       name="phoneNumber"
@@ -494,7 +514,7 @@ export function MemberCreatePage() {
                   </Form.Item>
                 </Form.Item>
 
-                <Form.Item label="이메일" required>
+                <Form.Item label="이메일" required style={CONTACT_EMAIL_ITEM_STYLE}>
                   <Space.Compact style={{ width: '100%' }}>
                     <Form.Item
                       name="email"

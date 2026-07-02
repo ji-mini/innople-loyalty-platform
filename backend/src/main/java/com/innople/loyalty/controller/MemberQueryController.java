@@ -91,7 +91,8 @@ public class MemberQueryController {
                 v.getWebId(),
                 v.getJoinedAt(),
                 v.getDormantAt(),
-                v.getWithdrawnAt()
+                v.getWithdrawnAt(),
+                v.getAppLoginEnabled()
         )).toList();
 
         return new MemberQueryDtos.PagedResponse<>(

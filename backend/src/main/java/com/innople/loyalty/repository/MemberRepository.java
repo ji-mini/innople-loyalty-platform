@@ -95,6 +95,8 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
         LocalDate getWithdrawnAt();
 
         long getPointBalance();
+
+        boolean getAppLoginEnabled();
     }
 
     @Query("""
@@ -130,7 +132,12 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
               m.joinedAt as joinedAt,
               m.dormantAt as dormantAt,
               m.withdrawnAt as withdrawnAt,
-              coalesce(pa.currentBalance, 0) as pointBalance
+              coalesce(pa.currentBalance, 0) as pointBalance,
+              (select case when count(mc.id) > 0 then true else false end
+                 from MemberCredential mc
+                where mc.tenantId = m.tenantId
+                  and mc.memberId = m.id
+                  and mc.deleted = false) as appLoginEnabled
             from Member m
             left join PointAccount pa
               on pa.tenantId = m.tenantId

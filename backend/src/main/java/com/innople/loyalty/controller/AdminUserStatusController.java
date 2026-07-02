@@ -38,7 +38,25 @@ public class AdminUserStatusController {
         AdminUser actor = adminRoleResolver.resolve(httpServletRequest);
         UUID changedBy = (actor != null) ? actor.getId() : null;
         return AdminUserManagementDtos.AdminUserResponse.from(
-                adminUserManagementService.updateStatus(adminUserId, request.status(), changedBy, request.reason())
+                adminUserManagementService.updateStatus(adminUserId, request.status(), request.role(), changedBy, request.reason())
+        );
+    }
+
+    /**
+     * 승인과 무관하게 이미 ACTIVE인 계정의 권한(role)만 단독으로 변경한다.
+     * (권한 편집 UI가 사용하는 엔드포인트. role이 실제로 바뀐 경우에만 이력이 기록된다.)
+     */
+    @PatchMapping("/{adminUserId}/role")
+    public AdminUserManagementDtos.AdminUserResponse updateRole(
+            @PathVariable UUID adminUserId,
+            @Valid @RequestBody AdminUserManagementDtos.UpdateRoleRequest request,
+            HttpServletRequest httpServletRequest
+    ) {
+        adminRoleResolver.requireAtLeast(httpServletRequest, AdminRole.SUPER_ADMIN);
+        AdminUser actor = adminRoleResolver.resolve(httpServletRequest);
+        UUID changedBy = (actor != null) ? actor.getId() : null;
+        return AdminUserManagementDtos.AdminUserResponse.from(
+                adminUserManagementService.updateRole(adminUserId, request.role(), changedBy, request.reason())
         );
     }
 }

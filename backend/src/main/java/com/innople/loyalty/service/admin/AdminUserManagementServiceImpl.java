@@ -3,9 +3,11 @@ package com.innople.loyalty.service.admin;
 import com.innople.loyalty.config.TenantContext;
 import com.innople.loyalty.domain.user.AdminRole;
 import com.innople.loyalty.domain.user.AdminUser;
+import com.innople.loyalty.domain.user.AdminUserRoleHistory;
 import com.innople.loyalty.domain.user.AdminUserStatus;
 import com.innople.loyalty.domain.user.AdminUserStatusHistory;
 import com.innople.loyalty.repository.AdminUserRepository;
+import com.innople.loyalty.repository.AdminUserRoleHistoryRepository;
 import com.innople.loyalty.repository.AdminUserStatusHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -19,6 +21,7 @@ import java.util.UUID;
 import static com.innople.loyalty.service.admin.AdminAuthExceptions.AdminUserAlreadyExistsException;
 import static com.innople.loyalty.service.admin.AdminUserManagementExceptions.AdminUserNotFoundException;
 import static com.innople.loyalty.service.admin.AdminUserManagementExceptions.InvalidAdminUserPhoneNumberException;
+import static com.innople.loyalty.service.admin.AdminUserManagementExceptions.InvalidAdminUserRoleChangeException;
 import static com.innople.loyalty.service.admin.AdminUserManagementExceptions.InvalidAdminUserStatusTransitionException;
 
 @Service
@@ -27,6 +30,7 @@ public class AdminUserManagementServiceImpl implements AdminUserManagementServic
 
     private final AdminUserRepository adminUserRepository;
     private final AdminUserStatusHistoryRepository adminUserStatusHistoryRepository;
+    private final AdminUserRoleHistoryRepository adminUserRoleHistoryRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -68,7 +72,7 @@ public class AdminUserManagementServiceImpl implements AdminUserManagementServic
 
     @Override
     @Transactional
-    public AdminUserItem update(UUID adminUserId, String phoneNumber, String email, String name, AdminRole role) {
+    public AdminUserItem update(UUID adminUserId, String phoneNumber, String email, String name, AdminRole role, UUID changedBy) {
         UUID tenantId = TenantContext.requireTenantId();
         AdminUser adminUser = adminUserRepository.findByTenantIdAndId(tenantId, adminUserId)
                 .orElseThrow(() -> new AdminUserNotFoundException("admin user not found"));
@@ -81,11 +85,14 @@ public class AdminUserManagementServiceImpl implements AdminUserManagementServic
         }
         AdminRole r = (role == null) ? AdminRole.OPERATOR : role;
 
+        AdminRole fromRole = adminUser.getRole();
         adminUser.changeProfile(p, e, n);
         adminUser.changeRole(r);
 
         try {
-            return toItem(adminUserRepository.save(adminUser));
+            AdminUser saved = adminUserRepository.save(adminUser);
+            recordRoleChangeIfChanged(tenantId, adminUserId, changedBy, fromRole, r, null);
+            return toItem(saved);
         } catch (DataIntegrityViolationException ex) {
             throw new AdminUserAlreadyExistsException("admin user already exists");
         }
@@ -93,7 +100,7 @@ public class AdminUserManagementServiceImpl implements AdminUserManagementServic
 
     @Override
     @Transactional
-    public AdminUserItem updateStatus(UUID adminUserId, AdminUserStatus status, UUID changedBy, String reason) {
+    public AdminUserItem updateStatus(UUID adminUserId, AdminUserStatus status, AdminRole targetRole, UUID changedBy, String reason) {
         UUID tenantId = TenantContext.requireTenantId();
         if (status == null) {
             throw new IllegalArgumentException("status must not be null");
@@ -104,14 +111,66 @@ public class AdminUserManagementServiceImpl implements AdminUserManagementServic
         AdminUserStatus from = adminUser.getStatus();
         validateTransition(from, status);
 
+        // 승인과 동시에 권한을 변경할 수 있다. targetRole이 null이면 기존 role을 유지한다.
+        AdminRole fromRole = adminUser.getRole();
+        if (targetRole != null) {
+            adminUser.changeRole(targetRole);
+        }
         adminUser.changeStatus(status);
         AdminUser saved = adminUserRepository.save(adminUser);
 
         adminUserStatusHistoryRepository.save(
                 AdminUserStatusHistory.of(tenantId, adminUserId, changedBy, from, status, reason)
         );
+        recordRoleChangeIfChanged(tenantId, adminUserId, changedBy, fromRole, adminUser.getRole(), reason);
 
         return toItem(saved);
+    }
+
+    @Override
+    @Transactional
+    public AdminUserItem updateRole(UUID adminUserId, AdminRole role, UUID changedBy, String reason) {
+        UUID tenantId = TenantContext.requireTenantId();
+        if (role == null) {
+            throw new IllegalArgumentException("role must not be null");
+        }
+        AdminUser adminUser = adminUserRepository.findByTenantIdAndId(tenantId, adminUserId)
+                .orElseThrow(() -> new AdminUserNotFoundException("admin user not found"));
+
+        // 권한 단독 변경은 이미 승인(ACTIVE)된 계정에 대해서만 허용한다.
+        if (adminUser.getStatus() != AdminUserStatus.ACTIVE) {
+            throw new InvalidAdminUserRoleChangeException("활성(ACTIVE) 상태의 계정만 권한을 변경할 수 있습니다.");
+        }
+
+        AdminRole fromRole = adminUser.getRole();
+        if (fromRole == role) {
+            // 동일 권한으로의 변경은 이력을 남기지 않고 그대로 반환한다.
+            return toItem(adminUser);
+        }
+
+        adminUser.changeRole(role);
+        AdminUser saved = adminUserRepository.save(adminUser);
+
+        recordRoleChangeIfChanged(tenantId, adminUserId, changedBy, fromRole, role, reason);
+
+        return toItem(saved);
+    }
+
+    /** role이 실제로 변경된 경우에만 권한 변경 이력을 남긴다. (동일 role 재승인/무변경 시 기록하지 않음) */
+    private void recordRoleChangeIfChanged(
+            UUID tenantId,
+            UUID adminUserId,
+            UUID changedBy,
+            AdminRole fromRole,
+            AdminRole toRole,
+            String reason
+    ) {
+        if (toRole == null || fromRole == toRole) {
+            return;
+        }
+        adminUserRoleHistoryRepository.save(
+                AdminUserRoleHistory.of(tenantId, adminUserId, changedBy, fromRole, toRole, reason)
+        );
     }
 
     /**

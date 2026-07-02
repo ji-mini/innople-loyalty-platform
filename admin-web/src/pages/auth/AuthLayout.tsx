@@ -1,3 +1,4 @@
+import { CheckCircleFilled } from '@ant-design/icons'
 import { Card } from 'antd'
 import React from 'react'
 import styles from './AuthLayout.module.css'
@@ -14,9 +15,9 @@ type AuthLayoutProps = {
 /**
  * 인증 화면(로그인/회원가입/비밀번호 재설정 등) 공통 레이아웃.
  * - 연한 그라데이션 배경 + 떠다니는 구름 + 장식 일러스트
- * - 좌측 브랜드 영역(브랜드명/태그라인/기능 소개 카드)
+ * - 좌측 히어로 영역(2줄 브랜드 타이틀 + 코럴 강조 라인, 미니멀)
  * - 우측 흰색 카드(폼 슬롯)
- * - 좁은 화면에서는 브랜드 영역을 숨기고 카드만 중앙 정렬
+ * - 좁은 화면에서는 히어로가 위, 카드가 아래로 스택
  */
 export function AuthLayout({ cardTitle, cardSubtitle, children }: AuthLayoutProps) {
   return (
@@ -43,42 +44,19 @@ export function AuthLayout({ cardTitle, cardSubtitle, children }: AuthLayoutProp
 
       <div className={styles.wrap}>
         <section className={styles.hero}>
-          <h1 className={styles.brand}>INNOPLE LOYALTY PLATFORM</h1>
-          <p className={styles.tagline}>테넌트 기반 멀티테넌시로, 더 안전하고 유연한 운영을 지원합니다.</p>
-          <div className={styles.featureCards}>
-            <div className={styles.featureCard}>
-              <div className={styles.featureCardImg}>
-                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="8" y="12" width="20" height="20" rx="4" fill="rgba(255,139,122,0.9)" />
-                  <rect x="36" y="12" width="20" height="20" rx="4" fill="rgba(139,216,194,0.9)" />
-                  <rect x="8" y="36" width="20" height="20" rx="4" fill="rgba(155,225,255,0.9)" />
-                  <rect x="36" y="36" width="20" height="20" rx="4" fill="rgba(255,180,210,0.9)" />
-                </svg>
-              </div>
-              <span className={styles.featureCardLabel}>테넌트 기반 멀티테넌시</span>
-            </div>
-            <div className={styles.featureCard}>
-              <div className={styles.featureCardImg}>
-                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="32" cy="20" r="10" fill="rgba(139,216,194,0.9)" />
-                  <path d="M12 52c0-11 8.95-20 20-20s20 9 20 20" stroke="rgba(139,216,194,0.9)" strokeWidth="6" fill="none" strokeLinecap="round" />
-                  <circle cx="48" cy="28" r="6" fill="rgba(255,139,122,0.9)" />
-                  <path d="M36 48c0-6.6 5.4-12 12-12" stroke="rgba(255,139,122,0.9)" strokeWidth="4" fill="none" strokeLinecap="round" />
-                </svg>
-              </div>
-              <span className={styles.featureCardLabel}>회원 조회 · 관리</span>
-            </div>
-            <div className={styles.featureCard}>
-              <div className={styles.featureCardImg}>
-                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="32" cy="28" r="14" fill="rgba(155,225,255,0.9)" />
-                  <path d="M32 18v20M24 28h16" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                  <rect x="14" y="44" width="36" height="8" rx="2" fill="rgba(255,180,210,0.9)" />
-                </svg>
-              </div>
-              <span className={styles.featureCardLabel}>포인트/거래 이력</span>
-            </div>
-          </div>
+          <h1 className={styles.brand}>
+            <span className={styles.brandPrimary}>Innople</span>
+            <span className={styles.brandSecondary}>Loyalty Platform</span>
+          </h1>
+          <span className={styles.accent} aria-hidden="true" />
+          <ul className={styles.features}>
+            {['테넌트 기반 멀티테넌시', '회원 · 포인트 통합 관리', '안전하고 유연한 운영'].map((label) => (
+              <li key={label} className={styles.featureItem}>
+                <CheckCircleFilled className={styles.featureIcon} />
+                <span>{label}</span>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <Card className={styles.card} bordered={false} bodyStyle={{ padding: 24 }}>

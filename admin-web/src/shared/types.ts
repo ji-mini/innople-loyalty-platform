@@ -61,6 +61,7 @@ export type MemberSummary = {
   joinedAt: string
   dormantAt: string | null
   withdrawnAt: string | null
+  appLoginEnabled: boolean
 }
 
 export type MemberAddress = {

@@ -5,6 +5,8 @@ import com.innople.loyalty.config.auth.AdminJwtTokenProvider;
 import com.innople.loyalty.domain.user.AdminRole;
 import com.innople.loyalty.domain.user.AdminUser;
 import com.innople.loyalty.repository.AdminUserRepository;
+import com.innople.loyalty.repository.AdminUserRoleHistoryRepository;
+import com.innople.loyalty.repository.AdminUserStatusHistoryRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,12 @@ class AdminUserEmailOptionalTest {
     private AdminUserRepository adminUserRepository;
 
     @Mock
+    private AdminUserStatusHistoryRepository adminUserStatusHistoryRepository;
+
+    @Mock
+    private AdminUserRoleHistoryRepository adminUserRoleHistoryRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
@@ -51,7 +59,8 @@ class AdminUserEmailOptionalTest {
     @BeforeEach
     void setUp() {
         TenantContext.setTenantId(tenantId);
-        managementService = new AdminUserManagementServiceImpl(adminUserRepository, passwordEncoder);
+        managementService = new AdminUserManagementServiceImpl(
+                adminUserRepository, adminUserStatusHistoryRepository, adminUserRoleHistoryRepository, passwordEncoder);
         authService = new AdminAuthServiceImpl(adminUserRepository, passwordEncoder, adminJwtTokenProvider);
 
         when(passwordEncoder.encode(any())).thenReturn("hashed-password");

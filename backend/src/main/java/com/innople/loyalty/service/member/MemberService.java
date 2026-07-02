@@ -37,7 +37,10 @@ public interface MemberService {
             Boolean appLoginAllowed,
             String initialPassword,
             Boolean autoGeneratePassword,
-            Boolean sendInitialPasswordLink
+            Boolean sendInitialPasswordLink,
+            // 인증 상태 placeholder. 실제 인증 인프라 연동 시 채워지며, 현재는 null/false로 전달될 수 있다.
+            Boolean phoneVerified,
+            Boolean emailVerified
     ) {
     }
 

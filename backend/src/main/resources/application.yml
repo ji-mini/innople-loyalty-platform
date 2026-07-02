@@ -23,6 +23,9 @@ app:
   juso:
     search-confm-key: ${APP_JUSO_SEARCH_CONFM_KEY:U01TX0FVVEgyMDI2MDMxMzEzNTcyNzExNzcyNTY=}
   member:
+    # 회원 등록 시 휴대폰/이메일 인증 강제 여부.
+    # 개발 편의를 위해 기본값 false(우회). 운영에서는 APP_MEMBER_VERIFICATION_REQUIRED=true로 주입해 강제한다.
+    verification-required: ${APP_MEMBER_VERIFICATION_REQUIRED:false}
     initial-password-link:
       login-url: ${APP_MEMBER_INITIAL_PASSWORD_LINK_LOGIN_URL:http://localhost:8081}
       from: ${APP_MEMBER_INITIAL_PASSWORD_LINK_FROM:no-reply@innople.local}

@@ -1,5 +1,6 @@
 package com.innople.loyalty.service.member;
 
+import com.innople.loyalty.config.MemberVerificationProperties;
 import com.innople.loyalty.config.TenantContext;
 import com.innople.loyalty.controller.dto.MemberDtos.AddressRequest;
 import com.innople.loyalty.controller.dto.MemberDtos.AddressResponse;
@@ -26,6 +27,7 @@ import java.util.regex.Pattern;
 import static com.innople.loyalty.service.member.MemberExceptions.InvalidMemberStatusException;
 import static com.innople.loyalty.service.member.MemberExceptions.MemberAlreadyExistsException;
 import static com.innople.loyalty.service.member.MemberExceptions.MemberNotFoundException;
+import static com.innople.loyalty.service.member.MemberExceptions.MemberVerificationRequiredException;
 
 @Service
 @RequiredArgsConstructor
@@ -39,12 +41,17 @@ public class MemberServiceImpl implements MemberService {
     private final CommonCodeRepository commonCodeRepository;
     private final MemberCredentialService memberCredentialService;
     private final InitialPasswordLinkSender initialPasswordLinkSender;
+    private final MemberVerificationProperties memberVerificationProperties;
     private static final Pattern WEB_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
 
     @Override
     @Transactional
     public MemberResult register(RegisterCommand command) {
         UUID tenantId = TenantContext.requireTenantId();
+
+        // 운영 등 verification-required=true 환경에서만 서버측에서 인증 완료 여부를 강제한다.
+        // (프론트 버튼 비활성화는 우회 가능하므로 반드시 서버에서 검증)
+        verifyContactVerification(command);
 
         String statusCode = (command.statusCode() == null || command.statusCode().isBlank())
                 ? MemberStatusCodes.ACTIVE
@@ -129,6 +136,24 @@ public class MemberServiceImpl implements MemberService {
             return toResult(saved, generatedPassword);
         } catch (DataIntegrityViolationException e) {
             throw new MemberAlreadyExistsException("unique constraint violated (memberNo/webId/ci)");
+        }
+    }
+
+    /**
+     * 휴대폰/이메일 인증 완료 여부를 서버측에서 강제한다.
+     * verification-required=false(개발 기본값)이면 검증을 건너뛰어 기존과 동일하게 동작한다.
+     * 실제 인증 인프라 연동 전까지는 command의 phoneVerified/emailVerified가 채워지지 않을 수 있으므로,
+     * 플래그를 켜기 전(운영 전환 시)에는 인증 상태를 채우는 로직이 함께 준비되어야 한다.
+     */
+    private void verifyContactVerification(RegisterCommand command) {
+        if (!memberVerificationProperties.isVerificationRequired()) {
+            return;
+        }
+        if (!Boolean.TRUE.equals(command.phoneVerified())) {
+            throw MemberVerificationRequiredException.phoneNotVerified();
+        }
+        if (!Boolean.TRUE.equals(command.emailVerified())) {
+            throw MemberVerificationRequiredException.emailNotVerified();
         }
     }
 

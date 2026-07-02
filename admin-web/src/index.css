@@ -6,6 +6,14 @@
   --brand-mint: #8bd8c2;
   --ink: #1f2a37;
 
+  /* 포인트 액션 버튼 틴트 (같은 채도의 은은한 쌍): 적립=긍정(민트) / 차감=주의(코럴) */
+  --point-earn-bg: #e1f5ee;
+  --point-earn-border: #9fe1cb;
+  --point-earn-text: #0f6e56;
+  --point-deduct-bg: #faece7;
+  --point-deduct-border: #f5c4b3;
+  --point-deduct-text: #993c1d;
+
   font-family: 'Nunito Sans', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color: var(--ink);
   background: #fff;
@@ -29,6 +37,38 @@ body {
 
 a {
   color: inherit;
+}
+
+/*
+ * 포인트 액션 버튼(적립/차감) 공통 틴트 스타일. 크기/패딩/폰트는 antd 기본을 그대로 두고 색만 변경한다.
+ * hover/focus에서도 antd 기본(파랑/빨강)으로 바뀌지 않도록 상태별 색을 고정한다.
+ */
+.btn-point-earn.ant-btn {
+  background: var(--point-earn-bg);
+  border: 0.5px solid var(--point-earn-border);
+  color: var(--point-earn-text);
+}
+
+.btn-point-earn.ant-btn:hover,
+.btn-point-earn.ant-btn:focus {
+  background: var(--point-earn-bg);
+  border-color: var(--point-earn-border);
+  color: var(--point-earn-text);
+  filter: brightness(0.97);
+}
+
+.btn-point-deduct.ant-btn {
+  background: var(--point-deduct-bg);
+  border: 0.5px solid var(--point-deduct-border);
+  color: var(--point-deduct-text);
+}
+
+.btn-point-deduct.ant-btn:hover,
+.btn-point-deduct.ant-btn:focus {
+  background: var(--point-deduct-bg);
+  border-color: var(--point-deduct-border);
+  color: var(--point-deduct-text);
+  filter: brightness(0.97);
 }
 
 /* 인증 화면 공통 브랜드 배경(핑크→블루→민트 그라데이션). 로그인/등록 등에서 재사용. */

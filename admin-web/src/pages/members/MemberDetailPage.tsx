@@ -7,6 +7,7 @@ import { useCommonCodes, useMemberDetail, useMemberLedgers, useMemberLoginHistor
 import type { MemberAddress, MemberDetail, MemberLedger, MemberLoginHistory, PointLedgerItem } from '../../shared/types'
 import { getSession } from '../../shared/storage'
 import { atLeast } from '../../shared/roles'
+import { col } from '../../shared/tableColumns'
 
 /** 회원 상세 Descriptions 제목(라벨) 열 — 고정 너비 + 값 열과 아주 약간 구분되는 톤 */
 const MEMBER_DETAIL_LABEL_COL_STYLE: React.CSSProperties = {
@@ -386,8 +387,16 @@ export function MemberDetailPage() {
           )}
           {role === 'SUPER_ADMIN' ? (
             <>
-              <Button onClick={() => nav(`/points/manual/earn?memberNo=${encodeURIComponent(memberNo)}`)}>포인트 적립</Button>
-              <Button danger onClick={() => nav(`/points/manual/deduct?memberNo=${encodeURIComponent(memberNo)}`)}>
+              <Button
+                className="btn-point-earn"
+                onClick={() => nav(`/points/manual/earn?memberNo=${encodeURIComponent(memberNo)}`)}
+              >
+                포인트 적립
+              </Button>
+              <Button
+                className="btn-point-deduct"
+                onClick={() => nav(`/points/manual/deduct?memberNo=${encodeURIComponent(memberNo)}`)}
+              >
                 포인트 차감
               </Button>
             </>
@@ -541,9 +550,8 @@ export function MemberDetailPage() {
                     dataSource={pointLedgers.data ?? []}
                     columns={[
                       {
-                        title: '구분',
+                        ...col('구분', 'center', { width: 90 }),
                         dataIndex: 'eventType',
-                        width: 100,
                         render: (v: string) => {
                           const color =
                             v === 'EARN' || v === 'ADJUST_EARN'
@@ -555,37 +563,36 @@ export function MemberDetailPage() {
                         },
                       },
                       {
-                        title: '포인트',
+                        ...col('포인트', 'right', { width: 110 }),
                         dataIndex: 'amount',
-                        width: 110,
                         render: (v: number) => `${v >= 0 ? '+' : ''}${v.toLocaleString('ko-KR')} P`,
                       },
                       {
-                        title: '총 구매금액',
+                        ...col('총 구매금액', 'right', { width: 120 }),
                         dataIndex: 'totalPurchaseAmount',
-                        width: 100,
                         render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
                       },
                       {
-                        title: '할인금액',
+                        ...col('할인금액', 'right', { width: 100 }),
                         dataIndex: 'discountAmount',
-                        width: 90,
                         render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
                       },
                       {
-                        title: '적립 대상 금액',
+                        ...col('적립 대상 금액', 'right', { width: 130 }),
                         dataIndex: 'purchaseAmount',
-                        width: 100,
                         render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
                       },
                       {
-                        title: '경로',
+                        ...col('경로', 'center', { width: 150 }),
                         dataIndex: 'sourceChannel',
-                        width: 170,
                         render: (v: string) => formatPointSourceChannel(v),
                       },
-                      { title: '사유', dataIndex: 'reason', ellipsis: true },
-                      { title: '일시', dataIndex: 'createdAt', width: 170, render: (v: string) => formatDateTime(v) },
+                      { ...col('사유', 'left', { width: 220, ellipsis: true }), dataIndex: 'reason' },
+                      {
+                        ...col('일시', 'right', { width: 160 }),
+                        dataIndex: 'createdAt',
+                        render: (v: string) => formatDateTime(v),
+                      },
                     ]}
                     locale={{
                       emptyText: <Typography.Text type="secondary">포인트 이력이 없습니다.</Typography.Text>,

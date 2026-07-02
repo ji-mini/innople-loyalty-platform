@@ -1,7 +1,10 @@
 package com.innople.loyalty.controller;
 
+import com.innople.loyalty.config.AdminRoleResolver;
 import com.innople.loyalty.controller.dto.AdminUserManagementDtos;
+import com.innople.loyalty.domain.user.AdminUser;
 import com.innople.loyalty.service.admin.AdminUserManagementService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +25,7 @@ import java.util.UUID;
 public class AdminUserManagementController {
 
     private final AdminUserManagementService adminUserManagementService;
+    private final AdminRoleResolver adminRoleResolver;
 
     @GetMapping
     public List<AdminUserManagementDtos.AdminUserResponse> list(@RequestParam(required = false) String keyword) {
@@ -44,14 +48,18 @@ public class AdminUserManagementController {
     @PutMapping("/{adminUserId}")
     public AdminUserManagementDtos.AdminUserResponse update(
             @PathVariable UUID adminUserId,
-            @Valid @RequestBody AdminUserManagementDtos.UpdateRequest request
+            @Valid @RequestBody AdminUserManagementDtos.UpdateRequest request,
+            HttpServletRequest httpServletRequest
     ) {
+        AdminUser actor = adminRoleResolver.resolve(httpServletRequest);
+        UUID changedBy = (actor != null) ? actor.getId() : null;
         return AdminUserManagementDtos.AdminUserResponse.from(adminUserManagementService.update(
                 adminUserId,
                 request.phoneNumber(),
                 request.email(),
                 request.name(),
-                request.role()
+                request.role(),
+                changedBy
         ));
     }
 }

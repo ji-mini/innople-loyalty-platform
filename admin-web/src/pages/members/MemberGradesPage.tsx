@@ -1,4 +1,4 @@
-import { Button, Card, Form, Input, InputNumber, Modal, Popconfirm, Space, Table, Tag, Typography, message } from 'antd'
+import { Button, Card, Form, Input, InputNumber, Modal, Popconfirm, Space, Table, Tag, Tooltip, Typography, message } from 'antd'
 import { CrownOutlined, InfoCircleOutlined, PlusOutlined, StarFilled, TrophyOutlined } from '@ant-design/icons'
 import { useQueryClient } from '@tanstack/react-query'
 import React from 'react'
@@ -8,6 +8,7 @@ import { useMemberGrades } from '../../shared/queries'
 import type { MemberGradeItem } from '../../shared/queries'
 import { atLeast } from '../../shared/roles'
 import { getSession } from '../../shared/storage'
+import { col } from '../../shared/tableColumns'
 
 const PAGE_BACKGROUND_STYLE: React.CSSProperties = {
   margin: '-8px -8px 0',
@@ -353,15 +354,13 @@ export function MemberGradesPage() {
               rowClassName={() => 'member-grade-row'}
               columns={[
                 {
-                  title: '코드',
+                  ...col('코드', 'center', { width: 100 }),
                   dataIndex: 'code',
-                  width: 140,
                   render: (v: string) => <Tag style={{ borderRadius: 999, marginInlineEnd: 0 }}>{v}</Tag>,
                 },
                 {
-                  title: '등급명',
+                  ...col('등급명', 'left', { width: 240 }),
                   dataIndex: 'name',
-                  width: 220,
                   render: (v: string, r: MemberGradeItem, index: number) => (
                     <Space size={10}>
                       <span
@@ -379,9 +378,8 @@ export function MemberGradesPage() {
                   ),
                 },
                 {
-                  title: '적립률(%)',
+                  ...col('적립률(%)', 'center', { width: 120 }),
                   dataIndex: 'earnRatePercent',
-                  width: 140,
                   render: (v: number) => (
                     <Tag color="green" style={{ borderRadius: 999, fontWeight: 700, paddingInline: 10 }}>
                       {formatRate(v)}
@@ -389,20 +387,23 @@ export function MemberGradesPage() {
                   ),
                 },
                 {
-                  title: '설명',
+                  // 남는 폭을 독점하지 않도록 폭을 제한하고, 길면 말줄임 + hover 시 전체 표시
+                  ...col('설명', 'left', { width: 320, ellipsis: { showTitle: false } }),
                   dataIndex: 'description',
-                  ellipsis: true,
-                  render: (v: string | null) => (
-                    <Typography.Text type="secondary">{v || '설명이 없습니다.'}</Typography.Text>
-                  ),
+                  render: (v: string | null) =>
+                    v ? (
+                      <Tooltip title={v} placement="topLeft">
+                        <Typography.Text type="secondary">{v}</Typography.Text>
+                      </Tooltip>
+                    ) : (
+                      <Typography.Text type="secondary">설명이 없습니다.</Typography.Text>
+                    ),
                 },
                 ...(canEdit
                   ? [
                       {
-                        title: '관리',
+                        ...col('관리', 'center', { width: 150 }),
                         key: 'actions',
-                        width: 150,
-                        align: 'right' as const,
                         render: (_: unknown, r: MemberGradeItem) => (
                           <Space>
                             <Button size="small" onClick={() => openEdit(r)}>
