@@ -82,6 +82,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiErrorResponse.of(ex.getCode(), ex.getMessage()));
     }
 
+    @ExceptionHandler(MemberExceptions.MemberPhoneAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponse> handleMemberPhoneAlreadyExists(MemberExceptions.MemberPhoneAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(ex.getCode(), ex.getMessage()));
+    }
+
     @ExceptionHandler(AdminAuthExceptions.InvalidCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleUnauthorized(AdminAuthExceptions.InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiErrorResponse.of(ex.getMessage()));

@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import static com.innople.loyalty.service.member.MemberExceptions.InvalidMemberStatusException;
 import static com.innople.loyalty.service.member.MemberExceptions.MemberAlreadyExistsException;
+import static com.innople.loyalty.service.member.MemberExceptions.MemberPhoneAlreadyExistsException;
 import static com.innople.loyalty.service.member.MemberExceptions.MemberNotFoundException;
 import static com.innople.loyalty.service.member.MemberExceptions.MemberVerificationRequiredException;
 
@@ -33,6 +34,8 @@ import static com.innople.loyalty.service.member.MemberExceptions.MemberVerifica
 @RequiredArgsConstructor
 public class MemberServiceImpl implements MemberService {
     private static final String DEFAULT_MEMBERSHIP_GRADE_NAME = "기본등급";
+    // V22__add_members_tenant_phone_unique_index 에서 추가한 (tenant_id, phone_number) 유니크 제약 이름.
+    private static final String PHONE_UNIQUE_CONSTRAINT = "uk_members_tenant_phone_number";
 
     private final MemberRepository memberRepository;
     private final AddressRepository addressRepository;
@@ -65,7 +68,7 @@ public class MemberServiceImpl implements MemberService {
         }
         String normalizedPhone = normalizePhoneOrNull(command.phoneNumber());
         if (normalizedPhone != null && memberRepository.existsByTenantIdAndPhoneNumber(tenantId, normalizedPhone)) {
-            throw new MemberAlreadyExistsException("phoneNumber already exists");
+            throw new MemberPhoneAlreadyExistsException();
         }
         String normalizedWebId = normalizeWebIdOrNull(command.webId());
         if (normalizedWebId != null && memberRepository.existsByTenantIdAndWebId(tenantId, normalizedWebId)) {
@@ -135,8 +138,24 @@ public class MemberServiceImpl implements MemberService {
             }
             return toResult(saved, generatedPassword);
         } catch (DataIntegrityViolationException e) {
+            // 동시 등록(race condition)으로 애플리케이션 선검사를 통과한 뒤 DB 유니크 제약에 걸린 경우.
+            if (isPhoneUniqueViolation(e)) {
+                throw new MemberPhoneAlreadyExistsException();
+            }
             throw new MemberAlreadyExistsException("unique constraint violated (memberNo/webId/ci)");
         }
+    }
+
+    private boolean isPhoneUniqueViolation(DataIntegrityViolationException e) {
+        Throwable cause = e;
+        while (cause != null) {
+            String message = cause.getMessage();
+            if (message != null && message.toLowerCase().contains(PHONE_UNIQUE_CONSTRAINT)) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 
     /**

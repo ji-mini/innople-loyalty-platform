@@ -10,6 +10,27 @@ public final class MemberExceptions {
         }
     }
 
+    /**
+     * 테넌트 스코프 내에서 이미 등록된 휴대폰번호로 회원 등록을 시도한 경우 발생.
+     * 에러 코드({@code PHONE_ALREADY_EXISTS})는 PHONE_NOT_VERIFIED 등 기존 회원 도메인 에러코드 패턴을 따른다.
+     */
+    public static class MemberPhoneAlreadyExistsException extends RuntimeException {
+        public static final String CODE = "PHONE_ALREADY_EXISTS";
+        // 프론트(중복 체크/폼 검증) 문구와 일관되게 유지한다.
+        public static final String MESSAGE = "이미 등록된 휴대폰 번호입니다.";
+
+        private final String code;
+
+        public MemberPhoneAlreadyExistsException() {
+            super(MESSAGE);
+            this.code = CODE;
+        }
+
+        public String getCode() {
+            return code;
+        }
+    }
+
     public static class MemberNotFoundException extends RuntimeException {
         public MemberNotFoundException(String message) {
             super(message);

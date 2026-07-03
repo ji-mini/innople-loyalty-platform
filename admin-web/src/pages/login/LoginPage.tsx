@@ -110,6 +110,7 @@ export function LoginPage() {
       <Form<FormValues>
         layout="vertical"
         form={form}
+        className={styles.loginForm}
         onFinish={onFinish}
         onValuesChange={(_, all) => {
           if (!all.remember) {

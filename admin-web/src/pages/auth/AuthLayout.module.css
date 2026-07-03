@@ -39,10 +39,18 @@
 
 .wrap {
   width: min(980px, 100%);
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: 28px;
+  display: flex;
+  justify-content: center;
   align-items: center;
+  /* 두 컬럼(히어로 + 카드)을 화면 절반씩 늘리지 않고 콘텐츠 크기에 맞춰 가운데로 모은다. */
+  gap: clamp(28px, 4vw, 56px);
+  flex-wrap: wrap;
+}
+
+.hero,
+.card {
+  /* 화면 절반씩 채우지 않고 콘텐츠 크기에 맞게(불필요한 좌우 여백 제거). */
+  flex: 0 1 auto;
 }
 
 .hero {
@@ -132,11 +140,16 @@
   color: rgba(31, 42, 55, 0.65);
 }
 
+/* 로그인 폼 내부 Form.Item 블록 사이 간격만 24px -> 16px로 축소 (전역 오염 방지) */
+.loginForm :global(.ant-form-item) {
+  margin-bottom: 16px;
+}
+
 .actionsRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 6px 0 2px;
+  margin: 2px 0 2px;
 }
 
 .linkBtn {
@@ -195,8 +208,7 @@
 
 @media (max-width: 880px) {
   .wrap {
-    grid-template-columns: 1fr;
-    justify-items: center;
+    flex-direction: column;
     gap: 18px;
   }
   .hero {
