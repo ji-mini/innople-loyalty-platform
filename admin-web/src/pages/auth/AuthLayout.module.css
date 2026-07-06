@@ -43,7 +43,7 @@
   justify-content: center;
   align-items: center;
   /* 두 컬럼(히어로 + 카드)을 화면 절반씩 늘리지 않고 콘텐츠 크기에 맞춰 가운데로 모은다. */
-  gap: clamp(28px, 4vw, 56px);
+  gap: clamp(72px, 8vw, 120px);
   flex-wrap: wrap;
 }
 

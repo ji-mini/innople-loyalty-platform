@@ -46,11 +46,11 @@ public class CommonCodeSeedRunner implements ApplicationRunner {
         upsert(MemberStatusCodes.GROUP, MemberStatusCodes.ACTIVE, "정상", true, 10);
         upsert(MemberStatusCodes.GROUP, MemberStatusCodes.DORMANT, "휴면", true, 20);
         upsert(MemberStatusCodes.GROUP, MemberStatusCodes.SUSPENDED, "정지", true, 30);
+        upsert(MemberStatusCodes.GROUP, MemberStatusCodes.WITHDRAW_REQUESTED, "탈퇴요청", true, 35);
         upsert(MemberStatusCodes.GROUP, MemberStatusCodes.WITHDRAWN, "탈퇴", true, 40);
 
         // legacy
         upsert(MemberStatusCodes.GROUP, MemberStatusCodes.LEGACY_NORMAL, "정상(레거시)", true, 11);
-        upsert(MemberStatusCodes.GROUP, MemberStatusCodes.LEGACY_WITHDRAW_REQUESTED, "탈퇴요청(레거시)", true, 35);
     }
 
     private void seedPointReason() {

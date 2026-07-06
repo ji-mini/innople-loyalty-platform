@@ -79,6 +79,12 @@ public class Member extends BaseEntity {
     private LocalDate dormantAt;
 
     @Column(nullable = true)
+    private LocalDate suspendedAt;
+
+    @Column(nullable = true)
+    private LocalDate withdrawRequestedAt;
+
+    @Column(nullable = true)
     private LocalDate withdrawnAt;
 
     @Column(nullable = true, length = 200)
@@ -101,6 +107,8 @@ public class Member extends BaseEntity {
             String statusCode,
             LocalDate joinedAt,
             LocalDate dormantAt,
+            LocalDate suspendedAt,
+            LocalDate withdrawRequestedAt,
             LocalDate withdrawnAt,
             String ci,
             String anniversaries
@@ -119,6 +127,8 @@ public class Member extends BaseEntity {
         member.statusCode = requireText(statusCode, "statusCode");
         member.joinedAt = Objects.requireNonNull(joinedAt, "joinedAt must not be null");
         member.dormantAt = dormantAt;
+        member.suspendedAt = suspendedAt;
+        member.withdrawRequestedAt = withdrawRequestedAt;
         member.withdrawnAt = withdrawnAt;
         member.ci = ci;
         member.anniversaries = anniversaries;
@@ -149,9 +159,11 @@ public class Member extends BaseEntity {
         this.anniversaries = anniversaries;
     }
 
-    public void updateStatus(String statusCode, LocalDate dormantAt, LocalDate withdrawnAt) {
+    public void updateStatus(String statusCode, LocalDate dormantAt, LocalDate suspendedAt, LocalDate withdrawRequestedAt, LocalDate withdrawnAt) {
         this.statusCode = requireText(statusCode, "statusCode");
         this.dormantAt = dormantAt;
+        this.suspendedAt = suspendedAt;
+        this.withdrawRequestedAt = withdrawRequestedAt;
         this.withdrawnAt = withdrawnAt;
     }
 

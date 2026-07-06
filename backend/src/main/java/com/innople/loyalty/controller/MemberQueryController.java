@@ -287,6 +287,8 @@ public class MemberQueryController {
                 m.getStatusCode(),
                 m.getJoinedAt(),
                 m.getDormantAt(),
+                m.getSuspendedAt(),
+                m.getWithdrawRequestedAt(),
                 m.getWithdrawnAt(),
                 m.getCi(),
                 m.getAnniversaries(),

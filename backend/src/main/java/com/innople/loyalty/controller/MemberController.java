@@ -3,6 +3,8 @@ package com.innople.loyalty.controller;
 import com.innople.loyalty.config.AdminRoleResolver;
 import com.innople.loyalty.config.ApiAuditLogInterceptor;
 import com.innople.loyalty.controller.dto.MemberDtos;
+import com.innople.loyalty.domain.member.MemberStatusCodes;
+import com.innople.loyalty.domain.user.AdminRole;
 import com.innople.loyalty.domain.user.AdminUser;
 import com.innople.loyalty.service.member.MemberDuplicationService;
 import com.innople.loyalty.service.member.MemberNumberService;
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/members")
@@ -102,10 +106,17 @@ public class MemberController {
             @Valid @RequestBody MemberDtos.UpdateStatusRequest request,
             HttpServletRequest httpRequest
     ) {
+        // 즉시탈퇴(WITHDRAWN)는 SUPER_ADMIN 전용. 그 외 상태는 ADMIN 이상 유지.
+        if (MemberStatusCodes.WITHDRAWN.equals(request.statusCode())) {
+            adminRoleResolver.requireAtLeast(httpRequest, AdminRole.SUPER_ADMIN);
+        }
+        AdminUser actor = adminRoleResolver.resolve(httpRequest);
+        UUID changedBy = (actor != null) ? actor.getId() : null;
         MemberResult result = memberService.updateStatus(memberNo, new MemberService.UpdateStatusCommand(
                 request.statusCode(),
-                request.dormantAt()
-        ));
+                request.dormantAt(),
+                request.reason()
+        ), changedBy);
         setMemberAuditMessage(httpRequest, "회원 상태 변경", memberNo);
         return toResponse(result);
     }
@@ -116,10 +127,12 @@ public class MemberController {
             @Valid @RequestBody MemberDtos.WithdrawRequest request,
             HttpServletRequest httpRequest
     ) {
+        AdminUser actor = adminRoleResolver.resolve(httpRequest);
+        UUID changedBy = (actor != null) ? actor.getId() : null;
         MemberResult result = memberService.withdraw(memberNo, new MemberService.WithdrawCommand(
                 request.withdrawnAt(),
                 request.reason()
-        ));
+        ), changedBy);
         setMemberAuditMessage(httpRequest, "회원 탈퇴", memberNo);
         return toResponse(result);
     }
@@ -166,10 +179,12 @@ public class MemberController {
                 r.address(),
                 r.webId(),
                 r.statusCode(),
-                r.joinedAt(),
-                r.dormantAt(),
-                r.withdrawnAt(),
-                r.ci(),
+        r.joinedAt(),
+        r.dormantAt(),
+        r.suspendedAt(),
+        r.withdrawRequestedAt(),
+        r.withdrawnAt(),
+        r.ci(),
                 r.anniversaries(),
                 r.appLoginEnabled(),
                 r.appLoginId(),

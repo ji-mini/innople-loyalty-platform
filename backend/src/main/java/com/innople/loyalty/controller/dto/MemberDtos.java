@@ -69,7 +69,8 @@ public final class MemberDtos {
 
     public record UpdateStatusRequest(
             @NotBlank @Size(max = 50) String statusCode,
-            LocalDate dormantAt
+            LocalDate dormantAt,
+            @Size(max = 500) String reason
     ) {
     }
 
@@ -114,6 +115,8 @@ public final class MemberDtos {
             String statusCode,
             LocalDate joinedAt,
             LocalDate dormantAt,
+            LocalDate suspendedAt,
+            LocalDate withdrawRequestedAt,
             LocalDate withdrawnAt,
             String ci,
             String anniversaries,

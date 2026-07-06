@@ -44,6 +44,8 @@ public final class MemberQueryDtos {
             String statusCode,
             LocalDate joinedAt,
             LocalDate dormantAt,
+            LocalDate suspendedAt,
+            LocalDate withdrawRequestedAt,
             LocalDate withdrawnAt,
             String ci,
             String anniversaries,

@@ -27,7 +27,7 @@ public class MemberReportServiceImpl implements MemberReportService {
 
         long newSignups = memberRepository.countByTenantIdAndJoinedAtBetween(tenantId, fromDate, toDate);
         long dormant = memberRepository.countByTenantIdAndDormantAtBetween(tenantId, fromDate, toDate);
-        long withdrawRequested = memberRepository.countByTenantIdAndStatusCode(tenantId, MemberStatusCodes.LEGACY_WITHDRAW_REQUESTED);
+        long withdrawRequested = memberRepository.countByTenantIdAndStatusCode(tenantId, MemberStatusCodes.WITHDRAW_REQUESTED);
         long withdrawn = memberRepository.countByTenantIdAndWithdrawnAtBetween(tenantId, fromDate, toDate);
         long totalMembers = memberRepository.countByTenantIdAndStatusCodeNot(tenantId, MemberStatusCodes.WITHDRAWN);
 

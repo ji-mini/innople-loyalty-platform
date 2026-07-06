@@ -10,9 +10,11 @@ import com.innople.loyalty.domain.member.Member;
 import com.innople.loyalty.domain.member.MemberLedgerEventType;
 import com.innople.loyalty.domain.member.MembershipGrade;
 import com.innople.loyalty.domain.member.MemberStatusCodes;
+import com.innople.loyalty.domain.member.MemberStatusHistory;
 import com.innople.loyalty.repository.AddressRepository;
 import com.innople.loyalty.repository.CommonCodeRepository;
 import com.innople.loyalty.repository.MemberRepository;
+import com.innople.loyalty.repository.MemberStatusHistoryRepository;
 import com.innople.loyalty.repository.MembershipGradeRepository;
 import com.innople.loyalty.service.memberauth.MemberCredentialService;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,7 @@ public class MemberServiceImpl implements MemberService {
     private final MemberRepository memberRepository;
     private final AddressRepository addressRepository;
     private final MemberLedgerService memberLedgerService;
+    private final MemberStatusHistoryRepository memberStatusHistoryRepository;
     private final MembershipGradeRepository membershipGradeRepository;
     private final CommonCodeRepository commonCodeRepository;
     private final MemberCredentialService memberCredentialService;
@@ -110,6 +113,8 @@ public class MemberServiceImpl implements MemberService {
                 normalizedWebId,
                 statusCode,
                 (command.joinedAt() != null) ? command.joinedAt() : LocalDate.now(),
+                null,
+                null,
                 null,
                 null,
                 command.ci(),
@@ -249,7 +254,7 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
-    public MemberResult updateStatus(String memberNo, UpdateStatusCommand command) {
+    public MemberResult updateStatus(String memberNo, UpdateStatusCommand command, UUID changedBy) {
         UUID tenantId = TenantContext.requireTenantId();
         String newStatus = command.statusCode();
         validateStatusCode(tenantId, newStatus);
@@ -257,42 +262,88 @@ public class MemberServiceImpl implements MemberService {
         Member member = memberRepository.findByTenantIdAndMemberNo(tenantId, memberNo)
                 .orElseThrow(() -> new MemberNotFoundException("member not found"));
 
+        // 최소 방어: 이미 완전 탈퇴(WITHDRAWN)된 회원은 어떤 상태로도 재변경 불가.
+        if (MemberStatusCodes.WITHDRAWN.equals(member.getStatusCode())) {
+            throw new InvalidMemberStatusException("이미 탈퇴 처리된 회원은 상태를 변경할 수 없습니다.");
+        }
+
         String beforeStatus = member.getStatusCode();
-        LocalDate dormantAt = command.dormantAt();
-        LocalDate withdrawnAt = member.getWithdrawnAt();
+        LocalDate today = LocalDate.now();
 
-        if (MemberStatusCodes.DORMANT.equals(newStatus) && dormantAt == null) {
-            dormantAt = LocalDate.now();
-        }
-        if (!MemberStatusCodes.DORMANT.equals(newStatus)) {
-            dormantAt = null;
-        }
-        if (MemberStatusCodes.WITHDRAWN.equals(newStatus) && withdrawnAt == null) {
-            withdrawnAt = LocalDate.now();
-        }
+        // 목표 상태별 날짜 필드 전이 규칙.
+        // 기본은 모든 날짜 null 클리어, 각 상태에서 필요한 필드만 세팅/보존한다.
+        LocalDate dormantAt = null;
+        LocalDate suspendedAt = null;
+        LocalDate withdrawRequestedAt = null;
+        LocalDate withdrawnAt = null;
 
-        member.updateStatus(newStatus, dormantAt, withdrawnAt);
+        if (MemberStatusCodes.DORMANT.equals(newStatus)) {
+            // 휴면: dormantAt 오늘(기존 로직 - command 값이 있으면 우선)
+            dormantAt = (command.dormantAt() != null) ? command.dormantAt() : today;
+        } else if (MemberStatusCodes.SUSPENDED.equals(newStatus)) {
+            // 정지: suspendedAt 를 오늘로 세팅(기존값 있으면 보존)
+            suspendedAt = (member.getSuspendedAt() != null) ? member.getSuspendedAt() : today;
+        } else if (MemberStatusCodes.WITHDRAW_REQUESTED.equals(newStatus)) {
+            // 탈퇴요청: withdrawRequestedAt 를 오늘로 세팅(기존값 있으면 보존)
+            withdrawRequestedAt = (member.getWithdrawRequestedAt() != null) ? member.getWithdrawRequestedAt() : today;
+        } else if (MemberStatusCodes.WITHDRAWN.equals(newStatus)) {
+            // 즉시탈퇴: 요청 흔적(withdrawRequestedAt)·휴면일시(dormantAt)·정지일시(suspendedAt)는 보존, withdrawnAt 오늘(기존값 있으면 보존)
+            dormantAt = member.getDormantAt();
+            suspendedAt = member.getSuspendedAt();
+            withdrawRequestedAt = member.getWithdrawRequestedAt();
+            withdrawnAt = (member.getWithdrawnAt() != null) ? member.getWithdrawnAt() : today;
+        }
+        // ACTIVE(철회 포함): 모든 날짜 필드 null 클리어(초기값 그대로)
+
+        member.updateStatus(newStatus, dormantAt, suspendedAt, withdrawRequestedAt, withdrawnAt);
         Member saved = memberRepository.save(member);
         memberLedgerService.record(saved, MemberLedgerEventType.UPDATE_STATUS, beforeStatus, saved.getStatusCode());
+        recordStatusChangeIfChanged(tenantId, saved, changedBy, beforeStatus, command.reason());
         return toResult(saved, null);
     }
 
     @Override
     @Transactional
-    public MemberResult withdraw(String memberNo, WithdrawCommand command) {
+    public MemberResult withdraw(String memberNo, WithdrawCommand command, UUID changedBy) {
         UUID tenantId = TenantContext.requireTenantId();
         validateStatusCode(tenantId, MemberStatusCodes.WITHDRAWN);
 
         Member member = memberRepository.findByTenantIdAndMemberNo(tenantId, memberNo)
                 .orElseThrow(() -> new MemberNotFoundException("member not found"));
 
+        // 최소 방어: 이미 완전 탈퇴(WITHDRAWN)된 회원은 어떤 상태로도 재변경 불가.
+        if (MemberStatusCodes.WITHDRAWN.equals(member.getStatusCode())) {
+            throw new InvalidMemberStatusException("이미 탈퇴 처리된 회원은 상태를 변경할 수 없습니다.");
+        }
+
         String beforeStatus = member.getStatusCode();
         LocalDate withdrawnAt = (command.withdrawnAt() != null) ? command.withdrawnAt() : LocalDate.now();
-        member.updateStatus(MemberStatusCodes.WITHDRAWN, member.getDormantAt(), withdrawnAt);
+        member.updateStatus(MemberStatusCodes.WITHDRAWN, member.getDormantAt(), member.getSuspendedAt(), member.getWithdrawRequestedAt(), withdrawnAt);
 
         Member saved = memberRepository.save(member);
         memberLedgerService.record(saved, MemberLedgerEventType.WITHDRAW, beforeStatus, saved.getStatusCode());
+        recordStatusChangeIfChanged(tenantId, saved, changedBy, beforeStatus, command.reason());
         return toResult(saved, null);
+    }
+
+    /**
+     * 회원 상태가 실제로 변경된 경우에만 상태 변경 이력을 남긴다.
+     * (원장 기록(memberLedgerService.record)과 별개로, 상태 전이 이력을 독립적으로 기록한다.)
+     */
+    private void recordStatusChangeIfChanged(
+            UUID tenantId,
+            Member saved,
+            UUID changedBy,
+            String beforeStatus,
+            String reason
+    ) {
+        String afterStatus = saved.getStatusCode();
+        if (afterStatus.equals(beforeStatus)) {
+            return;
+        }
+        memberStatusHistoryRepository.save(
+                MemberStatusHistory.of(tenantId, saved.getId(), changedBy, beforeStatus, afterStatus, reason)
+        );
     }
 
     @Override
@@ -380,6 +431,8 @@ public class MemberServiceImpl implements MemberService {
                 member.getStatusCode(),
                 member.getJoinedAt(),
                 member.getDormantAt(),
+                member.getSuspendedAt(),
+                member.getWithdrawRequestedAt(),
                 member.getWithdrawnAt(),
                 member.getCi(),
                 member.getAnniversaries(),

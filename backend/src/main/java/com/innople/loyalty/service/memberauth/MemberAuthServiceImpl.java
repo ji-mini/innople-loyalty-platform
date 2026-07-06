@@ -74,6 +74,8 @@ public class MemberAuthServiceImpl implements MemberAuthService {
                     null,
                     null,
                     null,
+                    null,
+                    null,
                     null
             );
             savedMember = memberRepository.save(member);

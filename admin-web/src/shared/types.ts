@@ -93,6 +93,8 @@ export type MemberDetail = {
   statusCode: string
   joinedAt: string
   dormantAt: string | null
+  suspendedAt: string | null
+  withdrawRequestedAt: string | null
   withdrawnAt: string | null
   ci: string | null
   anniversaries: string | null

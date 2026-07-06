@@ -124,6 +124,8 @@ class MemberAuthServiceImplTest {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
         setField(BaseEntity.class, member, "id", memberId);

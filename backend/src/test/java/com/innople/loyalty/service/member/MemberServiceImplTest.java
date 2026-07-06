@@ -82,6 +82,8 @@ class MemberServiceImplTest {
                 null,
                 null,
                 null,
+                null,
+                null,
                 null
         );
         setEntityId(member, memberId);

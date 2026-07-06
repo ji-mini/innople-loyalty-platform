@@ -14,9 +14,9 @@ public interface MemberService {
 
     MemberResult updateInfo(String memberNo, UpdateInfoCommand command);
 
-    MemberResult updateStatus(String memberNo, UpdateStatusCommand command);
+    MemberResult updateStatus(String memberNo, UpdateStatusCommand command, UUID changedBy);
 
-    MemberResult withdraw(String memberNo, WithdrawCommand command);
+    MemberResult withdraw(String memberNo, WithdrawCommand command, UUID changedBy);
 
     AppLoginResult updateAppLogin(String memberNo, UpdateAppLoginCommand command);
 
@@ -60,7 +60,8 @@ public interface MemberService {
 
     record UpdateStatusCommand(
             String statusCode,
-            LocalDate dormantAt
+            LocalDate dormantAt,
+            String reason
     ) {
     }
 

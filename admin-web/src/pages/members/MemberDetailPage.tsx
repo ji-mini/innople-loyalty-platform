@@ -327,6 +327,123 @@ function MemberAppLoginModal({
   )
 }
 
+/**
+ * 상태 변경 드롭다운에서 제외할 코드.
+ * - legacy 코드(NORMAL)만 제외. 나머지(휴면/정지/탈퇴요청/탈퇴)는 모두 /status 단일 엔드포인트로 통일 처리한다.
+ */
+const EXCLUDED_MEMBER_STATUS_CODES = ['NORMAL']
+
+function MemberStatusModal({
+  open,
+  loading,
+  role,
+  currentStatusCode,
+  statusOptions,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean
+  loading: boolean
+  role: string
+  currentStatusCode: string | null | undefined
+  statusOptions: { value: string; label: string }[]
+  onClose: () => void
+  onSubmit: (v: any) => Promise<void>
+}) {
+  const [form] = Form.useForm()
+
+  React.useEffect(() => {
+    if (!open) return
+    form.resetFields()
+  }, [open, form])
+
+  const selectableOptions = statusOptions
+    .filter((o) => !EXCLUDED_MEMBER_STATUS_CODES.includes(o.value))
+    // 즉시탈퇴(WITHDRAWN)는 SUPER_ADMIN 전용이므로 그 외 role 에서는 옵션 자체를 제외한다(UX 보조, 주 방어는 백엔드).
+    .filter((o) => o.value !== 'WITHDRAWN' || atLeast(role, 'SUPER_ADMIN'))
+    .map((o) => ({ ...o, disabled: o.value === currentStatusCode }))
+
+  // 탈퇴요청/즉시탈퇴는 확인 다이얼로그를 거친 뒤에만 제출한다. 그 외 상태는 바로 제출.
+  const handleFinish = (v: any) => {
+    if (v.statusCode === 'WITHDRAW_REQUESTED') {
+      Modal.confirm({
+        title: '탈퇴 요청 처리',
+        content: '탈퇴 요청 시 30일 유예 후 자동 탈퇴됩니다. 진행하시겠습니까?',
+        okText: '확인',
+        cancelText: '취소',
+        onOk: () => onSubmit(v),
+      })
+      return
+    }
+    if (v.statusCode === 'WITHDRAWN') {
+      Modal.confirm({
+        title: '즉시 탈퇴 처리',
+        content: '즉시 탈퇴 시 유예 없이 바로 탈퇴 처리됩니다. 되돌릴 수 없습니다. 진행하시겠습니까?',
+        okText: '확인',
+        cancelText: '취소',
+        okButtonProps: { danger: true },
+        onOk: () => onSubmit(v),
+      })
+      return
+    }
+    onSubmit(v)
+  }
+
+  return (
+    <Modal title="회원 상태 변경" open={open} onCancel={onClose} footer={null} width={560} destroyOnClose>
+      <Form form={form} layout="vertical" onFinish={handleFinish}>
+        <Form.Item label="상태" name="statusCode" rules={[{ required: true, message: '상태를 선택하세요' }]}>
+          <Select placeholder="선택" options={selectableOptions} />
+        </Form.Item>
+        <Form.Item shouldUpdate={(prev, cur) => prev.statusCode !== cur.statusCode} noStyle>
+          {({ getFieldValue }) => {
+            const status = getFieldValue('statusCode')
+            if (status === 'DORMANT') {
+              // 휴면일시는 서버가 오늘(now())로 처리하므로 입력받지 않고, "오늘 날짜로 처리됨"만 시각적으로 안내한다.
+              // (표시 전용 값이므로 제출에 사용하지 않는다.)
+              return (
+                <Form.Item
+                  label="휴면일시"
+                  extra="상태 변경 시점(오늘) 날짜로 즉시 휴면 처리됩니다."
+                >
+                  <DatePicker style={{ width: '100%' }} disabled value={dayjs()} />
+                </Form.Item>
+              )
+            }
+            if (status === 'SUSPENDED') {
+              // 정지일시도 휴면과 동일하게 서버가 오늘로 처리한다. 표시 전용(제출 미사용).
+              return (
+                <Form.Item
+                  label="정지일시"
+                  extra="상태 변경 시점(오늘) 날짜로 즉시 정지 처리됩니다."
+                >
+                  <DatePicker style={{ width: '100%' }} disabled value={dayjs()} />
+                </Form.Item>
+              )
+            }
+            if (status === 'WITHDRAW_REQUESTED' || status === 'WITHDRAWN') {
+              return (
+                <Form.Item label="사유" name="reason">
+                  <Input.TextArea rows={3} maxLength={500} placeholder="사유 (선택)" />
+                </Form.Item>
+              )
+            }
+            return null
+          }}
+        </Form.Item>
+        <Form.Item style={{ marginBottom: 0, marginTop: 16 }}>
+          <Space>
+            <Button type="primary" htmlType="submit" loading={loading}>
+              저장
+            </Button>
+            <Button onClick={onClose}>취소</Button>
+          </Space>
+        </Form.Item>
+      </Form>
+    </Modal>
+  )
+}
+
 export function MemberDetailPage() {
   const nav = useNavigate()
   const params = useParams()
@@ -354,6 +471,8 @@ export function MemberDetailPage() {
   const [editForm] = Form.useForm()
   const [appLoginOpen, setAppLoginOpen] = React.useState(false)
   const [appLoginLoading, setAppLoginLoading] = React.useState(false)
+  const [statusModalOpen, setStatusModalOpen] = React.useState(false)
+  const [statusModalLoading, setStatusModalLoading] = React.useState(false)
   const latestLogin = loginHistories.data?.[0]
 
   const getStatusName = (code: string | null | undefined) =>
@@ -383,7 +502,10 @@ export function MemberDetailPage() {
         </Typography.Title>
         <Space>
           {atLeast(role, 'ADMIN') && (
-            <Button onClick={() => setEditOpen(true)}>회원정보 수정</Button>
+            <>
+              <Button onClick={() => setEditOpen(true)}>회원정보 수정</Button>
+              <Button onClick={() => setStatusModalOpen(true)}>상태 변경</Button>
+            </>
           )}
           {role === 'SUPER_ADMIN' ? (
             <>
@@ -460,6 +582,12 @@ export function MemberDetailPage() {
                         </Descriptions.Item>
                         <Descriptions.Item label="휴면일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
                           {detail.data.dormantAt ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="정지일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {detail.data.suspendedAt ?? '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="탈퇴요청일" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
+                          {detail.data.withdrawRequestedAt ?? '-'}
                         </Descriptions.Item>
                         <Descriptions.Item label="탈퇴일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
                           {detail.data.withdrawnAt ?? '-'}
@@ -752,6 +880,38 @@ export function MemberDetailPage() {
               message.error(e?.response?.data?.message ?? e?.message ?? '앱 로그인 활성화 실패')
             } finally {
               setAppLoginLoading(false)
+            }
+          }}
+        />
+      )}
+
+      {atLeast(role, 'ADMIN') && (
+        <MemberStatusModal
+          open={statusModalOpen}
+          loading={statusModalLoading}
+          role={role}
+          currentStatusCode={detail.data?.statusCode}
+          statusOptions={(statusCodes.data ?? []).map((c) => ({ value: c.code, label: c.name }))}
+          onClose={() => setStatusModalOpen(false)}
+          onSubmit={async (v) => {
+            setStatusModalLoading(true)
+            try {
+              // dormantAt 은 표시 전용이므로 전송하지 않는다. 서버가 now() 로 채우고, 비-DORMANT 전환 시 서버가 클리어한다.
+              // reason 은 탈퇴요청/즉시탈퇴에서만 의미가 있으므로 그 외 상태에서는 null 로 보낸다.
+              await api.put(`/api/v1/members/${encodeURIComponent(memberNo)}/status`, {
+                statusCode: v.statusCode,
+                reason:
+                  v.statusCode === 'WITHDRAW_REQUESTED' || v.statusCode === 'WITHDRAWN'
+                    ? v.reason?.trim() || null
+                    : null,
+              })
+              message.success('회원 상태가 변경되었습니다.')
+              setStatusModalOpen(false)
+              detail.refetch()
+            } catch (e: any) {
+              message.error(e?.response?.data?.message ?? e?.message ?? '상태 변경 실패')
+            } finally {
+              setStatusModalLoading(false)
             }
           }}
         />

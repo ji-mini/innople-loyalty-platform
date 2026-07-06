@@ -1,0 +1,3 @@
+backend\src\main\java\com\innople\loyalty\controller\AdminUserStatusController.java:21: * JWT 검증 필터(AdminAuthFilter) 통과 후, SUPER_ADMIN 권한까지 확인한다.
+backend\src\main\java\com\innople\loyalty\controller\AdminUserStatusController.java:37:        adminRoleResolver.requireAtLeast(httpServletRequest, AdminRole.SUPER_ADMIN);
+backend\src\main\java\com\innople\loyalty\controller\AdminUserStatusController.java:55:        adminRoleResolver.requireAtLeast(httpServletRequest, AdminRole.SUPER_ADMIN);
