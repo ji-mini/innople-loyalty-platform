@@ -4,6 +4,7 @@ import com.innople.loyalty.controller.dto.MemberDtos.AddressResponse;
 import com.innople.loyalty.domain.member.CalendarType;
 import com.innople.loyalty.domain.member.Gender;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -19,11 +20,11 @@ public record MemberResult(
         AddressResponse address,
         String webId,
         String statusCode,
-        LocalDate joinedAt,
-        LocalDate dormantAt,
-        LocalDate suspendedAt,
-        LocalDate withdrawRequestedAt,
-        LocalDate withdrawnAt,
+        Instant joinedAt,
+        Instant dormantAt,
+        Instant suspendedAt,
+        Instant withdrawRequestedAt,
+        Instant withdrawnAt,
         String ci,
         String anniversaries,
         boolean appLoginEnabled,

@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -120,7 +121,7 @@ class MemberAuthServiceImplTest {
                 null,
                 null,
                 ACTIVE,
-                LocalDate.of(2026, 1, 1),
+                Instant.parse("2026-01-01T00:00:00Z"),
                 null,
                 null,
                 null,

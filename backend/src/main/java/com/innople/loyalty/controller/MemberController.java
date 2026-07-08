@@ -64,7 +64,6 @@ public class MemberController {
                 request.address(),
                 request.webId(),
                 request.statusCode(),
-                request.joinedAt(),
                 request.ci(),
                 request.anniversaries(),
                 request.appLoginAllowed(),

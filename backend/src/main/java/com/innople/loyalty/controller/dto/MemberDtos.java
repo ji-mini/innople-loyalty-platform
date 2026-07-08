@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -39,7 +40,6 @@ public final class MemberDtos {
             @Valid AddressRequest address,
             @Size(max = 100) String webId,
             @Size(max = 50) String statusCode,
-            LocalDate joinedAt,
             @Size(max = 200) String ci,
             @Size(max = 1000) String anniversaries,
             Boolean appLoginAllowed,
@@ -113,11 +113,11 @@ public final class MemberDtos {
             AddressResponse address,
             String webId,
             String statusCode,
-            LocalDate joinedAt,
-            LocalDate dormantAt,
-            LocalDate suspendedAt,
-            LocalDate withdrawRequestedAt,
-            LocalDate withdrawnAt,
+            Instant joinedAt,
+            Instant dormantAt,
+            Instant suspendedAt,
+            Instant withdrawRequestedAt,
+            Instant withdrawnAt,
             String ci,
             String anniversaries,
             boolean appLoginEnabled,

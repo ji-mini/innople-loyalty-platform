@@ -1,4 +1,5 @@
 import { Alert, Button, Card, DatePicker, Form, Input, Select, Space, Table, Tag, Typography } from 'antd'
+import dayjs from 'dayjs'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import type { MemberSummary } from '../../shared/types'
@@ -51,7 +52,11 @@ export function MembersPage() {
     },
     { ...col('휴대폰'), dataIndex: 'phoneNumber' },
     { ...col('Web ID'), dataIndex: 'webId' },
-    { ...col('가입일', 'right'), dataIndex: 'joinedAt' },
+    {
+      ...col('가입일', 'right'),
+      dataIndex: 'joinedAt',
+      render: (v: string | null | undefined) => (v ? dayjs(v).format('YYYY-MM-DD') : '-'),
+    },
     {
       ...col('포인트 잔액', 'right'),
       dataIndex: 'pointBalance',

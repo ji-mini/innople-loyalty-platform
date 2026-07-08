@@ -17,7 +17,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -70,7 +70,7 @@ public class MemberAuthServiceImpl implements MemberAuthService {
                     grade,
                     null,
                     MemberStatusCodes.ACTIVE,
-                    LocalDate.now(),
+                    Instant.now(),
                     null,
                     null,
                     null,

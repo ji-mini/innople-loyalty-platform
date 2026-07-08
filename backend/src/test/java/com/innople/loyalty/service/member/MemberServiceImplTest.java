@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
@@ -78,7 +79,7 @@ class MemberServiceImplTest {
                 null,
                 null,
                 MemberStatusCodes.ACTIVE,
-                LocalDate.of(2026, 1, 1),
+                Instant.parse("2026-01-01T00:00:00Z"),
                 null,
                 null,
                 null,

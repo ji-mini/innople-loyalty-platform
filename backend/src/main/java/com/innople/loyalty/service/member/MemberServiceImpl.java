@@ -22,7 +22,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -112,7 +114,8 @@ public class MemberServiceImpl implements MemberService {
                 defaultMembershipGrade,
                 normalizedWebId,
                 statusCode,
-                (command.joinedAt() != null) ? command.joinedAt() : LocalDate.now(),
+                // 가입일시는 관리자 등록 시점의 실제 시각으로 세팅한다(고객 셀프 가입과 동일).
+                Instant.now(),
                 null,
                 null,
                 null,
@@ -268,30 +271,30 @@ public class MemberServiceImpl implements MemberService {
         }
 
         String beforeStatus = member.getStatusCode();
-        LocalDate today = LocalDate.now();
+        Instant now = Instant.now();
 
         // 목표 상태별 날짜 필드 전이 규칙.
         // 기본은 모든 날짜 null 클리어, 각 상태에서 필요한 필드만 세팅/보존한다.
-        LocalDate dormantAt = null;
-        LocalDate suspendedAt = null;
-        LocalDate withdrawRequestedAt = null;
-        LocalDate withdrawnAt = null;
+        Instant dormantAt = null;
+        Instant suspendedAt = null;
+        Instant withdrawRequestedAt = null;
+        Instant withdrawnAt = null;
 
         if (MemberStatusCodes.DORMANT.equals(newStatus)) {
-            // 휴면: dormantAt 오늘(기존 로직 - command 값이 있으면 우선)
-            dormantAt = (command.dormantAt() != null) ? command.dormantAt() : today;
+            // 휴면: dormantAt 현재 시각(기존 로직 - command 값이 있으면 우선)
+            dormantAt = (command.dormantAt() != null) ? toStartOfDayInstant(command.dormantAt()) : now;
         } else if (MemberStatusCodes.SUSPENDED.equals(newStatus)) {
-            // 정지: suspendedAt 를 오늘로 세팅(기존값 있으면 보존)
-            suspendedAt = (member.getSuspendedAt() != null) ? member.getSuspendedAt() : today;
+            // 정지: suspendedAt 를 현재 시각으로 세팅(기존값 있으면 보존)
+            suspendedAt = (member.getSuspendedAt() != null) ? member.getSuspendedAt() : now;
         } else if (MemberStatusCodes.WITHDRAW_REQUESTED.equals(newStatus)) {
-            // 탈퇴요청: withdrawRequestedAt 를 오늘로 세팅(기존값 있으면 보존)
-            withdrawRequestedAt = (member.getWithdrawRequestedAt() != null) ? member.getWithdrawRequestedAt() : today;
+            // 탈퇴요청: withdrawRequestedAt 를 현재 시각으로 세팅(기존값 있으면 보존)
+            withdrawRequestedAt = (member.getWithdrawRequestedAt() != null) ? member.getWithdrawRequestedAt() : now;
         } else if (MemberStatusCodes.WITHDRAWN.equals(newStatus)) {
-            // 즉시탈퇴: 요청 흔적(withdrawRequestedAt)·휴면일시(dormantAt)·정지일시(suspendedAt)는 보존, withdrawnAt 오늘(기존값 있으면 보존)
+            // 즉시탈퇴: 요청 흔적(withdrawRequestedAt)·휴면일시(dormantAt)·정지일시(suspendedAt)는 보존, withdrawnAt 현재 시각(기존값 있으면 보존)
             dormantAt = member.getDormantAt();
             suspendedAt = member.getSuspendedAt();
             withdrawRequestedAt = member.getWithdrawRequestedAt();
-            withdrawnAt = (member.getWithdrawnAt() != null) ? member.getWithdrawnAt() : today;
+            withdrawnAt = (member.getWithdrawnAt() != null) ? member.getWithdrawnAt() : now;
         }
         // ACTIVE(철회 포함): 모든 날짜 필드 null 클리어(초기값 그대로)
 
@@ -317,7 +320,7 @@ public class MemberServiceImpl implements MemberService {
         }
 
         String beforeStatus = member.getStatusCode();
-        LocalDate withdrawnAt = (command.withdrawnAt() != null) ? command.withdrawnAt() : LocalDate.now();
+        Instant withdrawnAt = (command.withdrawnAt() != null) ? toStartOfDayInstant(command.withdrawnAt()) : Instant.now();
         member.updateStatus(MemberStatusCodes.WITHDRAWN, member.getDormantAt(), member.getSuspendedAt(), member.getWithdrawRequestedAt(), withdrawnAt);
 
         Member saved = memberRepository.save(member);
@@ -408,6 +411,15 @@ public class MemberServiceImpl implements MemberService {
         if (rawWebId == null) return null;
         String trimmed = rawWebId.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    /**
+     * 관리자가 입력한 날짜(LocalDate)를 Instant 로 변환한다.
+     * DB 컬럼이 timestamptz 로 승격되었고 마이그레이션에서 기존 DATE 를 00:00 UTC 로 캐스팅했으므로,
+     * 입력 날짜도 동일하게 해당 일자의 00:00 UTC 시각으로 통일한다.
+     */
+    private Instant toStartOfDayInstant(LocalDate date) {
+        return date.atStartOfDay(ZoneOffset.UTC).toInstant();
     }
 
     private String normalizePhoneOrNull(String rawPhoneNumber) {

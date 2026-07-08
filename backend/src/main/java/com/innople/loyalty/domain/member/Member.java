@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
@@ -73,19 +74,19 @@ public class Member extends BaseEntity {
     private String statusCode;
 
     @Column(nullable = false)
-    private LocalDate joinedAt;
+    private Instant joinedAt;
 
     @Column(nullable = true)
-    private LocalDate dormantAt;
+    private Instant dormantAt;
 
     @Column(nullable = true)
-    private LocalDate suspendedAt;
+    private Instant suspendedAt;
 
     @Column(nullable = true)
-    private LocalDate withdrawRequestedAt;
+    private Instant withdrawRequestedAt;
 
     @Column(nullable = true)
-    private LocalDate withdrawnAt;
+    private Instant withdrawnAt;
 
     @Column(nullable = true, length = 200)
     private String ci;
@@ -105,11 +106,11 @@ public class Member extends BaseEntity {
             MembershipGrade membershipGrade,
             String webId,
             String statusCode,
-            LocalDate joinedAt,
-            LocalDate dormantAt,
-            LocalDate suspendedAt,
-            LocalDate withdrawRequestedAt,
-            LocalDate withdrawnAt,
+            Instant joinedAt,
+            Instant dormantAt,
+            Instant suspendedAt,
+            Instant withdrawRequestedAt,
+            Instant withdrawnAt,
             String ci,
             String anniversaries
     ) {
@@ -159,7 +160,7 @@ public class Member extends BaseEntity {
         this.anniversaries = anniversaries;
     }
 
-    public void updateStatus(String statusCode, LocalDate dormantAt, LocalDate suspendedAt, LocalDate withdrawRequestedAt, LocalDate withdrawnAt) {
+    public void updateStatus(String statusCode, Instant dormantAt, Instant suspendedAt, Instant withdrawRequestedAt, Instant withdrawnAt) {
         this.statusCode = requireText(statusCode, "statusCode");
         this.dormantAt = dormantAt;
         this.suspendedAt = suspendedAt;

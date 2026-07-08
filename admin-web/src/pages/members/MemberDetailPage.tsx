@@ -404,9 +404,15 @@ function MemberStatusModal({
               return (
                 <Form.Item
                   label="휴면일시"
-                  extra="상태 변경 시점(오늘) 날짜로 즉시 휴면 처리됩니다."
+                  extra="상태 변경 시점(현재 시각)으로 즉시 휴면 처리됩니다."
                 >
-                  <DatePicker style={{ width: '100%' }} disabled value={dayjs()} />
+                  <DatePicker
+                    style={{ width: '100%' }}
+                    disabled
+                    showTime
+                    format="YYYY-MM-DD HH:mm:ss"
+                    value={dayjs()}
+                  />
                 </Form.Item>
               )
             }
@@ -415,9 +421,15 @@ function MemberStatusModal({
               return (
                 <Form.Item
                   label="정지일시"
-                  extra="상태 변경 시점(오늘) 날짜로 즉시 정지 처리됩니다."
+                  extra="상태 변경 시점(현재 시각)으로 즉시 정지 처리됩니다."
                 >
-                  <DatePicker style={{ width: '100%' }} disabled value={dayjs()} />
+                  <DatePicker
+                    style={{ width: '100%' }}
+                    disabled
+                    showTime
+                    format="YYYY-MM-DD HH:mm:ss"
+                    value={dayjs()}
+                  />
                 </Form.Item>
               )
             }
@@ -566,7 +578,7 @@ export function MemberDetailPage() {
                           {detail.data.webId ?? '-'}
                         </Descriptions.Item>
                         <Descriptions.Item label="가입일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
-                          {detail.data.joinedAt ?? '-'}
+                          {formatDateTime(detail.data.joinedAt)}
                         </Descriptions.Item>
                         <Descriptions.Item label="앱 로그인" contentStyle={MEMBER_DETAIL_CONTENT_FIRST_COL_STYLE}>
                           {detail.data.appLoginEnabled ? <Tag color="green">허용</Tag> : <Tag>미허용</Tag>}
@@ -581,16 +593,16 @@ export function MemberDetailPage() {
                           {latestLogin ? `${latestLogin.deviceName ?? '-'} / ${latestLogin.osName ?? '-'}` : '-'}
                         </Descriptions.Item>
                         <Descriptions.Item label="휴면일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
-                          {detail.data.dormantAt ?? '-'}
+                          {formatDateTime(detail.data.dormantAt)}
                         </Descriptions.Item>
                         <Descriptions.Item label="정지일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
-                          {detail.data.suspendedAt ?? '-'}
+                          {formatDateTime(detail.data.suspendedAt)}
                         </Descriptions.Item>
                         <Descriptions.Item label="탈퇴요청일" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
-                          {detail.data.withdrawRequestedAt ?? '-'}
+                          {formatDateTime(detail.data.withdrawRequestedAt)}
                         </Descriptions.Item>
                         <Descriptions.Item label="탈퇴일시" span={2} contentStyle={MEMBER_DETAIL_CONTENT_FLEX_COL_STYLE}>
-                          {detail.data.withdrawnAt ?? '-'}
+                          {formatDateTime(detail.data.withdrawnAt)}
                         </Descriptions.Item>
                       </Descriptions>
                     </div>

@@ -31,7 +31,6 @@ public interface MemberService {
             AddressRequest address,
             String webId,
             String statusCode,
-            LocalDate joinedAt,
             String ci,
             String anniversaries,
             Boolean appLoginAllowed,

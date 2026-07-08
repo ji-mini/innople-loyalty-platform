@@ -30,7 +30,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.innople.loyalty.common.DateRangeUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -67,6 +69,10 @@ public class MemberQueryController {
                 Sort.by(Sort.Direction.DESC, "joinedAt").and(Sort.by(Sort.Direction.DESC, "createdAt"))
         );
 
+        // 가입일 필터는 날짜 단위 입력이므로, timestamptz 컬럼과 비교하기 위해 KST half-open [start, endExclusive) 경계로 변환한다.
+        Instant joinedFromInstant = (joinedFrom != null) ? DateRangeUtils.kstStartOfDay(joinedFrom) : null;
+        Instant joinedToInstant = (joinedTo != null) ? DateRangeUtils.kstStartOfNextDay(joinedTo) : null;
+
         Page<MemberRepository.MemberSummaryView> result = memberRepository.searchSummary(
                 tenantId,
                 normalize(keyword),
@@ -75,8 +81,8 @@ public class MemberQueryController {
                 normalize(phoneNumber),
                 normalize(name),
                 normalize(webId),
-                joinedFrom,
-                joinedTo,
+                joinedFromInstant,
+                joinedToInstant,
                 pageable
         );
 

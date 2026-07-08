@@ -1,5 +1,4 @@
 import { Button, Card, DatePicker, Form, Input, Modal, Radio, Select, Space, Switch, Typography, message } from 'antd'
-import dayjs from 'dayjs'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../shared/api'
@@ -49,7 +48,6 @@ type FormValues = {
   ci?: string
   email?: string
   webId?: string
-  joinedAt?: any
   statusCode?: string
   address?: AddressForm
   appLoginAllowed?: boolean
@@ -301,7 +299,6 @@ export function MemberCreatePage() {
   const onFinish = async (v: FormValues) => {
     setLoading(true)
     try {
-      const joinedAt = v.joinedAt?.format?.('YYYY-MM-DD')
       const birthDate = v.birthDate?.format?.('YYYY-MM-DD')
       const anniversaries = v.anniversaries?.format?.('YYYY-MM-DD')
       const addr = v.address
@@ -319,7 +316,6 @@ export function MemberCreatePage() {
         ci: v.ci?.trim() ? v.ci.trim() : null,
         email: v.email!.trim(),
         webId: appLoginAllowed && v.webId?.trim() ? v.webId.trim() : null,
-        joinedAt: joinedAt ?? null,
         statusCode: v.statusCode ?? DEFAULT_STATUS,
         appLoginAllowed,
         autoGeneratePassword,
@@ -419,7 +415,6 @@ export function MemberCreatePage() {
             phoneNumber: '',
             email: '',
             webId: '',
-            joinedAt: dayjs(),
             statusCode: DEFAULT_STATUS,
             address: INITIAL_ADDRESS,
             appLoginAllowed: false,
@@ -469,9 +464,6 @@ export function MemberCreatePage() {
                       { value: 'UNKNOWN', label: '미선택' },
                     ]}
                   />
-                </Form.Item>
-                <Form.Item label="가입일" name="joinedAt">
-                  <DatePicker style={FULL_WIDTH_CONTROL_STYLE} disabled inputReadOnly />
                 </Form.Item>
                 <Form.Item label="상태" name="statusCode">
                   <Select

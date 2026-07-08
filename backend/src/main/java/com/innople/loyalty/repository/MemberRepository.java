@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,30 +28,32 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
 
     long countByTenantId(UUID tenantId);
 
-    long countByTenantIdAndJoinedAt(UUID tenantId, LocalDate joinedAt);
+    long countByTenantIdAndJoinedAt(UUID tenantId, Instant joinedAt);
 
     long countByTenantIdAndCreatedAtBetween(UUID tenantId, Instant from, Instant to);
 
-    long countByTenantIdAndJoinedAtBetween(UUID tenantId, LocalDate from, LocalDate to);
+    // KST half-open 구간 집계: joinedAt >= start AND joinedAt < endExclusive
+    long countByTenantIdAndJoinedAtGreaterThanEqualAndJoinedAtLessThan(UUID tenantId, Instant start, Instant endExclusive);
 
-    long countByTenantIdAndJoinedAtLessThanEqual(UUID tenantId, LocalDate to);
+    long countByTenantIdAndJoinedAtLessThanEqual(UUID tenantId, Instant to);
 
     long countByTenantIdAndStatusCode(UUID tenantId, String statusCode);
 
-    long countByTenantIdAndDormantAtBetween(UUID tenantId, LocalDate from, LocalDate to);
+    long countByTenantIdAndDormantAtGreaterThanEqualAndDormantAtLessThan(UUID tenantId, Instant start, Instant endExclusive);
 
-    long countByTenantIdAndWithdrawnAtBetween(UUID tenantId, LocalDate from, LocalDate to);
+    long countByTenantIdAndWithdrawnAtGreaterThanEqualAndWithdrawnAtLessThan(UUID tenantId, Instant start, Instant endExclusive);
 
     @Query("select count(m) from Member m where m.tenantId = :tenantId and m.statusCode <> :excludeStatus")
     long countByTenantIdAndStatusCodeNot(@Param("tenantId") UUID tenantId, @Param("excludeStatus") String excludeStatus);
 
+    // asOfEndExclusive = 기준일 다음 날 KST 자정. "기준일 끝까지 활성" = 그 이전에 가입했고, 그 이전에 탈퇴하지 않은 회원.
     @Query("""
             select count(m) from Member m
             where m.tenantId = :tenantId
-              and m.joinedAt <= :asOfDate
-              and (m.withdrawnAt is null or m.withdrawnAt > :asOfDate)
+              and m.joinedAt < :asOfEndExclusive
+              and (m.withdrawnAt is null or m.withdrawnAt >= :asOfEndExclusive)
             """)
-    long countActiveMembersAsOf(@Param("tenantId") UUID tenantId, @Param("asOfDate") LocalDate asOfDate);
+    long countActiveMembersAsOf(@Param("tenantId") UUID tenantId, @Param("asOfEndExclusive") Instant asOfEndExclusive);
 
     List<Member> findByTenantIdAndIdIn(UUID tenantId, List<UUID> ids);
 
@@ -88,11 +89,11 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
 
         String getWebId();
 
-        LocalDate getJoinedAt();
+        Instant getJoinedAt();
 
-        LocalDate getDormantAt();
+        Instant getDormantAt();
 
-        LocalDate getWithdrawnAt();
+        Instant getWithdrawnAt();
 
         long getPointBalance();
 
@@ -149,7 +150,7 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
               and (:name is null or lower(m.name) like lower(concat('%', cast(:name as string), '%')))
               and (:webId is null or lower(m.webId) like lower(concat('%', cast(:webId as string), '%')))
               and (:joinedFrom is null or m.joinedAt >= :joinedFrom)
-              and (:joinedTo is null or m.joinedAt <= :joinedTo)
+              and (:joinedTo is null or m.joinedAt < :joinedTo)
               and (
                     :keyword is null
                  or lower(m.memberNo) like lower(concat('%', cast(:keyword as string), '%'))
@@ -167,8 +168,8 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
             @Param("phoneNumber") String phoneNumber,
             @Param("name") String name,
             @Param("webId") String webId,
-            @Param("joinedFrom") LocalDate joinedFrom,
-            @Param("joinedTo") LocalDate joinedTo,
+            @Param("joinedFrom") Instant joinedFrom,
+            @Param("joinedTo") Instant joinedTo,
             Pageable pageable
     );
 }
