@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface MemberRepository extends JpaRepository<Member, UUID> {
+public interface MemberRepository extends JpaRepository<Member, UUID>, MemberRepositoryCustom {
     Optional<Member> findByTenantIdAndId(UUID tenantId, UUID id);
 
     @Query("""
@@ -121,56 +121,8 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
             Pageable pageable
     );
 
-    @Query("""
-            select
-              m.id as id,
-              m.memberNo as memberNo,
-              m.name as name,
-              m.statusCode as statusCode,
-              m.phoneNumber as phoneNumber,
-              m.email as email,
-              m.webId as webId,
-              m.joinedAt as joinedAt,
-              m.dormantAt as dormantAt,
-              m.withdrawnAt as withdrawnAt,
-              coalesce(pa.currentBalance, 0) as pointBalance,
-              (select case when count(mc.id) > 0 then true else false end
-                 from MemberCredential mc
-                where mc.tenantId = m.tenantId
-                  and mc.memberId = m.id
-                  and mc.deleted = false) as appLoginEnabled
-            from Member m
-            left join PointAccount pa
-              on pa.tenantId = m.tenantId
-             and pa.memberId = m.id
-            where m.tenantId = :tenantId
-              and (:statusCode is null or m.statusCode = :statusCode)
-              and (:memberNo is null or lower(m.memberNo) like lower(concat('%', cast(:memberNo as string), '%')))
-              and (:phoneNumber is null or lower(m.phoneNumber) like lower(concat('%', cast(:phoneNumber as string), '%')))
-              and (:name is null or lower(m.name) like lower(concat('%', cast(:name as string), '%')))
-              and (:webId is null or lower(m.webId) like lower(concat('%', cast(:webId as string), '%')))
-              and (:joinedFrom is null or m.joinedAt >= :joinedFrom)
-              and (:joinedTo is null or m.joinedAt < :joinedTo)
-              and (
-                    :keyword is null
-                 or lower(m.memberNo) like lower(concat('%', cast(:keyword as string), '%'))
-                 or lower(m.name) like lower(concat('%', cast(:keyword as string), '%'))
-                 or lower(m.phoneNumber) like lower(concat('%', cast(:keyword as string), '%'))
-                 or lower(m.email) like lower(concat('%', cast(:keyword as string), '%'))
-                 or lower(m.webId) like lower(concat('%', cast(:keyword as string), '%'))
-              )
-            """)
-    Page<MemberSummaryView> searchSummary(
-            @Param("tenantId") UUID tenantId,
-            @Param("keyword") String keyword,
-            @Param("statusCode") String statusCode,
-            @Param("memberNo") String memberNo,
-            @Param("phoneNumber") String phoneNumber,
-            @Param("name") String name,
-            @Param("webId") String webId,
-            @Param("joinedFrom") Instant joinedFrom,
-            @Param("joinedTo") Instant joinedTo,
-            Pageable pageable
-    );
+    // 회원 목록 조회(가입일 범위 필터 포함)는 MemberRepositoryCustom / MemberRepositoryImpl 에서
+    // 동적 JPQL 로 구현한다. 가입일 필터를 (:date is null or ...) 로 처리하면 값이 없을 때
+    // timestamptz 파라미터 타입 미결정 오류가 발생하기 때문이다.
 }
 

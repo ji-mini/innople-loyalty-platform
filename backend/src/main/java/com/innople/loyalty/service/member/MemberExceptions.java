@@ -44,6 +44,26 @@ public final class MemberExceptions {
     }
 
     /**
+     * 회원 상태상 수기 포인트 적립/차감이 허용되지 않는 경우 발생.
+     * 에러 코드({@code MEMBER_STATUS_NOT_ALLOWED})와 메시지는 프론트가 그대로 노출 가능하도록 전달한다.
+     * (MemberPhoneAlreadyExistsException 의 code 전달 패턴을 따른다.)
+     */
+    public static class MemberStatusNotAllowedException extends RuntimeException {
+        public static final String CODE = "MEMBER_STATUS_NOT_ALLOWED";
+
+        private final String code;
+
+        public MemberStatusNotAllowedException(String message) {
+            super(message);
+            this.code = CODE;
+        }
+
+        public String getCode() {
+            return code;
+        }
+    }
+
+    /**
      * 회원 등록 시 필수 인증(휴대폰/이메일)이 완료되지 않은 경우 발생.
      * verification-required=true 인 환경(운영)에서만 검증되며, 명확한 에러 코드를 함께 전달한다.
      */

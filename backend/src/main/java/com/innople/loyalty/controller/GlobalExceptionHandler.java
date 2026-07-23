@@ -87,6 +87,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(ex.getCode(), ex.getMessage()));
     }
 
+    @ExceptionHandler(MemberExceptions.MemberStatusNotAllowedException.class)
+    public ResponseEntity<ApiErrorResponse> handleMemberStatusNotAllowed(MemberExceptions.MemberStatusNotAllowedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(ex.getCode(), ex.getMessage()));
+    }
+
     @ExceptionHandler(AdminAuthExceptions.InvalidCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleUnauthorized(AdminAuthExceptions.InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiErrorResponse.of(ex.getMessage()));

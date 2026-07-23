@@ -17,6 +17,7 @@ import com.innople.loyalty.repository.MemberRepository;
 import com.innople.loyalty.repository.MemberStatusHistoryRepository;
 import com.innople.loyalty.repository.MembershipGradeRepository;
 import com.innople.loyalty.service.memberauth.MemberCredentialService;
+import com.innople.loyalty.service.points.PointService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,9 @@ public class MemberServiceImpl implements MemberService {
     private static final String DEFAULT_MEMBERSHIP_GRADE_NAME = "기본등급";
     // V22__add_members_tenant_phone_unique_index 에서 추가한 (tenant_id, phone_number) 유니크 제약 이름.
     private static final String PHONE_UNIQUE_CONSTRAINT = "uk_members_tenant_phone_number";
+    // 최종 탈회(WITHDRAWN) 시 잔여 포인트 전량 소각에 사용할 원장 채널/사유.
+    private static final String WITHDRAW_BURN_SOURCE = "ADMIN_WEB_WITHDRAW_BURN";
+    private static final String WITHDRAW_BURN_REASON = "회원 탈회에 따른 포인트 전량 소각";
 
     private final MemberRepository memberRepository;
     private final AddressRepository addressRepository;
@@ -50,6 +54,7 @@ public class MemberServiceImpl implements MemberService {
     private final MemberCredentialService memberCredentialService;
     private final InitialPasswordLinkSender initialPasswordLinkSender;
     private final MemberVerificationProperties memberVerificationProperties;
+    private final PointService pointService;
     private static final Pattern WEB_ID_PATTERN = Pattern.compile("^[A-Za-z0-9_-]+$");
 
     @Override
@@ -302,6 +307,12 @@ public class MemberServiceImpl implements MemberService {
         Member saved = memberRepository.save(member);
         memberLedgerService.record(saved, MemberLedgerEventType.UPDATE_STATUS, beforeStatus, saved.getStatusCode());
         recordStatusChangeIfChanged(tenantId, saved, changedBy, beforeStatus, command.reason());
+
+        // 최종 탈회(WITHDRAWN)로 전이한 경우에만 잔여 포인트를 전량 소각한다. 같은 트랜잭션에서 원자적으로 처리한다.
+        // WITHDRAW_REQUESTED(탈회요청)는 여기에 해당하지 않으므로 소각되지 않는다(30일 유예 중 취소 가능).
+        if (MemberStatusCodes.WITHDRAWN.equals(newStatus)) {
+            pointService.burnAll(saved.getId(), withdrawnAt, WITHDRAW_BURN_REASON, WITHDRAW_BURN_SOURCE);
+        }
         return toResult(saved, null);
     }
 
@@ -326,6 +337,9 @@ public class MemberServiceImpl implements MemberService {
         Member saved = memberRepository.save(member);
         memberLedgerService.record(saved, MemberLedgerEventType.WITHDRAW, beforeStatus, saved.getStatusCode());
         recordStatusChangeIfChanged(tenantId, saved, changedBy, beforeStatus, command.reason());
+
+        // 최종 탈회 확정 → 잔여 포인트 전량 소각. 같은 트랜잭션에서 원자적으로 처리한다.
+        pointService.burnAll(saved.getId(), withdrawnAt, WITHDRAW_BURN_REASON, WITHDRAW_BURN_SOURCE);
         return toResult(saved, null);
     }
 

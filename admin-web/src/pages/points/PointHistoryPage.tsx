@@ -5,11 +5,14 @@ import { useMemberDetail, usePointLedgers } from '../../shared/queries'
 import type { PointLedgerItem } from '../../shared/types'
 import { PageShell } from '../common/PageShell'
 
-const TYPE_OPTIONS: Array<{ value: 'ALL' | 'EARN' | 'USE' | 'EVENT'; label: string }> = [
+type TypeFilterValue = 'ALL' | 'EARN' | 'USE' | 'EVENT' | 'BURN_WITHDRAW'
+
+const TYPE_OPTIONS: Array<{ value: TypeFilterValue; label: string }> = [
   { value: 'ALL', label: '전체' },
   { value: 'EARN', label: '적립' },
   { value: 'USE', label: '사용' },
   { value: 'EVENT', label: '이벤트' },
+  { value: 'BURN_WITHDRAW', label: '탈회소멸' },
 ]
 
 function eventTypeLabel(eventType: string): string {
@@ -30,12 +33,12 @@ function formatDateTime(value: string | null | undefined): string {
 export function PointHistoryPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const initialMemberNo = searchParams.get('memberNo') ?? ''
-  const initialTypeGroup = (searchParams.get('typeGroup') as 'ALL' | 'EARN' | 'USE' | 'EVENT' | null) ?? 'ALL'
+  const initialTypeGroup = (searchParams.get('typeGroup') as TypeFilterValue | null) ?? 'ALL'
   const [memberNo, setMemberNo] = React.useState('')
-  const [typeFilter, setTypeFilter] = React.useState<'ALL' | 'EARN' | 'USE' | 'EVENT'>('ALL')
+  const [typeFilter, setTypeFilter] = React.useState<TypeFilterValue>('ALL')
   const [searched, setSearched] = React.useState(false)
   const [appliedMemberNo, setAppliedMemberNo] = React.useState('')
-  const [appliedTypeFilter, setAppliedTypeFilter] = React.useState<'ALL' | 'EARN' | 'USE' | 'EVENT'>('ALL')
+  const [appliedTypeFilter, setAppliedTypeFilter] = React.useState<TypeFilterValue>('ALL')
   const trimmedMemberNo = memberNo.trim()
   const memberDetail = useMemberDetail(appliedMemberNo)
 
@@ -50,6 +53,7 @@ export function PointHistoryPage() {
     return allRows.filter((r) => {
       if (appliedTypeFilter === 'EARN') return r.eventType === 'EARN' || r.eventType === 'ADJUST_EARN'
       if (appliedTypeFilter === 'USE') return r.eventType === 'USE' || r.eventType === 'ADJUST_USE'
+      if (appliedTypeFilter === 'BURN_WITHDRAW') return r.eventType === 'BURN_WITHDRAW'
       return r.eventType === 'EXPIRE_AUTO' || r.eventType === 'EXPIRE_MANUAL'
     })
   }, [allRows, appliedTypeFilter])
@@ -130,7 +134,13 @@ export function PointHistoryPage() {
               width: 130,
               render: (v: string) => {
                 const color =
-                  v === 'EARN' || v === 'ADJUST_EARN' ? 'green' : v === 'USE' || v === 'ADJUST_USE' ? 'volcano' : 'default'
+                  v === 'EARN' || v === 'ADJUST_EARN'
+                    ? 'green'
+                    : v === 'USE' || v === 'ADJUST_USE'
+                      ? 'volcano'
+                      : v === 'BURN_WITHDRAW'
+                        ? 'red'
+                        : 'default'
                 return <Tag color={color}>{eventTypeLabel(v)}</Tag>
               },
             },

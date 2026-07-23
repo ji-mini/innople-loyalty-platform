@@ -26,5 +26,14 @@ public interface PointService {
                                       String referenceType, String referenceId);
 
     PointOperationResult autoExpire(UUID memberId, Instant referenceAt, String reason, String referenceType, String referenceId);
+
+    /**
+     * 회원 최종 탈회(WITHDRAWN) 시 잔여 포인트를 전량 소각한다.
+     *
+     * <p>만료(expire) 계열과 달리 만료일 도래 여부와 무관하게 잔량이 남은 모든 lot 을 대상으로 한다.
+     * 상태 가드(assertPointOperationAllowed)를 거치지 않으며, PointAccount 가 없거나 소각 대상 잔량이 0이면
+     * 예외 없이 no-op 로 통과한다(ledgerId/approvalNo=null, amount=0).</p>
+     */
+    PointOperationResult burnAll(UUID memberId, Instant referenceAt, String reason, String sourceChannel);
 }
 

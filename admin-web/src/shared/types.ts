@@ -124,7 +124,7 @@ export type MemberLoginHistory = {
 export type PointLedgerItem = {
   id: string
   memberNo: string
-  eventType: 'EARN' | 'USE' | 'EXPIRE_AUTO' | 'EXPIRE_MANUAL' | 'ADJUST_EARN' | 'ADJUST_USE'
+  eventType: 'EARN' | 'USE' | 'EXPIRE_AUTO' | 'EXPIRE_MANUAL' | 'ADJUST_EARN' | 'ADJUST_USE' | 'BURN_WITHDRAW'
   amount: number
   reason: string | null
   sourceChannel: string

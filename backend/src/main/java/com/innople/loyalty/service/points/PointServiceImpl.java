@@ -2,8 +2,10 @@ package com.innople.loyalty.service.points;
 
 import com.innople.loyalty.config.TenantContext;
 import com.innople.loyalty.domain.member.Member;
+import com.innople.loyalty.domain.member.MemberStatusCodes;
 import com.innople.loyalty.domain.member.MembershipGrade;
 import com.innople.loyalty.repository.CommonCodeRepository;
+import com.innople.loyalty.service.member.MemberExceptions;
 import com.innople.loyalty.domain.points.PointAccount;
 import com.innople.loyalty.domain.points.PointAllocation;
 import com.innople.loyalty.domain.points.PointEventType;
@@ -22,6 +24,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.UUID;
 import java.math.BigDecimal;
@@ -41,6 +44,12 @@ public class PointServiceImpl implements PointService {
     private static final String ADMIN_WEB_MANUAL_EARN = "ADMIN_WEB_MANUAL_EARN";
     private static final String ADMIN_WEB_MANUAL_EXPIRE = "ADMIN_WEB_MANUAL_EXPIRE";
     private static final String SYSTEM_AUTO_EXPIRE = "SYSTEM_AUTO_EXPIRE";
+
+    // 수기/POS 포인트 적립·차감이 허용되는 회원 상태 allow-list. 이 집합에 없는 상태는 전부 차단한다.
+    // (block-list 가 아니라 allow-list 이므로 새 상태가 추가돼도 기본이 차단이다.)
+    // 시스템 만료(autoExpire/manualExpire/expire)는 이 가드를 거치지 않으므로 비활성 회원도 만료가 계속 동작한다.
+    private static final Set<String> POINT_OPERATION_ALLOWED_STATUS = Set.of(
+            MemberStatusCodes.ACTIVE, MemberStatusCodes.LEGACY_NORMAL);
 
     private final MemberRepository memberRepository;
     private final PointAccountRepository pointAccountRepository;
@@ -66,6 +75,10 @@ public class PointServiceImpl implements PointService {
         }
 
         UUID tenantId = TenantContext.requireTenantId();
+        Member member = memberRepository.findByTenantIdAndId(tenantId, memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+        assertPointOperationAllowed(member.getStatusCode());
+
         String resolvedApprovalNo = resolveApprovalNo(tenantId, approvalNo);
         ReferenceInfo referenceInfo = validateReferenceInfo(tenantId, referenceType, referenceId);
         Instant now = Instant.now();
@@ -121,6 +134,8 @@ public class PointServiceImpl implements PointService {
         UUID tenantId = TenantContext.requireTenantId();
         Member member = memberRepository.findByTenantIdAndIdWithMembershipGrade(tenantId, memberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+        assertPointOperationAllowed(member.getStatusCode());
+
         MembershipGrade grade = member.getMembershipGrade();
         if (grade == null) {
             throw new IllegalArgumentException("회원 등급이 없어 적립 대상 금액 기준 적립을 할 수 없습니다.");
@@ -159,6 +174,10 @@ public class PointServiceImpl implements PointService {
         }
 
         UUID tenantId = TenantContext.requireTenantId();
+        Member member = memberRepository.findByTenantIdAndId(tenantId, memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+        assertPointOperationAllowed(member.getStatusCode());
+
         String resolvedApprovalNo = resolveApprovalNo(tenantId, approvalNo);
         ReferenceInfo referenceInfo = validateReferenceInfo(tenantId, referenceType, referenceId);
         PointAccount account = pointAccountRepository
@@ -253,6 +272,115 @@ public class PointServiceImpl implements PointService {
                 PointEventType.EXPIRE_AUTO,
                 SYSTEM_AUTO_EXPIRE
         );
+    }
+
+    /**
+     * 탈회 소각. 만료(expire) 계열과 코드를 공유하지 않으며(공통 expire 시그니처 보존을 위해 로직을 복제),
+     * 상태 가드(assertPointOperationAllowed)를 호출하지 않는다. PointAccount 부재/잔량 0 은 예외 없이 no-op.
+     * 만료일 도래 여부와 무관하게 잔량이 남은 전체 lot 을 소각 대상으로 한다.
+     */
+    @Override
+    @Transactional
+    public PointOperationResult burnAll(UUID memberId, Instant referenceAt, String reason, String sourceChannel) {
+        if (sourceChannel == null || sourceChannel.isBlank()) {
+            throw new IllegalArgumentException("sourceChannel must not be blank");
+        }
+
+        UUID tenantId = TenantContext.requireTenantId();
+
+        // 포인트를 한 번도 받은 적 없는 회원(계정 미존재)의 탈회를 실패시키지 않도록 no-op 처리한다.
+        PointAccount account = pointAccountRepository
+                .findWithLockByTenantIdAndMemberId(tenantId, memberId)
+                .orElse(null);
+        if (account == null) {
+            return noOpResult(0L);
+        }
+
+        List<PointLot> remainingLots = pointLotRepository.findAllRemainingLots(tenantId, account.getId());
+        long totalToBurn = 0L;
+        for (PointLot lot : remainingLots) {
+            totalToBurn = Math.addExact(totalToBurn, lot.getRemainingAmount());
+        }
+
+        if (totalToBurn == 0L) {
+            return noOpResult(account.getCurrentBalance());
+        }
+
+        String resolvedApprovalNo = resolveApprovalNo(tenantId, null);
+        PointLedger ledger = pointLedgerRepository.save(
+                new PointLedger(
+                        account.getId(),
+                        memberId,
+                        PointEventType.BURN_WITHDRAW,
+                        -totalToBurn,
+                        reason,
+                        sourceChannel,
+                        resolvedApprovalNo,
+                        null,
+                        null
+                )
+        );
+
+        List<PointAllocation> allocations = new ArrayList<>();
+        for (PointLot lot : remainingLots) {
+            long burnAmount = lot.getRemainingAmount();
+            if (burnAmount <= 0) {
+                continue;
+            }
+            lot.deduct(burnAmount);
+            allocations.add(new PointAllocation(account.getId(), ledger.getId(), lot.getId(), burnAmount));
+        }
+
+        pointLotRepository.saveAll(remainingLots);
+        pointAllocationRepository.saveAll(allocations);
+
+        account.addBalance(-totalToBurn);
+        pointAccountRepository.save(account);
+
+        return new PointOperationResult(
+                ledger.getId(),
+                ledger.getApprovalNo(),
+                ledger.getEventType(),
+                ledger.getAmount(),
+                account.getCurrentBalance(),
+                ledger.getCreatedAt()
+        );
+    }
+
+    private PointOperationResult noOpResult(long currentBalance) {
+        return new PointOperationResult(
+                null,
+                null,
+                PointEventType.BURN_WITHDRAW,
+                0L,
+                currentBalance,
+                Instant.now()
+        );
+    }
+
+    /**
+     * 수기/POS 포인트 적립·차감 허용 여부를 회원 상태로 판정한다. statusCode 만 받는 순수 검증이며 내부에서 조회하지 않는다.
+     * allow-list 에 없는 상태는 전부 차단하여 409(MEMBER_STATUS_NOT_ALLOWED)로 응답한다.
+     */
+    private void assertPointOperationAllowed(String statusCode) {
+        if (statusCode != null && POINT_OPERATION_ALLOWED_STATUS.contains(statusCode)) {
+            return;
+        }
+        throw new MemberExceptions.MemberStatusNotAllowedException(
+                "%s 상태 회원은 포인트 적립/차감이 불가합니다".formatted(statusLabel(statusCode)));
+    }
+
+    private String statusLabel(String statusCode) {
+        if (statusCode == null) {
+            return "알 수 없음";
+        }
+        return switch (statusCode) {
+            case MemberStatusCodes.DORMANT -> "휴면";
+            case MemberStatusCodes.SUSPENDED -> "정지";
+            case MemberStatusCodes.WITHDRAW_REQUESTED -> "탈회요청";
+            case MemberStatusCodes.WITHDRAWN -> "탈회";
+            default -> statusCode;
+        };
     }
 
     private String resolveApprovalNo(UUID tenantId, String requestedApprovalNo) {

@@ -45,6 +45,21 @@ public interface PointLotRepository extends JpaRepository<PointLot, UUID> {
             @Param("referenceAt") Instant referenceAt
     );
 
+    // 탈회 소각용: 만료일 도래 여부와 무관하게 잔량이 남은 모든 lot 을 조회한다.
+    // (만료일이 이미 지났지만 만료 배치가 아직 처리하지 않은 lot 도 포함) FEFO 정렬은 소각 순서 안정성을 위해 유지한다.
+    @Query("""
+            select l
+            from PointLot l
+            where l.tenantId = :tenantId
+              and l.accountId = :accountId
+              and l.remainingAmount > 0
+            order by l.expiresAt asc, l.createdAt asc
+            """)
+    List<PointLot> findAllRemainingLots(
+            @Param("tenantId") UUID tenantId,
+            @Param("accountId") UUID accountId
+    );
+
     @Query("""
             select distinct l.memberId
             from PointLot l

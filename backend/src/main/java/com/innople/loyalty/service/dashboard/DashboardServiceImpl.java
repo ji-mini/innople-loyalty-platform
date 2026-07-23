@@ -196,7 +196,8 @@ public class DashboardServiceImpl implements DashboardService {
         return switch (eventType) {
             case EARN, ADJUST_EARN -> "EARN";
             case USE, ADJUST_USE -> "USE";
-            case EXPIRE_AUTO, EXPIRE_MANUAL -> "EXPIRE";
+            // BURN_WITHDRAW(탈회 소각)도 포인트 감소이므로 대시보드 활동 분류상 EXPIRE 버킷으로 묶는다.
+            case EXPIRE_AUTO, EXPIRE_MANUAL, BURN_WITHDRAW -> "EXPIRE";
         };
     }
 

@@ -1,4 +1,4 @@
-import { Alert, Button, Card, DatePicker, Descriptions, Form, Input, Modal, Radio, Select, Space, Table, Tabs, Tag, Typography, message } from 'antd'
+import { Alert, Button, Card, DatePicker, Descriptions, Form, Input, Modal, Radio, Select, Space, Table, Tabs, Tag, Tooltip, Typography, message } from 'antd'
 import dayjs from 'dayjs'
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -61,7 +61,9 @@ function formatPointSourceChannel(v: string | null | undefined): string {
         ? '관리자 웹 수기 소멸'
         : v === 'SYSTEM_AUTO_EXPIRE'
           ? '시스템 자동 소멸'
-          : v
+          : v === 'ADMIN_WEB_WITHDRAW_BURN'
+            ? '관리자 웹 탈회 소멸'
+            : v
 }
 
 function formatDateTime(v: string | null | undefined): string {
@@ -477,7 +479,9 @@ export function MemberDetailPage() {
           ? '자동 소멸'
           : v === 'EXPIRE_MANUAL'
             ? '수동 소멸'
-            : v
+            : v === 'BURN_WITHDRAW'
+              ? '탈회소멸'
+              : v
   const [editOpen, setEditOpen] = React.useState(false)
   const [editLoading, setEditLoading] = React.useState(false)
   const [editForm] = Form.useForm()
@@ -698,7 +702,9 @@ export function MemberDetailPage() {
                               ? 'green'
                               : v === 'USE' || v === 'ADJUST_USE'
                                 ? 'volcano'
-                                : 'default'
+                                : v === 'BURN_WITHDRAW'
+                                  ? 'red'
+                                  : 'default'
                           return <Tag color={color}>{pointEventTypeLabel(v)}</Tag>
                         },
                       },
@@ -727,7 +733,19 @@ export function MemberDetailPage() {
                         dataIndex: 'sourceChannel',
                         render: (v: string) => formatPointSourceChannel(v),
                       },
-                      { ...col('사유', 'left', { width: 220, ellipsis: true }), dataIndex: 'reason' },
+                      {
+                        // 남는 폭을 독점하지 않도록 폭을 제한하고, 길면 말줄임 + hover 시 전체 표시
+                        ...col('사유', 'left', { width: 220, ellipsis: { showTitle: false } }),
+                        dataIndex: 'reason',
+                        render: (v: string | null) =>
+                          v ? (
+                            <Tooltip title={v} placement="topLeft">
+                              {v}
+                            </Tooltip>
+                          ) : (
+                            '-'
+                          ),
+                      },
                       {
                         ...col('일시', 'right', { width: 160 }),
                         dataIndex: 'createdAt',
