@@ -7,12 +7,14 @@ import com.innople.loyalty.controller.dto.MemberDtos.AddressResponse;
 import com.innople.loyalty.domain.code.CommonCode;
 import com.innople.loyalty.domain.member.Address;
 import com.innople.loyalty.domain.member.Member;
+import com.innople.loyalty.domain.member.MemberGradeHistory;
 import com.innople.loyalty.domain.member.MemberLedgerEventType;
 import com.innople.loyalty.domain.member.MembershipGrade;
 import com.innople.loyalty.domain.member.MemberStatusCodes;
 import com.innople.loyalty.domain.member.MemberStatusHistory;
 import com.innople.loyalty.repository.AddressRepository;
 import com.innople.loyalty.repository.CommonCodeRepository;
+import com.innople.loyalty.repository.MemberGradeHistoryRepository;
 import com.innople.loyalty.repository.MemberRepository;
 import com.innople.loyalty.repository.MemberStatusHistoryRepository;
 import com.innople.loyalty.repository.MembershipGradeRepository;
@@ -49,6 +51,7 @@ public class MemberServiceImpl implements MemberService {
     private final AddressRepository addressRepository;
     private final MemberLedgerService memberLedgerService;
     private final MemberStatusHistoryRepository memberStatusHistoryRepository;
+    private final MemberGradeHistoryRepository memberGradeHistoryRepository;
     private final MembershipGradeRepository membershipGradeRepository;
     private final CommonCodeRepository commonCodeRepository;
     private final MemberCredentialService memberCredentialService;
@@ -264,6 +267,13 @@ public class MemberServiceImpl implements MemberService {
     @Transactional
     public MemberResult updateStatus(String memberNo, UpdateStatusCommand command, UUID changedBy) {
         UUID tenantId = TenantContext.requireTenantId();
+
+        // 변경 주체(관리자) 없이는 상태를 변경할 수 없다(이력 actor_type=ADMIN → changed_by NOT NULL CHECK 선방어).
+        // resolve 실패 시 null 이 그대로 저장되던 기존 경로를 400 으로 막는다. changed_by IS NULL 은 시스템 배치 전용으로 예약.
+        if (changedBy == null) {
+            throw new IllegalArgumentException("상태 변경 주체(changedBy)가 필요합니다.");
+        }
+
         String newStatus = command.statusCode();
         validateStatusCode(tenantId, newStatus);
 
@@ -318,8 +328,55 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
+    public MemberResult updateGrade(String memberNo, UpdateGradeCommand command, UUID changedBy) {
+        UUID tenantId = TenantContext.requireTenantId();
+
+        // 변경 주체(관리자) 없이는 등급을 변경할 수 없다.
+        // changed_by IS NULL 은 향후 시스템 등급 산정 배치 전용으로 예약한다.
+        if (changedBy == null) {
+            throw new IllegalArgumentException("등급 변경 주체(changedBy)가 필요합니다.");
+        }
+        if (command.gradeId() == null) {
+            throw new IllegalArgumentException("gradeId must not be null");
+        }
+
+        Member member = memberRepository.findByTenantIdAndMemberNo(tenantId, memberNo)
+                .orElseThrow(() -> new MemberNotFoundException("member not found"));
+
+        // 최소 방어: 이미 완전 탈퇴(WITHDRAWN)된 회원은 등급을 변경할 수 없다(updateStatus 의 WITHDRAWN 재변경 방어와 동일 취급).
+        // 휴면/정지/탈퇴요청 상태는 등급 변경을 허용한다.
+        if (MemberStatusCodes.WITHDRAWN.equals(member.getStatusCode())) {
+            throw new InvalidMemberStatusException("이미 탈퇴 처리된 회원은 등급을 변경할 수 없습니다.");
+        }
+
+        MembershipGrade targetGrade = membershipGradeRepository.findByTenantIdAndId(tenantId, command.gradeId())
+                .orElseThrow(() -> new MembershipGradeExceptions.MembershipGradeNotFoundException("membership grade not found"));
+
+        // LAZY 프록시에서 id 만 읽는다(비교 목적). getName() 은 호출하지 않는다.
+        MembershipGrade beforeGrade = member.getMembershipGrade();
+        UUID beforeGradeId = (beforeGrade != null) ? beforeGrade.getId() : null;
+
+        // 동일 등급으로의 변경은 no-op: 이력 저장 없이 현재 상태를 그대로 반환한다.
+        if (command.gradeId().equals(beforeGradeId)) {
+            return toResult(member, null);
+        }
+
+        member.changeMembershipGrade(targetGrade);
+        Member saved = memberRepository.save(member);
+        recordGradeChangeIfChanged(tenantId, saved, changedBy, beforeGradeId, command.reason());
+        return toResult(saved, null);
+    }
+
+    @Override
+    @Transactional
     public MemberResult withdraw(String memberNo, WithdrawCommand command, UUID changedBy) {
         UUID tenantId = TenantContext.requireTenantId();
+
+        // 변경 주체(관리자) 없이는 탈퇴 처리를 할 수 없다(이력 actor_type=ADMIN → changed_by NOT NULL CHECK 선방어).
+        if (changedBy == null) {
+            throw new IllegalArgumentException("탈퇴 처리 주체(changedBy)가 필요합니다.");
+        }
+
         validateStatusCode(tenantId, MemberStatusCodes.WITHDRAWN);
 
         Member member = memberRepository.findByTenantIdAndMemberNo(tenantId, memberNo)
@@ -359,7 +416,28 @@ public class MemberServiceImpl implements MemberService {
             return;
         }
         memberStatusHistoryRepository.save(
-                MemberStatusHistory.of(tenantId, saved.getId(), changedBy, beforeStatus, afterStatus, reason)
+                MemberStatusHistory.ofAdmin(tenantId, saved.getId(), changedBy, beforeStatus, afterStatus, reason)
+        );
+    }
+
+    /**
+     * 회원 등급이 실제로 변경된 경우에만 등급 변경 이력을 남긴다.
+     * (recordStatusChangeIfChanged 와 동형. to_grade_id 는 NOT NULL 이므로 등급 해제(null) 이력은 남기지 않는다.)
+     */
+    private void recordGradeChangeIfChanged(
+            UUID tenantId,
+            Member saved,
+            UUID changedBy,
+            UUID beforeGradeId,
+            String reason
+    ) {
+        MembershipGrade afterGrade = saved.getMembershipGrade();
+        UUID afterGradeId = (afterGrade != null) ? afterGrade.getId() : null;
+        if (afterGradeId == null || afterGradeId.equals(beforeGradeId)) {
+            return;
+        }
+        memberGradeHistoryRepository.save(
+                MemberGradeHistory.ofAdmin(tenantId, saved.getId(), changedBy, beforeGradeId, afterGradeId, reason)
         );
     }
 
@@ -443,6 +521,11 @@ public class MemberServiceImpl implements MemberService {
     }
 
     private MemberResult toResult(Member member, String generatedPassword) {
+        // 등급은 LAZY 프록시라 반드시 @Transactional 서비스 경계 안에서 값을 꺼낸다.
+        // (컨트롤러 toResponse 에서 getName() 을 호출하면 LazyInitializationException 발생)
+        MembershipGrade grade = member.getMembershipGrade();
+        UUID gradeId = (grade != null) ? grade.getId() : null;
+        String gradeName = (grade != null) ? grade.getName() : null;
         return new MemberResult(
                 member.getId(),
                 member.getMemberNo(),
@@ -464,7 +547,9 @@ public class MemberServiceImpl implements MemberService {
                 member.getAnniversaries(),
                 memberCredentialService.isAppLoginEnabled(member.getId()),
                 memberCredentialService.getLoginId(member.getId()),
-                generatedPassword
+                generatedPassword,
+                gradeId,
+                gradeName
         );
     }
 

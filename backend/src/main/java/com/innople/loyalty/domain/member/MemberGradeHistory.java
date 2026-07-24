@@ -2,6 +2,8 @@ package com.innople.loyalty.domain.member;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
@@ -53,6 +55,11 @@ public class MemberGradeHistory {
     @Column(length = 500, updatable = false)
     private String reason;
 
+    /** 변경 주체 구분. ADMIN(관리자 수기, changedBy 필수) / SYSTEM(배치·시스템). */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20, updatable = false)
+    private HistoryActorType actorType;
+
     @Column(nullable = false, updatable = false)
     private Instant changedAt;
 
@@ -66,7 +73,8 @@ public class MemberGradeHistory {
         }
     }
 
-    public static MemberGradeHistory of(
+    /** 관리자 수기 등급 변경 이력. changedBy(관리자 id)는 필수다. */
+    public static MemberGradeHistory ofAdmin(
             UUID tenantId,
             UUID memberId,
             UUID changedBy,
@@ -74,10 +82,38 @@ public class MemberGradeHistory {
             UUID toGradeId,
             String reason
     ) {
+        if (changedBy == null) {
+            throw new IllegalArgumentException("changedBy must not be null for ADMIN grade history");
+        }
+        MemberGradeHistory history = create(tenantId, memberId, fromGradeId, toGradeId, reason);
+        history.changedBy = changedBy;
+        history.actorType = HistoryActorType.ADMIN;
+        return history;
+    }
+
+    /** 배치·시스템에 의한 등급 변경 이력. changedBy 없이 기록한다. */
+    public static MemberGradeHistory ofSystem(
+            UUID tenantId,
+            UUID memberId,
+            UUID fromGradeId,
+            UUID toGradeId,
+            String reason
+    ) {
+        MemberGradeHistory history = create(tenantId, memberId, fromGradeId, toGradeId, reason);
+        history.actorType = HistoryActorType.SYSTEM;
+        return history;
+    }
+
+    private static MemberGradeHistory create(
+            UUID tenantId,
+            UUID memberId,
+            UUID fromGradeId,
+            UUID toGradeId,
+            String reason
+    ) {
         MemberGradeHistory history = new MemberGradeHistory();
         history.tenantId = tenantId;
         history.memberId = memberId;
-        history.changedBy = changedBy;
         history.fromGradeId = fromGradeId;
         history.toGradeId = toGradeId;
         history.reason = (reason == null || reason.isBlank()) ? null : reason.trim();

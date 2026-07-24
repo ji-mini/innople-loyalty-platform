@@ -29,7 +29,9 @@ public record MemberResult(
         String anniversaries,
         boolean appLoginEnabled,
         String appLoginId,
-        String generatedPassword
+        String generatedPassword,
+        UUID gradeId,
+        String gradeName
 ) {
 }
 

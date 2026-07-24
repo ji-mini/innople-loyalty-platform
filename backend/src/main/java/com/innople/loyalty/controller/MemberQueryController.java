@@ -257,6 +257,8 @@ public class MemberQueryController {
     private MemberQueryDtos.MemberDetailResponse toDetail(Member m) {
         MembershipGrade grade = m.getMembershipGrade();
         String gradeName = grade != null ? grade.getName() : null;
+        // 프론트 등급 드롭다운이 현재 등급 id 를 알 수 있도록 함께 노출한다.
+        UUID gradeId = grade != null ? grade.getId() : null;
         UUID tenantId = TenantContext.requireTenantId();
         long pointBalance = pointAccountRepository.findByTenantIdAndMemberId(tenantId, m.getId())
                 .map(account -> account.getCurrentBalance())
@@ -283,6 +285,7 @@ public class MemberQueryController {
                 m.getName(),
                 pointBalance,
                 gradeName,
+                gradeId,
                 m.getBirthDate(),
                 m.getCalendarType(),
                 m.getGender(),

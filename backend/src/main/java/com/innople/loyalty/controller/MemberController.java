@@ -105,6 +105,9 @@ public class MemberController {
             @Valid @RequestBody MemberDtos.UpdateStatusRequest request,
             HttpServletRequest httpRequest
     ) {
+        // 기본 권한선: ADMIN 이상만 상태 변경 가능. resolve 실패(미인증)는 여기서 403 으로 차단되어
+        // 서비스의 changedBy null 가드(400)에 도달하기 전에 처리된다(서비스 가드는 방어선으로 유지).
+        adminRoleResolver.requireAtLeast(httpRequest, AdminRole.ADMIN);
         // 즉시탈퇴(WITHDRAWN)는 SUPER_ADMIN 전용. 그 외 상태는 ADMIN 이상 유지.
         if (MemberStatusCodes.WITHDRAWN.equals(request.statusCode())) {
             adminRoleResolver.requireAtLeast(httpRequest, AdminRole.SUPER_ADMIN);
@@ -120,12 +123,31 @@ public class MemberController {
         return toResponse(result);
     }
 
+    @PutMapping("/{memberNo}/grade")
+    public MemberDtos.MemberResponse updateGrade(
+            @PathVariable String memberNo,
+            @Valid @RequestBody MemberDtos.UpdateGradeRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        adminRoleResolver.requireAtLeast(httpRequest, AdminRole.ADMIN);
+        AdminUser actor = adminRoleResolver.resolve(httpRequest);
+        UUID changedBy = (actor != null) ? actor.getId() : null;
+        MemberResult result = memberService.updateGrade(memberNo, new MemberService.UpdateGradeCommand(
+                request.gradeId(),
+                request.reason()
+        ), changedBy);
+        setMemberAuditMessage(httpRequest, "회원 등급 변경", memberNo);
+        return toResponse(result);
+    }
+
     @PutMapping("/{memberNo}/withdraw")
     public MemberDtos.MemberResponse withdraw(
             @PathVariable String memberNo,
             @Valid @RequestBody MemberDtos.WithdrawRequest request,
             HttpServletRequest httpRequest
     ) {
+        // 탈퇴 처리는 ADMIN 이상만 가능. 미인증(resolve 실패)은 403 으로 차단(서비스 changedBy 가드는 방어선으로 유지).
+        adminRoleResolver.requireAtLeast(httpRequest, AdminRole.ADMIN);
         AdminUser actor = adminRoleResolver.resolve(httpRequest);
         UUID changedBy = (actor != null) ? actor.getId() : null;
         MemberResult result = memberService.withdraw(memberNo, new MemberService.WithdrawCommand(
@@ -187,7 +209,9 @@ public class MemberController {
                 r.anniversaries(),
                 r.appLoginEnabled(),
                 r.appLoginId(),
-                r.generatedPassword()
+                r.generatedPassword(),
+                r.gradeId(),
+                r.gradeName()
         );
     }
 }

@@ -74,6 +74,13 @@ public final class MemberDtos {
     ) {
     }
 
+    public record UpdateGradeRequest(
+            @NotNull UUID gradeId,
+            // 스키마상 reason 은 nullable 이지만, 관리자 수기 등급 변경 API 에서는 사유를 필수로 받는다.
+            @NotBlank @Size(max = 500) String reason
+    ) {
+    }
+
     public record WithdrawRequest(
             LocalDate withdrawnAt,
             @Size(max = 500) String reason
@@ -122,7 +129,9 @@ public final class MemberDtos {
             String anniversaries,
             boolean appLoginEnabled,
             String appLoginId,
-            String generatedPassword
+            String generatedPassword,
+            UUID gradeId,
+            String gradeName
     ) {
     }
 

@@ -6,6 +6,8 @@ public final class MembershipGradeExceptions {
     }
 
     public static class MembershipGradeNotFoundException extends RuntimeException {
+        public static final String CODE = "MEMBERSHIP_GRADE_NOT_FOUND";
+
         public MembershipGradeNotFoundException(String message) {
             super(message);
         }

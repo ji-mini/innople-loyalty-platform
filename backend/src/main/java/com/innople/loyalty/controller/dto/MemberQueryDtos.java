@@ -2,6 +2,7 @@ package com.innople.loyalty.controller.dto;
 
 import com.innople.loyalty.domain.member.CalendarType;
 import com.innople.loyalty.domain.member.Gender;
+import com.innople.loyalty.domain.member.HistoryActorType;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -34,6 +35,7 @@ public final class MemberQueryDtos {
             String name,
             long pointBalance,
             String gradeName,
+            UUID gradeId,
             LocalDate birthDate,
             CalendarType calendarType,
             Gender gender,
@@ -83,6 +85,72 @@ public final class MemberQueryDtos {
             String userAgent,
             Instant createdAt
     ) {
+    }
+
+    /**
+     * 회원 상태 변경 이력 조회 응답.
+     * <p>actorType 은 enum.name() 문자열로 노출한다. changedByName 은 관리자가 삭제/부재(SYSTEM·MEMBER 주체)일 때
+     * null 이 되는 것을 정상 케이스로 취급한다. fromStatus/toStatus 는 원시 코드 문자열이며 라벨 변환하지 않는다.
+     */
+    public record MemberStatusHistoryResponse(
+            UUID id,
+            String actorType,
+            UUID changedBy,
+            String changedByName,
+            String reason,
+            Instant changedAt,
+            String fromStatus,
+            String toStatus
+    ) {
+        /** JPQL 생성자 표현식에서 {@code h.actorType}(enum)을 그대로 받아 name() 문자열로 변환한다. */
+        public MemberStatusHistoryResponse(
+                UUID id,
+                HistoryActorType actorType,
+                UUID changedBy,
+                String changedByName,
+                String reason,
+                Instant changedAt,
+                String fromStatus,
+                String toStatus
+        ) {
+            this(id, actorType != null ? actorType.name() : null, changedBy, changedByName,
+                    reason, changedAt, fromStatus, toStatus);
+        }
+    }
+
+    /**
+     * 회원 등급 변경 이력 조회 응답.
+     * <p>actorType 은 enum.name() 문자열로 노출한다. changedByName 은 관리자가 삭제/부재(SYSTEM 주체)일 때 null 이 될 수 있다.
+     * fromGradeId/fromGradeName 은 최초 등급 부여 시 null 일 수 있다.
+     */
+    public record MemberGradeHistoryResponse(
+            UUID id,
+            String actorType,
+            UUID changedBy,
+            String changedByName,
+            String reason,
+            Instant changedAt,
+            UUID fromGradeId,
+            String fromGradeName,
+            UUID toGradeId,
+            String toGradeName
+    ) {
+        /** JPQL 생성자 표현식에서 {@code h.actorType}(enum)을 그대로 받아 name() 문자열로 변환한다. */
+        public MemberGradeHistoryResponse(
+                UUID id,
+                HistoryActorType actorType,
+                UUID changedBy,
+                String changedByName,
+                String reason,
+                Instant changedAt,
+                UUID fromGradeId,
+                String fromGradeName,
+                UUID toGradeId,
+                String toGradeName
+        ) {
+            this(id, actorType != null ? actorType.name() : null, changedBy, changedByName,
+                    reason, changedAt, fromGradeId, fromGradeName, toGradeId, toGradeName);
+        }
     }
 
     public record PagedResponse<T>(

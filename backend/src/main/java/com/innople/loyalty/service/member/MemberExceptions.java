@@ -32,12 +32,16 @@ public final class MemberExceptions {
     }
 
     public static class MemberNotFoundException extends RuntimeException {
+        public static final String CODE = "MEMBER_NOT_FOUND";
+
         public MemberNotFoundException(String message) {
             super(message);
         }
     }
 
     public static class InvalidMemberStatusException extends RuntimeException {
+        public static final String CODE = "INVALID_MEMBER_STATUS";
+
         public InvalidMemberStatusException(String message) {
             super(message);
         }

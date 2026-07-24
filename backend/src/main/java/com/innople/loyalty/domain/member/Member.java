@@ -168,6 +168,14 @@ public class Member extends BaseEntity {
         this.withdrawnAt = withdrawnAt;
     }
 
+    /**
+     * 회원 등급을 변경한다. 등급 해제(null)는 허용하지 않는다
+     * (등급 이력의 to_grade_id 가 NOT NULL 이므로 null 전이는 기록 불가).
+     */
+    public void changeMembershipGrade(MembershipGrade membershipGrade) {
+        this.membershipGrade = Objects.requireNonNull(membershipGrade, "membershipGrade must not be null");
+    }
+
     private static String requireText(String value, String field) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(field + " must not be blank");

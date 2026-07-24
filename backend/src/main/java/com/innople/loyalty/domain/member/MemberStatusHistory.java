@@ -2,6 +2,8 @@ package com.innople.loyalty.domain.member;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
@@ -52,6 +54,11 @@ public class MemberStatusHistory {
     @Column(length = 500, updatable = false)
     private String reason;
 
+    /** 변경 주체 구분. ADMIN(관리자 수기, changedBy 필수) / SYSTEM(배치·시스템). */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20, updatable = false)
+    private HistoryActorType actorType;
+
     @Column(nullable = false, updatable = false)
     private Instant changedAt;
 
@@ -65,7 +72,8 @@ public class MemberStatusHistory {
         }
     }
 
-    public static MemberStatusHistory of(
+    /** 관리자 수기 상태 변경 이력. changedBy(관리자 id)는 필수다. */
+    public static MemberStatusHistory ofAdmin(
             UUID tenantId,
             UUID memberId,
             UUID changedBy,
@@ -73,10 +81,38 @@ public class MemberStatusHistory {
             String toStatus,
             String reason
     ) {
+        if (changedBy == null) {
+            throw new IllegalArgumentException("changedBy must not be null for ADMIN status history");
+        }
+        MemberStatusHistory history = create(tenantId, memberId, fromStatus, toStatus, reason);
+        history.changedBy = changedBy;
+        history.actorType = HistoryActorType.ADMIN;
+        return history;
+    }
+
+    /** 배치·시스템에 의한 상태 변경 이력. changedBy 없이 기록한다. */
+    public static MemberStatusHistory ofSystem(
+            UUID tenantId,
+            UUID memberId,
+            String fromStatus,
+            String toStatus,
+            String reason
+    ) {
+        MemberStatusHistory history = create(tenantId, memberId, fromStatus, toStatus, reason);
+        history.actorType = HistoryActorType.SYSTEM;
+        return history;
+    }
+
+    private static MemberStatusHistory create(
+            UUID tenantId,
+            UUID memberId,
+            String fromStatus,
+            String toStatus,
+            String reason
+    ) {
         MemberStatusHistory history = new MemberStatusHistory();
         history.tenantId = tenantId;
         history.memberId = memberId;
-        history.changedBy = changedBy;
         history.fromStatus = fromStatus;
         history.toStatus = toStatus;
         history.reason = (reason == null || reason.isBlank()) ? null : reason.trim();

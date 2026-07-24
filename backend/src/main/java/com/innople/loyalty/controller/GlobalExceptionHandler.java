@@ -60,8 +60,6 @@ public class GlobalExceptionHandler {
             PointExceptions.PointAccountNotFoundException.class,
             PointExceptions.DuplicatePointTransactionException.class,
             MemberExceptions.MemberAlreadyExistsException.class,
-            MemberExceptions.MemberNotFoundException.class,
-            MemberExceptions.InvalidMemberStatusException.class,
             AdminAuthExceptions.AdminUserAlreadyExistsException.class,
             AdminUserManagementExceptions.AdminUserNotFoundException.class,
             CommonCodeExceptions.CommonCodeAlreadyExistsException.class,
@@ -92,6 +90,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(ex.getCode(), ex.getMessage()));
     }
 
+    // 프론트가 메시지 문자열이 아닌 머신 판별용 code 로 구분할 수 있도록 전용 핸들러로 분리한다.
+    // HTTP 상태코드는 기존과 동일하게 409(CONFLICT)를 유지한다(404 전환은 별도 백로그).
+    @ExceptionHandler(MemberExceptions.MemberNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleMemberNotFound(MemberExceptions.MemberNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiErrorResponse.of(MemberExceptions.MemberNotFoundException.CODE, ex.getMessage()));
+    }
+
+    @ExceptionHandler(MemberExceptions.InvalidMemberStatusException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidMemberStatus(MemberExceptions.InvalidMemberStatusException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiErrorResponse.of(MemberExceptions.InvalidMemberStatusException.CODE, ex.getMessage()));
+    }
+
+    @ExceptionHandler(MembershipGradeExceptions.MembershipGradeNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleMembershipGradeNotFound(MembershipGradeExceptions.MembershipGradeNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiErrorResponse.of(MembershipGradeExceptions.MembershipGradeNotFoundException.CODE, ex.getMessage()));
+    }
+
     @ExceptionHandler(AdminAuthExceptions.InvalidCredentialsException.class)
     public ResponseEntity<ApiErrorResponse> handleUnauthorized(AdminAuthExceptions.InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiErrorResponse.of(ex.getMessage()));
@@ -111,11 +129,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiErrorResponse.of(ex.getMessage()));
     }
 
-    @ExceptionHandler({
-            MembershipGradeExceptions.MembershipGradeNotFoundException.class,
-            MembershipGradeExceptions.LevelAlreadyExistsException.class
-    })
-    public ResponseEntity<ApiErrorResponse> handleMembershipGrade(RuntimeException ex) {
+    @ExceptionHandler(MembershipGradeExceptions.LevelAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponse> handleMembershipGradeLevelConflict(MembershipGradeExceptions.LevelAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(ex.getMessage()));
     }
 

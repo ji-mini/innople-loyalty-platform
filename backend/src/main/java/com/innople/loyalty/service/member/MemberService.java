@@ -16,6 +16,8 @@ public interface MemberService {
 
     MemberResult updateStatus(String memberNo, UpdateStatusCommand command, UUID changedBy);
 
+    MemberResult updateGrade(String memberNo, UpdateGradeCommand command, UUID changedBy);
+
     MemberResult withdraw(String memberNo, WithdrawCommand command, UUID changedBy);
 
     AppLoginResult updateAppLogin(String memberNo, UpdateAppLoginCommand command);
@@ -60,6 +62,12 @@ public interface MemberService {
     record UpdateStatusCommand(
             String statusCode,
             LocalDate dormantAt,
+            String reason
+    ) {
+    }
+
+    record UpdateGradeCommand(
+            UUID gradeId,
             String reason
     ) {
     }
