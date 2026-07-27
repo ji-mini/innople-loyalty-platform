@@ -16,6 +16,8 @@ public class MemberSummaryRow implements MemberRepository.MemberSummaryView {
     private final String memberNo;
     private final String name;
     private final String statusCode;
+    private final UUID gradeId;
+    private final String gradeName;
     private final String phoneNumber;
     private final String email;
     private final String webId;
@@ -30,6 +32,8 @@ public class MemberSummaryRow implements MemberRepository.MemberSummaryView {
             String memberNo,
             String name,
             String statusCode,
+            UUID gradeId,
+            String gradeName,
             String phoneNumber,
             String email,
             String webId,
@@ -43,6 +47,8 @@ public class MemberSummaryRow implements MemberRepository.MemberSummaryView {
         this.memberNo = memberNo;
         this.name = name;
         this.statusCode = statusCode;
+        this.gradeId = gradeId;
+        this.gradeName = gradeName;
         this.phoneNumber = phoneNumber;
         this.email = email;
         this.webId = webId;
@@ -71,6 +77,16 @@ public class MemberSummaryRow implements MemberRepository.MemberSummaryView {
     @Override
     public String getStatusCode() {
         return statusCode;
+    }
+
+    @Override
+    public UUID getGradeId() {
+        return gradeId;
+    }
+
+    @Override
+    public String getGradeName() {
+        return gradeName;
     }
 
     @Override

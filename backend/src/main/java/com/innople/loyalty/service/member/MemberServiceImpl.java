@@ -6,6 +6,7 @@ import com.innople.loyalty.controller.dto.MemberDtos.AddressRequest;
 import com.innople.loyalty.controller.dto.MemberDtos.AddressResponse;
 import com.innople.loyalty.domain.code.CommonCode;
 import com.innople.loyalty.domain.member.Address;
+import com.innople.loyalty.domain.member.HistoryActorType;
 import com.innople.loyalty.domain.member.Member;
 import com.innople.loyalty.domain.member.MemberGradeHistory;
 import com.innople.loyalty.domain.member.MemberLedgerEventType;
@@ -277,6 +278,16 @@ public class MemberServiceImpl implements MemberService {
         String newStatus = command.statusCode();
         validateStatusCode(tenantId, newStatus);
 
+        // 최종 탈회(WITHDRAWN)는 withdraw(...) 단일 진입점으로 위임한다(포인트 소각/원장/이력 포함).
+        if (MemberStatusCodes.WITHDRAWN.equals(newStatus)) {
+            return withdraw(
+                    memberNo,
+                    new WithdrawCommand(null, command.reason()),
+                    changedBy,
+                    HistoryActorType.ADMIN
+            );
+        }
+
         Member member = memberRepository.findByTenantIdAndMemberNo(tenantId, memberNo)
                 .orElseThrow(() -> new MemberNotFoundException("member not found"));
 
@@ -304,25 +315,15 @@ public class MemberServiceImpl implements MemberService {
         } else if (MemberStatusCodes.WITHDRAW_REQUESTED.equals(newStatus)) {
             // 탈퇴요청: withdrawRequestedAt 를 현재 시각으로 세팅(기존값 있으면 보존)
             withdrawRequestedAt = (member.getWithdrawRequestedAt() != null) ? member.getWithdrawRequestedAt() : now;
-        } else if (MemberStatusCodes.WITHDRAWN.equals(newStatus)) {
-            // 즉시탈퇴: 요청 흔적(withdrawRequestedAt)·휴면일시(dormantAt)·정지일시(suspendedAt)는 보존, withdrawnAt 현재 시각(기존값 있으면 보존)
-            dormantAt = member.getDormantAt();
-            suspendedAt = member.getSuspendedAt();
-            withdrawRequestedAt = member.getWithdrawRequestedAt();
-            withdrawnAt = (member.getWithdrawnAt() != null) ? member.getWithdrawnAt() : now;
         }
         // ACTIVE(철회 포함): 모든 날짜 필드 null 클리어(초기값 그대로)
+        // WITHDRAWN 은 위에서 withdraw(...) 로 위임하므로 여기서 처리하지 않는다.
 
         member.updateStatus(newStatus, dormantAt, suspendedAt, withdrawRequestedAt, withdrawnAt);
         Member saved = memberRepository.save(member);
         memberLedgerService.record(saved, MemberLedgerEventType.UPDATE_STATUS, beforeStatus, saved.getStatusCode());
-        recordStatusChangeIfChanged(tenantId, saved, changedBy, beforeStatus, command.reason());
+        recordStatusChangeIfChanged(tenantId, saved, changedBy, beforeStatus, command.reason(), HistoryActorType.ADMIN);
 
-        // 최종 탈회(WITHDRAWN)로 전이한 경우에만 잔여 포인트를 전량 소각한다. 같은 트랜잭션에서 원자적으로 처리한다.
-        // WITHDRAW_REQUESTED(탈회요청)는 여기에 해당하지 않으므로 소각되지 않는다(30일 유예 중 취소 가능).
-        if (MemberStatusCodes.WITHDRAWN.equals(newStatus)) {
-            pointService.burnAll(saved.getId(), withdrawnAt, WITHDRAW_BURN_REASON, WITHDRAW_BURN_SOURCE);
-        }
         return toResult(saved, null);
     }
 
@@ -369,12 +370,19 @@ public class MemberServiceImpl implements MemberService {
 
     @Override
     @Transactional
-    public MemberResult withdraw(String memberNo, WithdrawCommand command, UUID changedBy) {
+    public MemberResult withdraw(String memberNo, WithdrawCommand command, UUID changedBy, HistoryActorType actorType) {
         UUID tenantId = TenantContext.requireTenantId();
 
-        // 변경 주체(관리자) 없이는 탈퇴 처리를 할 수 없다(이력 actor_type=ADMIN → changed_by NOT NULL CHECK 선방어).
-        if (changedBy == null) {
+        if (actorType == null) {
+            throw new IllegalArgumentException("탈퇴 처리 주체 구분(actorType)이 필요합니다.");
+        }
+        // ADMIN 경로: changedBy 필수(이력 actor_type=ADMIN → changed_by NOT NULL CHECK 선방어).
+        // SYSTEM 경로(향후 스케줄러): changedBy 없이 기록 가능.
+        if (actorType == HistoryActorType.ADMIN && changedBy == null) {
             throw new IllegalArgumentException("탈퇴 처리 주체(changedBy)가 필요합니다.");
+        }
+        if (actorType != HistoryActorType.ADMIN && actorType != HistoryActorType.SYSTEM) {
+            throw new IllegalArgumentException("탈퇴 처리에 허용되지 않는 actorType 입니다: " + actorType);
         }
 
         validateStatusCode(tenantId, MemberStatusCodes.WITHDRAWN);
@@ -388,16 +396,60 @@ public class MemberServiceImpl implements MemberService {
         }
 
         String beforeStatus = member.getStatusCode();
-        Instant withdrawnAt = (command.withdrawnAt() != null) ? toStartOfDayInstant(command.withdrawnAt()) : Instant.now();
-        member.updateStatus(MemberStatusCodes.WITHDRAWN, member.getDormantAt(), member.getSuspendedAt(), member.getWithdrawRequestedAt(), withdrawnAt);
+        // withdrawnAt: 기존값 보존 → 없으면 command.withdrawnAt(UTC 자정) → 없으면 now
+        Instant withdrawnAt = member.getWithdrawnAt() != null
+                ? member.getWithdrawnAt()
+                : (command.withdrawnAt() != null ? toStartOfDayInstant(command.withdrawnAt()) : Instant.now());
+        // dormant/suspended/withdrawRequested 타임스탬프는 탈회 시 보존한다.
+        member.updateStatus(
+                MemberStatusCodes.WITHDRAWN,
+                member.getDormantAt(),
+                member.getSuspendedAt(),
+                member.getWithdrawRequestedAt(),
+                withdrawnAt
+        );
 
         Member saved = memberRepository.save(member);
+        // 스냅샷(원본 PII) 기록 → 상태 이력 → 포인트 소각 순. 익명화는 이 모든 기록이 끝난 뒤에만 수행한다.
         memberLedgerService.record(saved, MemberLedgerEventType.WITHDRAW, beforeStatus, saved.getStatusCode());
-        recordStatusChangeIfChanged(tenantId, saved, changedBy, beforeStatus, command.reason());
+        recordStatusChangeIfChanged(tenantId, saved, changedBy, beforeStatus, command.reason(), actorType);
 
         // 최종 탈회 확정 → 잔여 포인트 전량 소각. 같은 트랜잭션에서 원자적으로 처리한다.
         pointService.burnAll(saved.getId(), withdrawnAt, WITHDRAW_BURN_REASON, WITHDRAW_BURN_SOURCE);
-        return toResult(saved, null);
+
+        // 원장 WITHDRAW 스냅샷에 원본 PII가 보존된 뒤, 동일 트랜잭션에서 개인정보를 파기한다.
+        anonymizePersonalData(saved);
+        Member anonymized = memberRepository.save(saved);
+        return toResult(anonymized, null);
+    }
+
+    /**
+     * 최종 탈회 시 members / addresses / member_credentials 개인정보를 익명화한다.
+     * member_ledgers / member_login_histories 는 절대 수정하지 않는다.
+     */
+    private void anonymizePersonalData(Member member) {
+        String token = buildWithdrawnToken(member.getId());
+        member.anonymizePersonalData(token);
+
+        Address address = member.getAddress();
+        if (address != null) {
+            address.anonymize();
+            addressRepository.save(address);
+        }
+
+        memberCredentialService.anonymizeAndDisable(member.getId(), token);
+    }
+
+    /**
+     * 익명화 토큰: "WITHDRAWN_" + (UUID 하이픈 제거 hex 앞 20자) = 총 30자.
+     * phone_number VARCHAR(30) 제약에 맞추며, web_id/ci/credentials.loginId 에도 동일 형식을 쓴다.
+     */
+    private static String buildWithdrawnToken(UUID memberId) {
+        if (memberId == null) {
+            throw new IllegalArgumentException("memberId must not be null");
+        }
+        String hex = memberId.toString().replace("-", "");
+        return "WITHDRAWN_" + hex.substring(0, 20);
     }
 
     /**
@@ -409,10 +461,17 @@ public class MemberServiceImpl implements MemberService {
             Member saved,
             UUID changedBy,
             String beforeStatus,
-            String reason
+            String reason,
+            HistoryActorType actorType
     ) {
         String afterStatus = saved.getStatusCode();
         if (afterStatus.equals(beforeStatus)) {
+            return;
+        }
+        if (actorType == HistoryActorType.SYSTEM) {
+            memberStatusHistoryRepository.save(
+                    MemberStatusHistory.ofSystem(tenantId, saved.getId(), beforeStatus, afterStatus, reason)
+            );
             return;
         }
         memberStatusHistoryRepository.save(

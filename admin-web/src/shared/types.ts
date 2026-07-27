@@ -55,6 +55,8 @@ export type MemberSummary = {
   name: string
   pointBalance: number
   statusCode: string
+  gradeId: string | null
+  gradeName: string | null
   phoneNumber: string | null
   email: string | null
   webId: string | null
@@ -83,6 +85,7 @@ export type MemberDetail = {
   name: string
   pointBalance: number
   gradeName: string | null
+  gradeId: string | null
   birthDate: string | null
   calendarType: 'SOLAR' | 'LUNAR' | null
   gender: 'MALE' | 'FEMALE' | 'UNKNOWN' | null
@@ -100,6 +103,19 @@ export type MemberDetail = {
   anniversaries: string | null
   appLoginEnabled: boolean
   appLoginId: string | null
+}
+
+export type MemberGradeHistory = {
+  id: string
+  actorType: string
+  changedBy: string | null
+  changedByName: string | null
+  reason: string | null
+  changedAt: string
+  fromGradeId: string | null
+  fromGradeName: string | null
+  toGradeId: string | null
+  toGradeName: string | null
 }
 
 export type MemberLedger = {

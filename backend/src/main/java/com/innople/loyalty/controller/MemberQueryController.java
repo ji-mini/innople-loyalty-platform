@@ -92,6 +92,8 @@ public class MemberQueryController {
                 v.getName(),
                 v.getPointBalance(),
                 v.getStatusCode(),
+                v.getGradeId(),
+                v.getGradeName(),
                 v.getPhoneNumber(),
                 v.getEmail(),
                 v.getWebId(),

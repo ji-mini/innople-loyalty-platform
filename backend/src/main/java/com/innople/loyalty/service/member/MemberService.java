@@ -3,6 +3,7 @@ package com.innople.loyalty.service.member;
 import com.innople.loyalty.controller.dto.MemberDtos.AddressRequest;
 import com.innople.loyalty.domain.member.CalendarType;
 import com.innople.loyalty.domain.member.Gender;
+import com.innople.loyalty.domain.member.HistoryActorType;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -18,7 +19,11 @@ public interface MemberService {
 
     MemberResult updateGrade(String memberNo, UpdateGradeCommand command, UUID changedBy);
 
-    MemberResult withdraw(String memberNo, WithdrawCommand command, UUID changedBy);
+    /**
+     * 최종 탈회(WITHDRAWN) 단일 진입점.
+     * @param actorType 이력 주체. 관리자 경로={@link HistoryActorType#ADMIN}, 향후 스케줄러={@link HistoryActorType#SYSTEM}
+     */
+    MemberResult withdraw(String memberNo, WithdrawCommand command, UUID changedBy, HistoryActorType actorType);
 
     AppLoginResult updateAppLogin(String memberNo, UpdateAppLoginCommand command);
 

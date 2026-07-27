@@ -73,6 +73,22 @@ public class Address extends BaseEntity {
         return address;
     }
 
+    /**
+     * 최종 탈회 시 주소 개인정보를 익명화한다.
+     * NOT NULL 컬럼은 placeholder, nullable 컬럼은 NULL로 덮는다.
+     */
+    public void anonymize() {
+        this.zipCode = "-";
+        this.roadAddress = "-";
+        this.jibunAddress = null;
+        this.detailAddress = null;
+        this.buildingName = null;
+        this.siDo = null;
+        this.siGunGu = null;
+        this.eupMyeonDong = null;
+        this.legalDongCode = null;
+    }
+
     private static String requireNonBlank(String value, String field) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(field + " must not be blank");

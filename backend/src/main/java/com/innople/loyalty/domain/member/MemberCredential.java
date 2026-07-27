@@ -98,6 +98,23 @@ public class MemberCredential extends BaseEntity {
         this.deleted = true;
     }
 
+    /**
+     * 최종 탈회 시 앱 로그인 자격증명을 파기한다.
+     * 로그인 ID/비밀번호 해시를 무의미 값으로 덮고 soft-delete(deleted=true) 한다.
+     */
+    public void anonymizeAndDisable(String loginIdToken, String passwordHashPlaceholder) {
+        if (loginIdToken == null || loginIdToken.isBlank()) {
+            throw new IllegalArgumentException("loginIdToken must not be blank");
+        }
+        if (passwordHashPlaceholder == null || passwordHashPlaceholder.isBlank()) {
+            throw new IllegalArgumentException("passwordHashPlaceholder must not be blank");
+        }
+        this.phoneNumber = loginIdToken.trim();
+        this.email = null;
+        this.passwordHash = passwordHashPlaceholder.trim();
+        this.deleted = true;
+    }
+
     private static String normalizeEmailOrNull(String email) {
         if (email == null || email.isBlank()) {
             return null;

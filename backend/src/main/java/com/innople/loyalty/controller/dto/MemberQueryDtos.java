@@ -19,6 +19,8 @@ public final class MemberQueryDtos {
             String name,
             long pointBalance,
             String statusCode,
+            UUID gradeId,
+            String gradeName,
             String phoneNumber,
             String email,
             String webId,

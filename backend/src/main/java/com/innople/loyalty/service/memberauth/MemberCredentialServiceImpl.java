@@ -83,6 +83,19 @@ public class MemberCredentialServiceImpl implements MemberCredentialService {
     }
 
     @Override
+    @Transactional
+    public void anonymizeAndDisable(UUID memberId, String loginIdToken) {
+        UUID tenantId = TenantContext.requireTenantId();
+        // bcrypt 해시와 형식이 달라 passwordEncoder.matches 가 절대 성공하지 않는 고정 placeholder.
+        final String passwordHashPlaceholder = "!";
+        memberCredentialRepository.findByTenantIdAndMemberId(tenantId, memberId)
+                .ifPresent(credential -> {
+                    credential.anonymizeAndDisable(loginIdToken, passwordHashPlaceholder);
+                    memberCredentialRepository.save(credential);
+                });
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Optional<MemberCredential> findByPhoneNumber(String phoneNumber) {
         UUID tenantId = TenantContext.requireTenantId();

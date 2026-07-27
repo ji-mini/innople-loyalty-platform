@@ -1,10 +1,18 @@
-import { Alert, Button, Card, DatePicker, Descriptions, Form, Input, Modal, Radio, Select, Space, Table, Tabs, Tag, Tooltip, Typography, message } from 'antd'
+import { Alert, Button, Card, Col, DatePicker, Descriptions, Form, Input, Modal, Radio, Row, Select, Space, Table, Tabs, Tag, Tooltip, Typography, message } from 'antd'
 import dayjs from 'dayjs'
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../shared/api'
-import { useCommonCodes, useMemberDetail, useMemberLedgers, useMemberLoginHistories, usePointLedgers } from '../../shared/queries'
-import type { MemberAddress, MemberDetail, MemberLedger, MemberLoginHistory, PointLedgerItem } from '../../shared/types'
+import {
+  useCommonCodes,
+  useMemberDetail,
+  useMemberGradeHistories,
+  useMemberGrades,
+  useMemberLedgers,
+  useMemberLoginHistories,
+  usePointLedgers,
+} from '../../shared/queries'
+import type { MemberAddress, MemberDetail, MemberGradeHistory, MemberLedger, MemberLoginHistory, PointLedgerItem } from '../../shared/types'
 import { getSession } from '../../shared/storage'
 import { atLeast } from '../../shared/roles'
 import { col } from '../../shared/tableColumns'
@@ -70,6 +78,11 @@ function formatDateTime(v: string | null | undefined): string {
   if (!v) return '-'
   const parsed = dayjs(v)
   return parsed.isValid() ? parsed.format('YYYY-MM-DD HH:mm:ss') : v
+}
+
+function formatHistoryActorType(v: string | null | undefined): string {
+  if (!v) return '-'
+  return v === 'ADMIN' ? '관리자' : v === 'SYSTEM' ? '시스템' : v === 'MEMBER' ? '회원' : v
 }
 
 type JusoSearchItem = { roadAddr: string; roadAddrPart1: string; jibunAddr: string; zipNo: string; bdNm?: string }
@@ -458,6 +471,67 @@ function MemberStatusModal({
   )
 }
 
+function MemberGradeModal({
+  open,
+  loading,
+  currentGradeId,
+  currentGradeName,
+  gradeOptions,
+  onClose,
+  onSubmit,
+}: {
+  open: boolean
+  loading: boolean
+  currentGradeId: string | null | undefined
+  currentGradeName: string | null | undefined
+  gradeOptions: { value: string; label: string }[]
+  onClose: () => void
+  onSubmit: (v: { gradeId: string; reason: string }) => Promise<void>
+}) {
+  const [form] = Form.useForm<{ gradeId: string; reason: string }>()
+
+  React.useEffect(() => {
+    if (!open) return
+    form.resetFields()
+  }, [open, form])
+
+  const selectableOptions = gradeOptions.map((o) => ({
+    ...o,
+    disabled: o.value === currentGradeId,
+  }))
+
+  return (
+    <Modal title="회원 등급 변경" open={open} onCancel={onClose} footer={null} width={560} destroyOnClose>
+      <Form form={form} layout="vertical" onFinish={(v) => onSubmit(v)}>
+        <Form.Item label="현재 등급">
+          <Input value={currentGradeName ?? '-'} readOnly />
+        </Form.Item>
+        <Form.Item label="변경할 등급" name="gradeId" rules={[{ required: true, message: '등급을 선택하세요' }]}>
+          <Select placeholder="선택" options={selectableOptions} />
+        </Form.Item>
+        <Form.Item
+          label="사유"
+          name="reason"
+          rules={[
+            { required: true, message: '사유를 입력하세요' },
+            { whitespace: true, message: '사유를 입력하세요' },
+          ]}
+        >
+          <Input.TextArea rows={3} maxLength={500} placeholder="사유 (필수)" showCount />
+        </Form.Item>
+        <Form.Item style={{ marginBottom: 0, marginTop: 16 }}>
+          <Space>
+            <Button type="primary" htmlType="submit" loading={loading}>
+              저장
+            </Button>
+            <Button onClick={onClose}>취소</Button>
+          </Space>
+        </Form.Item>
+      </Form>
+    </Modal>
+  )
+}
+
 export function MemberDetailPage() {
   const nav = useNavigate()
   const params = useParams()
@@ -467,6 +541,8 @@ export function MemberDetailPage() {
   const detail = useMemberDetail(memberNo)
   const ledgers = useMemberLedgers(memberNo, 100)
   const loginHistories = useMemberLoginHistories(memberNo, 50)
+  const gradeHistories = useMemberGradeHistories(memberNo, 50)
+  const memberGrades = useMemberGrades()
   const pointLedgers = usePointLedgers({ memberNo: memberNo || undefined, limit: 100 })
   const statusCodes = useCommonCodes('MEMBER_STATUS')
 
@@ -489,10 +565,16 @@ export function MemberDetailPage() {
   const [appLoginLoading, setAppLoginLoading] = React.useState(false)
   const [statusModalOpen, setStatusModalOpen] = React.useState(false)
   const [statusModalLoading, setStatusModalLoading] = React.useState(false)
+  const [gradeModalOpen, setGradeModalOpen] = React.useState(false)
+  const [gradeModalLoading, setGradeModalLoading] = React.useState(false)
   const latestLogin = loginHistories.data?.[0]
 
   const getStatusName = (code: string | null | undefined) =>
     code ? (statusCodes.data?.find((c) => c.code === code)?.name ?? code) : '-'
+
+  // 탈퇴(WITHDRAWN)는 터미널 상태로, 상단 액션(수정/상태변경/포인트 적립·차감)이 백엔드에서 모두 차단된다.
+  // 표시 라벨이 아니라 enum 값 기준으로 판단한다.
+  const isWithdrawn = detail.data?.statusCode === 'WITHDRAWN'
 
   const ledgerCols = [
     { title: '일시', dataIndex: 'createdAt', render: (v: string) => formatDateTime(v) },
@@ -510,6 +592,46 @@ export function MemberDetailPage() {
     { title: 'User-Agent', dataIndex: 'userAgent', ellipsis: true, render: (v: string | null | undefined) => v || '-' },
   ]
 
+  const gradeHistoryCols = [
+    {
+      ...col('변경일시', 'left', { width: 150 }),
+      dataIndex: 'changedAt',
+      render: (v: string) => formatDateTime(v),
+    },
+    {
+      ...col('이전 등급', 'left', { width: 90 }),
+      dataIndex: 'fromGradeName',
+      render: (v: string | null | undefined) => v || '-',
+    },
+    {
+      ...col('변경 등급', 'left', { width: 90 }),
+      dataIndex: 'toGradeName',
+      render: (v: string | null | undefined) => v || '-',
+    },
+    {
+      ...col('사유', 'left', { ellipsis: { showTitle: false } }),
+      dataIndex: 'reason',
+      render: (v: string | null) =>
+        v ? (
+          <Tooltip title={v} placement="topLeft">
+            {v}
+          </Tooltip>
+        ) : (
+          '-'
+        ),
+    },
+    {
+      ...col('처리자', 'left', { width: 90 }),
+      dataIndex: 'changedByName',
+      render: (v: string | null | undefined) => v || '-',
+    },
+    {
+      ...col('구분', 'center', { width: 80 }),
+      dataIndex: 'actorType',
+      render: (v: string) => <Tag>{formatHistoryActorType(v)}</Tag>,
+    },
+  ]
+
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={16}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -517,13 +639,14 @@ export function MemberDetailPage() {
           회원 상세
         </Typography.Title>
         <Space>
-          {atLeast(role, 'ADMIN') && (
+          {!isWithdrawn && atLeast(role, 'ADMIN') && (
             <>
               <Button onClick={() => setEditOpen(true)}>회원정보 수정</Button>
               <Button onClick={() => setStatusModalOpen(true)}>상태 변경</Button>
+              <Button onClick={() => setGradeModalOpen(true)}>등급 변경</Button>
             </>
           )}
-          {role === 'SUPER_ADMIN' ? (
+          {!isWithdrawn && role === 'SUPER_ADMIN' ? (
             <>
               <Button
                 className="btn-point-earn"
@@ -786,15 +909,33 @@ export function MemberDetailPage() {
                     }}
                   />
                 </Card>
-                <Card title="회원 원장(최근 100건)" loading={ledgers.isLoading}>
-                  <Table<MemberLedger>
-                    rowKey={(r) => r.id}
-                    columns={ledgerCols as any}
-                    dataSource={ledgers.data ?? []}
-                    pagination={false}
-                    size="small"
-                  />
-                </Card>
+                <Row gutter={16}>
+                  <Col xs={24} md={12}>
+                    <Card title="회원 원장(최근 100건)" loading={ledgers.isLoading}>
+                      <Table<MemberLedger>
+                        rowKey={(r) => r.id}
+                        columns={ledgerCols as any}
+                        dataSource={ledgers.data ?? []}
+                        pagination={false}
+                        size="small"
+                      />
+                    </Card>
+                  </Col>
+                  <Col xs={24} md={12}>
+                    <Card title="등급 변경 이력" loading={gradeHistories.isLoading}>
+                      <Table<MemberGradeHistory>
+                        rowKey={(r) => r.id}
+                        columns={gradeHistoryCols as any}
+                        dataSource={gradeHistories.data ?? []}
+                        pagination={false}
+                        size="small"
+                        locale={{
+                          emptyText: <Typography.Text type="secondary">등급 변경 이력이 없습니다.</Typography.Text>,
+                        }}
+                      />
+                    </Card>
+                  </Col>
+                </Row>
               </Space>
             ),
           },
@@ -942,6 +1083,34 @@ export function MemberDetailPage() {
               message.error(e?.response?.data?.message ?? e?.message ?? '상태 변경 실패')
             } finally {
               setStatusModalLoading(false)
+            }
+          }}
+        />
+      )}
+
+      {atLeast(role, 'ADMIN') && (
+        <MemberGradeModal
+          open={gradeModalOpen}
+          loading={gradeModalLoading}
+          currentGradeId={detail.data?.gradeId}
+          currentGradeName={detail.data?.gradeName}
+          gradeOptions={(memberGrades.data ?? []).map((g) => ({ value: g.id, label: g.name }))}
+          onClose={() => setGradeModalOpen(false)}
+          onSubmit={async (v) => {
+            setGradeModalLoading(true)
+            try {
+              await api.put(`/api/v1/members/${encodeURIComponent(memberNo)}/grade`, {
+                gradeId: v.gradeId,
+                reason: v.reason.trim(),
+              })
+              message.success('회원 등급이 변경되었습니다.')
+              setGradeModalOpen(false)
+              detail.refetch()
+              gradeHistories.refetch()
+            } catch (e: any) {
+              message.error(e?.response?.data?.message ?? e?.message ?? '등급 변경 실패')
+            } finally {
+              setGradeModalLoading(false)
             }
           }}
         />

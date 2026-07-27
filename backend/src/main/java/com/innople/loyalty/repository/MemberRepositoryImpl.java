@@ -48,6 +48,8 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                   m.memberNo,
                   m.name,
                   m.statusCode,
+                  g.id,
+                  g.name,
                   m.phoneNumber,
                   m.email,
                   m.webId,
@@ -62,6 +64,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                       and mc.deleted = false)
                 )
                 from Member m
+                left join m.membershipGrade g on g.tenantId = m.tenantId
                 left join PointAccount pa
                   on pa.tenantId = m.tenantId
                  and pa.memberId = m.id

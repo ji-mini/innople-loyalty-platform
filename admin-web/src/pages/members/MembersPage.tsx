@@ -6,6 +6,25 @@ import type { MemberSummary } from '../../shared/types'
 import { useCommonCodes, useMemberList } from '../../shared/queries'
 import { col } from '../../shared/tableColumns'
 
+/** 회원 상태 코드 → Ant Design Tag color. 라벨은 공통코드 name 을 그대로 쓴다. */
+function memberStatusTagColor(statusCode: string | null | undefined): string {
+  switch (statusCode) {
+    case 'ACTIVE':
+    case 'NORMAL':
+      return 'green'
+    case 'DORMANT':
+      return 'orange'
+    case 'SUSPENDED':
+      return 'red'
+    case 'WITHDRAW_REQUESTED':
+      return 'gold'
+    case 'WITHDRAWN':
+      return 'default'
+    default:
+      return 'default'
+  }
+}
+
 export function MembersPage() {
   const statusCodes = useCommonCodes('MEMBER_STATUS')
   const [form] = Form.useForm()
@@ -42,8 +61,13 @@ export function MembersPage() {
       dataIndex: 'statusCode',
       render: (v: string) => {
         const name = statusCodes.data?.find((c) => c.code === v)?.name ?? v
-        return <Tag>{name}</Tag>
+        return <Tag color={memberStatusTagColor(v)}>{name}</Tag>
       },
+    },
+    {
+      ...col('등급'),
+      dataIndex: 'gradeName',
+      render: (v: string | null | undefined) => v || '-',
     },
     {
       ...col('앱 로그인', 'center', { width: 110 }),

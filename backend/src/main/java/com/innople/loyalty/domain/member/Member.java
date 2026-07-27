@@ -176,6 +176,32 @@ public class Member extends BaseEntity {
         this.membershipGrade = Objects.requireNonNull(membershipGrade, "membershipGrade must not be null");
     }
 
+    /**
+     * 최종 탈회(WITHDRAWN) 시 개인정보를 익명화한다.
+     * UNIQUE 컬럼(phone/webId/ci)은 원래 값이 있을 때만 회원별 유니크 토큰으로 덮어 재가입 중복을 해제한다.
+     * 원래 NULL 인 컬럼은 그대로 둔다.
+     */
+    public void anonymizePersonalData(String withdrawnToken) {
+        if (withdrawnToken == null || withdrawnToken.isBlank()) {
+            throw new IllegalArgumentException("withdrawnToken must not be blank");
+        }
+        this.name = "탈퇴회원";
+        if (this.phoneNumber != null) {
+            this.phoneNumber = withdrawnToken;
+        }
+        if (this.webId != null) {
+            this.webId = withdrawnToken;
+        }
+        if (this.ci != null) {
+            this.ci = withdrawnToken;
+        }
+        this.email = null;
+        this.birthDate = null;
+        this.anniversaries = null;
+        this.calendarType = null;
+        this.gender = null;
+    }
+
     private static String requireText(String value, String field) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(field + " must not be blank");

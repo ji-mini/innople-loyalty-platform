@@ -83,6 +83,10 @@ public interface MemberRepository extends JpaRepository<Member, UUID>, MemberRep
 
         String getStatusCode();
 
+        UUID getGradeId();
+
+        String getGradeName();
+
         String getPhoneNumber();
 
         String getEmail();

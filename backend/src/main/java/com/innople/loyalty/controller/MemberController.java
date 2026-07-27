@@ -3,6 +3,7 @@ package com.innople.loyalty.controller;
 import com.innople.loyalty.config.AdminRoleResolver;
 import com.innople.loyalty.config.ApiAuditLogInterceptor;
 import com.innople.loyalty.controller.dto.MemberDtos;
+import com.innople.loyalty.domain.member.HistoryActorType;
 import com.innople.loyalty.domain.member.MemberStatusCodes;
 import com.innople.loyalty.domain.user.AdminRole;
 import com.innople.loyalty.domain.user.AdminUser;
@@ -153,7 +154,7 @@ public class MemberController {
         MemberResult result = memberService.withdraw(memberNo, new MemberService.WithdrawCommand(
                 request.withdrawnAt(),
                 request.reason()
-        ), changedBy);
+        ), changedBy, HistoryActorType.ADMIN);
         setMemberAuditMessage(httpRequest, "회원 탈퇴", memberNo);
         return toResponse(result);
     }
