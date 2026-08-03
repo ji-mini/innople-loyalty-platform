@@ -1,4 +1,5 @@
-import { Alert, Button, Card, Col, DatePicker, Descriptions, Form, Input, Modal, Radio, Row, Select, Space, Table, Tabs, Tag, Tooltip, Typography, message } from 'antd'
+import { DownOutlined } from '@ant-design/icons'
+import { Alert, Button, Card, Col, DatePicker, Descriptions, Dropdown, Form, Input, Modal, Radio, Row, Select, Space, Table, Tabs, Tag, Tooltip, Typography, message } from 'antd'
 import dayjs from 'dayjs'
 import React from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -15,7 +16,7 @@ import {
 import type { MemberAddress, MemberDetail, MemberGradeHistory, MemberLedger, MemberLoginHistory, PointLedgerItem } from '../../shared/types'
 import { getSession } from '../../shared/storage'
 import { atLeast } from '../../shared/roles'
-import { col } from '../../shared/tableColumns'
+import { col, headerCell } from '../../shared/tableColumns'
 
 /** 회원 상세 Descriptions 제목(라벨) 열 — 고정 너비 + 값 열과 아주 약간 구분되는 톤 */
 const MEMBER_DETAIL_LABEL_COL_STYLE: React.CSSProperties = {
@@ -572,7 +573,7 @@ export function MemberDetailPage() {
   const getStatusName = (code: string | null | undefined) =>
     code ? (statusCodes.data?.find((c) => c.code === code)?.name ?? code) : '-'
 
-  // 탈퇴(WITHDRAWN)는 터미널 상태로, 상단 액션(수정/상태변경/포인트 적립·차감)이 백엔드에서 모두 차단된다.
+  // 탈퇴(WITHDRAWN)는 터미널 상태로, 액션(수정/속성변경/포인트 적립·차감)이 백엔드에서 모두 차단된다.
   // 표시 라벨이 아니라 enum 값 기준으로 판단한다.
   const isWithdrawn = detail.data?.statusCode === 'WITHDRAWN'
 
@@ -641,27 +642,21 @@ export function MemberDetailPage() {
         <Space>
           {!isWithdrawn && atLeast(role, 'ADMIN') && (
             <>
-              <Button onClick={() => setEditOpen(true)}>회원정보 수정</Button>
-              <Button onClick={() => setStatusModalOpen(true)}>상태 변경</Button>
-              <Button onClick={() => setGradeModalOpen(true)}>등급 변경</Button>
+              <Button onClick={() => setEditOpen(true)}>회원 정보 수정</Button>
+              <Dropdown
+                menu={{
+                  items: [
+                    { key: 'status', label: '상태 변경', onClick: () => setStatusModalOpen(true) },
+                    { key: 'grade', label: '등급 변경', onClick: () => setGradeModalOpen(true) },
+                  ],
+                }}
+              >
+                <Button>
+                  회원 속성 변경 <DownOutlined />
+                </Button>
+              </Dropdown>
             </>
           )}
-          {!isWithdrawn && role === 'SUPER_ADMIN' ? (
-            <>
-              <Button
-                className="btn-point-earn"
-                onClick={() => nav(`/points/manual/earn?memberNo=${encodeURIComponent(memberNo)}`)}
-              >
-                포인트 적립
-              </Button>
-              <Button
-                className="btn-point-deduct"
-                onClick={() => nav(`/points/manual/deduct?memberNo=${encodeURIComponent(memberNo)}`)}
-              >
-                포인트 차감
-              </Button>
-            </>
-          ) : null}
         </Space>
       </div>
 
@@ -803,21 +798,53 @@ export function MemberDetailPage() {
             key: 'points',
             label: '포인트 이력',
             children: (
+              // minWidth:0 — Tabs/Space 자식이 고정폭 테이블 때문에 컨테이너를 우측으로 밀어내지 않도록 함
+              <div style={{ width: '100%', maxWidth: '100%', minWidth: 0 }}>
               <Space direction="vertical" size={16} style={{ width: '100%' }}>
-                <Card size="small">
-                  <Typography.Text strong>
-                    현재 잔액 {detail.data?.pointBalance?.toLocaleString('ko-KR') ?? '0'} P
-                  </Typography.Text>
+                <Card size="small" styles={{ body: { padding: '16px 32px' } }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', width: '100%', minWidth: 0 }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 10 }}>
+                      <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                        현재 잔액
+                      </Typography.Text>
+                      <Typography.Text strong style={{ fontSize: 20, lineHeight: 1.2 }}>
+                        {(detail.data?.pointBalance ?? 0).toLocaleString('ko-KR')} P
+                      </Typography.Text>
+                    </div>
+                    {!isWithdrawn && role === 'SUPER_ADMIN' ? (
+                      <Space>
+                        <Button
+                          className="btn-point-earn"
+                          onClick={() => nav(`/points/manual/earn?memberNo=${encodeURIComponent(memberNo)}`)}
+                        >
+                          포인트 적립
+                        </Button>
+                        <Button
+                          className="btn-point-deduct"
+                          onClick={() => nav(`/points/manual/deduct?memberNo=${encodeURIComponent(memberNo)}`)}
+                        >
+                          포인트 차감
+                        </Button>
+                      </Space>
+                    ) : null}
+                  </div>
                 </Card>
-                <Card title="포인트 이력 (최근 100건)" loading={pointLedgers.isLoading}>
+                <Card
+                  title="포인트 이력 (최근 100건)"
+                  loading={pointLedgers.isLoading}
+                  styles={{ body: { overflowX: 'auto' } }}
+                >
                   <Table<PointLedgerItem>
                     rowKey={(r) => r.id}
                     size="small"
                     pagination={false}
+                    scroll={{ x: 'max-content' }}
                     dataSource={pointLedgers.data ?? []}
                     columns={[
                       {
+                        // col()의 title은 데이터 align을 헤더에 그대로 넣으므로, 헤더만 center로 덮어쓴다.
                         ...col('구분', 'center', { width: 90 }),
+                        title: headerCell('구분', 'center'),
                         dataIndex: 'eventType',
                         render: (v: string) => {
                           const color =
@@ -833,32 +860,38 @@ export function MemberDetailPage() {
                       },
                       {
                         ...col('포인트', 'right', { width: 110 }),
+                        title: headerCell('포인트', 'center'),
                         dataIndex: 'amount',
                         render: (v: number) => `${v >= 0 ? '+' : ''}${v.toLocaleString('ko-KR')} P`,
                       },
                       {
                         ...col('총 구매금액', 'right', { width: 120 }),
+                        title: headerCell('총 구매금액', 'center'),
                         dataIndex: 'totalPurchaseAmount',
                         render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
                       },
                       {
                         ...col('할인금액', 'right', { width: 100 }),
+                        title: headerCell('할인금액', 'center'),
                         dataIndex: 'discountAmount',
                         render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
                       },
                       {
                         ...col('적립 대상 금액', 'right', { width: 130 }),
+                        title: headerCell('적립 대상 금액', 'center'),
                         dataIndex: 'purchaseAmount',
                         render: (v: number | null) => (v == null ? '-' : `${v.toLocaleString('ko-KR')}원`),
                       },
                       {
                         ...col('경로', 'center', { width: 150 }),
+                        title: headerCell('경로', 'center'),
                         dataIndex: 'sourceChannel',
                         render: (v: string) => formatPointSourceChannel(v),
                       },
                       {
                         // 남는 폭을 독점하지 않도록 폭을 제한하고, 길면 말줄임 + hover 시 전체 표시
                         ...col('사유', 'left', { width: 220, ellipsis: { showTitle: false } }),
+                        title: headerCell('사유', 'center'),
                         dataIndex: 'reason',
                         render: (v: string | null) =>
                           v ? (
@@ -871,6 +904,7 @@ export function MemberDetailPage() {
                       },
                       {
                         ...col('일시', 'right', { width: 160 }),
+                        title: headerCell('일시', 'center'),
                         dataIndex: 'createdAt',
                         render: (v: string) => formatDateTime(v),
                       },
@@ -881,6 +915,7 @@ export function MemberDetailPage() {
                   />
                 </Card>
               </Space>
+              </div>
             ),
           },
           {

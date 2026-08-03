@@ -25,6 +25,12 @@ function memberStatusTagColor(statusCode: string | null | undefined): string {
   }
 }
 
+/** 탈퇴(WITHDRAWN) 회원의 연락처는 익명화 원문 대신 '-' 표시. 상태 코드로만 판정. */
+function displayContactForList(value: string | null | undefined, statusCode: string | null | undefined): string {
+  if (statusCode === 'WITHDRAWN') return '-'
+  return value || '-'
+}
+
 export function MembersPage() {
   const statusCodes = useCommonCodes('MEMBER_STATUS')
   const [form] = Form.useForm()
@@ -74,7 +80,11 @@ export function MembersPage() {
       dataIndex: 'appLoginEnabled',
       render: (v: boolean) => (v ? <Tag color="green">허용</Tag> : <Tag>미허용</Tag>),
     },
-    { ...col('휴대폰'), dataIndex: 'phoneNumber' },
+    {
+      ...col('휴대폰'),
+      dataIndex: 'phoneNumber',
+      render: (v: string | null | undefined, r: MemberSummary) => displayContactForList(v, r.statusCode),
+    },
     { ...col('Web ID'), dataIndex: 'webId' },
     {
       ...col('가입일', 'right'),

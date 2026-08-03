@@ -1,5 +1,6 @@
 package com.innople.loyalty.controller;
 
+import com.innople.loyalty.config.AdminRoleResolver;
 import com.innople.loyalty.config.TenantContext;
 import com.innople.loyalty.controller.dto.MemberDtos;
 import com.innople.loyalty.controller.dto.MemberQueryDtos;
@@ -8,6 +9,7 @@ import com.innople.loyalty.domain.member.Member;
 import com.innople.loyalty.domain.member.MembershipGrade;
 import com.innople.loyalty.domain.member.MemberLedger;
 import com.innople.loyalty.domain.member.MemberLoginHistory;
+import com.innople.loyalty.domain.user.AdminRole;
 import com.innople.loyalty.repository.MemberLedgerRepository;
 import com.innople.loyalty.repository.MemberLoginHistoryRepository;
 import com.innople.loyalty.repository.MemberRepository;
@@ -42,6 +44,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MemberQueryController {
 
+    private final AdminRoleResolver adminRoleResolver;
     private final MemberRepository memberRepository;
     private final MemberLedgerRepository memberLedgerRepository;
     private final MemberLoginHistoryRepository memberLoginHistoryRepository;
@@ -60,8 +63,10 @@ public class MemberQueryController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate joinedFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate joinedTo,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            HttpServletRequest httpRequest
     ) {
+        adminRoleResolver.requireAtLeast(httpRequest, AdminRole.ADMIN);
         UUID tenantId = TenantContext.requireTenantId();
         PageRequest pageable = PageRequest.of(
                 Math.max(page, 0),
@@ -113,7 +118,11 @@ public class MemberQueryController {
     }
 
     @GetMapping("/{memberNo}")
-    public MemberQueryDtos.MemberDetailResponse get(@PathVariable String memberNo) {
+    public MemberQueryDtos.MemberDetailResponse get(
+            @PathVariable String memberNo,
+            HttpServletRequest httpRequest
+    ) {
+        adminRoleResolver.requireAtLeast(httpRequest, AdminRole.ADMIN);
         UUID tenantId = TenantContext.requireTenantId();
         Member member = memberRepository.findByTenantIdAndMemberNo(tenantId, memberNo)
                 .orElseThrow(() -> new IllegalArgumentException("member not found"));
@@ -123,8 +132,10 @@ public class MemberQueryController {
     @GetMapping("/{memberNo}/ledgers")
     public List<MemberQueryDtos.MemberLedgerResponse> ledgers(
             @PathVariable String memberNo,
-            @RequestParam(defaultValue = "50") int limit
+            @RequestParam(defaultValue = "50") int limit,
+            HttpServletRequest httpRequest
     ) {
+        adminRoleResolver.requireAtLeast(httpRequest, AdminRole.ADMIN);
         UUID tenantId = TenantContext.requireTenantId();
         int size = Math.min(Math.max(limit, 1), 200);
         Member member = memberRepository.findByTenantIdAndMemberNo(tenantId, memberNo)
@@ -148,8 +159,10 @@ public class MemberQueryController {
     @GetMapping("/{memberNo}/login-histories")
     public List<MemberQueryDtos.MemberLoginHistoryResponse> loginHistories(
             @PathVariable String memberNo,
-            @RequestParam(defaultValue = "20") int limit
+            @RequestParam(defaultValue = "20") int limit,
+            HttpServletRequest httpRequest
     ) {
+        adminRoleResolver.requireAtLeast(httpRequest, AdminRole.ADMIN);
         UUID tenantId = TenantContext.requireTenantId();
         int size = Math.min(Math.max(limit, 1), 100);
         Member member = memberRepository.findByTenantIdAndMemberNo(tenantId, memberNo)
