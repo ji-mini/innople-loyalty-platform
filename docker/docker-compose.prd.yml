@@ -8,6 +8,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prd
       SERVER_PORT: "3201"
+      TZ: Asia/Seoul
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3201/api/v1/public/health || exit 1"]
       interval: 5s

@@ -1,5 +1,6 @@
 package com.innople.loyalty.controller;
 
+import com.innople.loyalty.common.AppTimeZones;
 import com.innople.loyalty.controller.dto.MemberReportDtos;
 import com.innople.loyalty.service.report.MemberReportService;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +26,10 @@ public class MemberReportController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate totalAsOfDate
     ) {
-        YearMonth now = YearMonth.now();
+        YearMonth now = YearMonth.now(AppTimeZones.KST);
         LocalDate from = fromDate != null ? fromDate : now.atDay(1);
         LocalDate to = toDate != null ? toDate : now.atEndOfMonth();
-        LocalDate totalDate = totalAsOfDate != null ? totalAsOfDate : LocalDate.now();
+        LocalDate totalDate = totalAsOfDate != null ? totalAsOfDate : LocalDate.now(AppTimeZones.KST);
         return memberReportService.getReport(from, to, totalDate);
     }
 
@@ -36,7 +37,7 @@ public class MemberReportController {
     public MemberReportDtos.MonthlyTotalsResponse getMonthlyTotals(
             @RequestParam(required = false) Integer year
     ) {
-        int targetYear = year != null ? year : LocalDate.now().getYear();
+        int targetYear = year != null ? year : LocalDate.now(AppTimeZones.KST).getYear();
         return memberReportService.getMonthlyTotals(targetYear);
     }
 }

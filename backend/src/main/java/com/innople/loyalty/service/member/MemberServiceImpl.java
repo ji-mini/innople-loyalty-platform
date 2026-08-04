@@ -1,5 +1,6 @@
 package com.innople.loyalty.service.member;
 
+import com.innople.loyalty.common.AppTimeZones;
 import com.innople.loyalty.config.MemberVerificationProperties;
 import com.innople.loyalty.config.TenantContext;
 import com.innople.loyalty.controller.dto.MemberDtos.AddressRequest;
@@ -28,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -566,11 +566,11 @@ public class MemberServiceImpl implements MemberService {
 
     /**
      * 관리자가 입력한 날짜(LocalDate)를 Instant 로 변환한다.
-     * DB 컬럼이 timestamptz 로 승격되었고 마이그레이션에서 기존 DATE 를 00:00 UTC 로 캐스팅했으므로,
-     * 입력 날짜도 동일하게 해당 일자의 00:00 UTC 시각으로 통일한다.
+     * 저장은 timestamptz(절대 시각)로 유지하되, 관리자가 입력한 "날짜"의 해석 기준은 KST 로 통일한다.
+     * 따라서 해당 일자의 KST 자정(00:00 Asia/Seoul) 시각으로 변환한다.
      */
     private Instant toStartOfDayInstant(LocalDate date) {
-        return date.atStartOfDay(ZoneOffset.UTC).toInstant();
+        return date.atStartOfDay(AppTimeZones.KST).toInstant();
     }
 
     private String normalizePhoneOrNull(String rawPhoneNumber) {

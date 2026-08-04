@@ -57,6 +57,26 @@ public interface MemberRepository extends JpaRepository<Member, UUID>, MemberRep
 
     List<Member> findByTenantIdAndIdIn(UUID tenantId, List<UUID> ids);
 
+    /**
+     * 자동 탈퇴 배치 대상 회원 번호 조회.
+     * 특정 테넌트에서 status = statusCode(=WITHDRAW_REQUESTED)이고 탈퇴요청 시각이 기준 시각 이하인 회원.
+     * <p>withdrawRequestedAt IS NULL 행은 {@code <=} 비교에서 자연히 제외된다. 처리에 필요한 memberNo 만 반환한다.
+     * 오래된 요청부터 처리하도록 withdrawRequestedAt ASC 로 정렬한다.</p>
+     */
+    @Query("""
+            select m.memberNo
+            from Member m
+            where m.tenantId = :tenantId
+              and m.statusCode = :statusCode
+              and m.withdrawRequestedAt <= :threshold
+            order by m.withdrawRequestedAt asc
+            """)
+    List<String> findWithdrawTargetMemberNos(
+            @Param("tenantId") UUID tenantId,
+            @Param("statusCode") String statusCode,
+            @Param("threshold") Instant threshold
+    );
+
     boolean existsByTenantIdAndMemberNo(UUID tenantId, String memberNo);
     boolean existsByTenantIdAndPhoneNumber(UUID tenantId, String phoneNumber);
     boolean existsByTenantIdAndWebId(UUID tenantId, String webId);

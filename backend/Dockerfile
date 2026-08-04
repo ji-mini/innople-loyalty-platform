@@ -23,5 +23,7 @@ COPY --from=build /workspace/build/libs/*.jar ./app.jar
 EXPOSE 3201
 
 ENV SERVER_PORT=3201
+# JVM/OS 기본 시간대를 KST로 고정한다(코드의 명시적 KST 처리와 병행하는 안전망).
+ENV TZ=Asia/Seoul
 
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+ENTRYPOINT ["java","-Duser.timezone=Asia/Seoul","-jar","/app/app.jar"]

@@ -4,6 +4,7 @@ import com.innople.loyalty.config.AdminRoleResolver;
 import com.innople.loyalty.domain.common.TenantMismatchException;
 import com.innople.loyalty.service.admin.AdminAuthExceptions;
 import com.innople.loyalty.service.admin.AdminUserManagementExceptions;
+import com.innople.loyalty.service.batch.BatchExceptions;
 import com.innople.loyalty.service.code.CommonCodeExceptions;
 import com.innople.loyalty.service.member.MemberExceptions;
 import com.innople.loyalty.service.memberauth.MemberAuthExceptions;
@@ -108,6 +109,22 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleMembershipGradeNotFound(MembershipGradeExceptions.MembershipGradeNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiErrorResponse.of(MembershipGradeExceptions.MembershipGradeNotFoundException.CODE, ex.getMessage()));
+    }
+
+    // 배치 설정 부재는 실제 404 로 반환한다(레거시 NotFound→409 관례와 달리, 신규 배치 API 는 정확한 404 로 설계).
+    @ExceptionHandler(BatchExceptions.BatchConfigNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleBatchConfigNotFound(BatchExceptions.BatchConfigNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiErrorResponse.of(BatchExceptions.BatchConfigNotFoundException.CODE, ex.getMessage()));
+    }
+
+    @ExceptionHandler({
+            BatchExceptions.BatchConfigAlreadyExistsException.class,
+            BatchExceptions.BatchAlreadyRunningException.class,
+            BatchExceptions.BatchDisabledException.class
+    })
+    public ResponseEntity<ApiErrorResponse> handleBatchConflict(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiErrorResponse.of(ex.getMessage()));
     }
 
     @ExceptionHandler(AdminAuthExceptions.InvalidCredentialsException.class)

@@ -47,6 +47,7 @@ type MenuKey =
   | 'system.commonCodes'
   | 'system.permissions'
   | 'system.logs'
+  | 'system.batches'
 
 const KEY_TO_PATH: Record<MenuKey, string> = {
   dashboard: '/dashboard',
@@ -73,6 +74,7 @@ const KEY_TO_PATH: Record<MenuKey, string> = {
   'system.commonCodes': '/system/common-codes',
   'system.permissions': '/system/permissions',
   'system.logs': '/system/logs',
+  'system.batches': '/batches',
 }
 
 function topMenuLabel(text: string) {
@@ -114,6 +116,7 @@ function pickSelectedKey(pathname: string): MenuKey {
   if (pathname.startsWith('/system/common-codes')) return 'system.commonCodes'
   if (pathname.startsWith('/system/permissions')) return 'system.permissions'
   if (pathname.startsWith('/system/logs')) return 'system.logs'
+  if (pathname === '/batches' || pathname.startsWith('/batches/')) return 'system.batches'
 
   return 'dashboard'
 }
@@ -309,8 +312,9 @@ export function AdminLayout() {
                       icon: <SettingOutlined />,
                       label: topMenuLabel('시스템'),
                       children: [
-                        { key: 'system.users', label: '사용자 관리', onClick: () => nav(KEY_TO_PATH['system.users']) },
                         { key: 'system.commonCodes', label: '공통코드 관리', onClick: () => nav(KEY_TO_PATH['system.commonCodes']) },
+                        { key: 'system.batches', label: '배치관리', onClick: () => nav(KEY_TO_PATH['system.batches']) },
+                        { key: 'system.users', label: '사용자 관리', onClick: () => nav(KEY_TO_PATH['system.users']) },
                         { key: 'system.permissions', label: '권한관리', onClick: () => nav(KEY_TO_PATH['system.permissions']) },
                         { key: 'system.logs', label: '로그조회', onClick: () => nav(KEY_TO_PATH['system.logs']) },
                       ],

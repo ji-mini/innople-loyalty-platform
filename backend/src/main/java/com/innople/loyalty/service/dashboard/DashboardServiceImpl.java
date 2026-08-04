@@ -1,5 +1,6 @@
 package com.innople.loyalty.service.dashboard;
 
+import com.innople.loyalty.common.AppTimeZones;
 import com.innople.loyalty.config.TenantContext;
 import com.innople.loyalty.controller.dto.DashboardDtos;
 import com.innople.loyalty.domain.dashboard.DashboardMonthlyGoal;
@@ -47,8 +48,8 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional(readOnly = true)
     public DashboardDtos.DashboardResponse getDashboard() {
         UUID tenantId = TenantContext.requireTenantId();
-        LocalDate today = LocalDate.now();
-        ZoneId zone = ZoneId.systemDefault();
+        ZoneId zone = AppTimeZones.KST;
+        LocalDate today = LocalDate.now(zone);
         LocalDate monthStart = today.withDayOfMonth(1);
         LocalDate prevMonthStart = monthStart.minusMonths(1);
         LocalDate nextMonthStart = monthStart.plusMonths(1);
@@ -160,7 +161,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional(readOnly = true)
     public DashboardDtos.DashboardGoalResponse getCurrentGoal() {
         UUID tenantId = TenantContext.requireTenantId();
-        YearMonth currentMonth = YearMonth.now();
+        YearMonth currentMonth = YearMonth.now(AppTimeZones.KST);
         return dashboardMonthlyGoalRepository
                 .findByTenantIdAndTargetYearAndTargetMonth(tenantId, currentMonth.getYear(), currentMonth.getMonthValue())
                 .map(this::toGoalResponse)
@@ -177,7 +178,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Transactional
     public DashboardDtos.DashboardGoalResponse upsertCurrentGoal(long targetNewMembers, long targetEarn, long targetUse) {
         UUID tenantId = TenantContext.requireTenantId();
-        YearMonth currentMonth = YearMonth.now();
+        YearMonth currentMonth = YearMonth.now(AppTimeZones.KST);
         DashboardMonthlyGoal goal = dashboardMonthlyGoalRepository
                 .findByTenantIdAndTargetYearAndTargetMonth(tenantId, currentMonth.getYear(), currentMonth.getMonthValue())
                 .orElseGet(() -> new DashboardMonthlyGoal(

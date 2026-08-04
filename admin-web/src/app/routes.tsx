@@ -33,6 +33,8 @@ const AdminAccountsPage = React.lazy(async () => ({ default: (await import('../p
 const CommonCodesPage = React.lazy(async () => ({ default: (await import('../pages/system/CommonCodesPage')).CommonCodesPage }))
 const PermissionsPage = React.lazy(async () => ({ default: (await import('../pages/system/PermissionsPage')).PermissionsPage }))
 const LogsPage = React.lazy(async () => ({ default: (await import('../pages/system/LogsPage')).LogsPage }))
+const BatchListPage = React.lazy(async () => ({ default: (await import('../pages/batches/BatchListPage')).BatchListPage }))
+const BatchDetailPage = React.lazy(async () => ({ default: (await import('../pages/batches/BatchDetailPage')).BatchDetailPage }))
 
 function RequireAuth() {
   const loc = useLocation()
@@ -139,6 +141,14 @@ export const router = createBrowserRouter([
                 path: '/tenants/:tenantId',
                 element: withSuspense(<TenantDetailPage />),
                 handle: { crumbs: (p: any) => ['테넌트관리', '테넌트 상세', p?.tenantId ?? '-'] },
+              },
+
+              // Batch management
+              { path: '/batches', element: withSuspense(<BatchListPage />), handle: { crumbs: ['배치관리', '배치 목록'] } },
+              {
+                path: '/batches/:batchName',
+                element: withSuspense(<BatchDetailPage />),
+                handle: { crumbs: (p: any) => ['배치관리', '배치 상세', p?.batchName ?? '-'] },
               },
 
               // System management

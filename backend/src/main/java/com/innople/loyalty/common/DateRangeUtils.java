@@ -11,11 +11,11 @@ import java.time.ZoneId;
  * 구간은 항상 half-open [start, endExclusive) 이며 쿼리 조건은 {@code field >= start AND field < endExclusive} 로 사용한다.
  * (inclusive-end 방식의 마이크로초 정밀도 누락/중복을 방지)</p>
  *
- * <p>현재는 단일 KST 테넌트 전제로 ZoneId 를 하드코딩한다. 다국가 테넌트 지원 시 테넌트별 ZoneId 주입으로 리팩터링한다.</p>
+ * <p>시간대는 프로젝트 공용 상수 {@link AppTimeZones#KST} 를 사용한다(단일 KST 테넌트 전제).</p>
  */
 public final class DateRangeUtils {
 
-    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+    private static final ZoneId KST = AppTimeZones.KST;
 
     private DateRangeUtils() {
     }
