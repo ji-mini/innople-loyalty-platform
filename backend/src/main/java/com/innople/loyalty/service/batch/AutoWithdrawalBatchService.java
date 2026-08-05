@@ -47,7 +47,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AutoWithdrawalBatchService {
 
     static final String AUTO_WITHDRAWAL_REASON = "자동 탈퇴 (유예기간 경과)";
-    // catch-up 판정: 오늘 KST 범위 안에 이미 완료(SUCCESS/PARTIAL)된 이력이 있으면 재실행하지 않는다.
+    // 하루 1회 보장(멱등): 오늘 KST 범위 안에 이미 완료(SUCCESS/PARTIAL)된 이력이 있으면 재실행하지 않는다.
+    // (스케줄 정각 실행과 수동 실행이 같은 날 중복 처리되지 않도록 하는 게이트)
     private static final Set<BatchExecutionStatus> COMPLETED_STATUSES =
             Set.of(BatchExecutionStatus.SUCCESS, BatchExecutionStatus.PARTIAL);
 
@@ -119,8 +120,8 @@ public class AutoWithdrawalBatchService {
 
         ZonedDateTime nowKst = now.atZone(AppTimeZones.KST);
         int currentHour = nowKst.getHour();
-        if (currentHour < config.getRunHour()) {
-            log.debug("Auto-withdrawal skipped (before run_hour {}<{}) tenant={}",
+        if (currentHour != config.getRunHour()) {
+            log.debug("Auto-withdrawal skipped (run_hour mismatch current={} run={}) tenant={}",
                     currentHour, config.getRunHour(), tenantId);
             return null;
         }

@@ -10,7 +10,7 @@ import java.time.Instant;
 
 /**
  * 자동 탈퇴 배치 스케줄러. 매시 정각에 전 테넌트를 순회하며,
- * 각 테넌트의 batch_job_config(enabled=true) + run_hour 도달 + 오늘 미처리 조건을 만족할 때만 실행한다.
+ * 각 테넌트의 batch_job_config(enabled=true) + 현재 KST 시각 == run_hour 정각 + 오늘 미처리 조건을 만족할 때만 실행한다.
  * (테넌트 순회/컨텍스트 세팅/중복 실행 방지는 {@link AutoWithdrawalBatchService}가 담당.)
  */
 @Slf4j

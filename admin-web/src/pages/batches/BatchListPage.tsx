@@ -1,11 +1,25 @@
-import { Button, Card, Form, InputNumber, Modal, Space, Switch, Table, Tag, Typography, message } from 'antd'
+import {
+  Button,
+  Card,
+  Form,
+  InputNumber,
+  Modal,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+  message,
+} from 'antd'
 import dayjs from 'dayjs'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageShell } from '../common/PageShell'
 import { col } from '../../shared/tableColumns'
 import {
-  AUTO_WITHDRAWAL,
+  BATCH_TYPES,
   batchLabel,
   useBatchConfigs,
   useCreateBatchConfig,
@@ -13,6 +27,7 @@ import {
 } from '../../shared/batch'
 
 type CreateForm = {
+  batchName: string
   runHour: number
   thresholdDays: number
   enabled: boolean
@@ -27,9 +42,23 @@ export function BatchListPage() {
 
   const rows = configsQuery.data ?? []
 
+  // 이미 등록된 배치는 선택지에서 제외한다(테넌트당 batch_name 1건 → 중복 생성 시 409 충돌 방지).
+  const registeredNames = React.useMemo(() => new Set(rows.map((r) => r.batchName)), [rows])
+  const availableTypes = React.useMemo(
+    () => BATCH_TYPES.filter((t) => !registeredNames.has(t.name)),
+    [registeredNames]
+  )
+  const noneAvailable = availableTypes.length === 0
+
   const openCreate = () => {
+    if (noneAvailable) return
     form.resetFields()
-    form.setFieldsValue({ runHour: 3, thresholdDays: 30, enabled: false })
+    form.setFieldsValue({
+      batchName: availableTypes[0].name,
+      runHour: 3,
+      thresholdDays: 30,
+      enabled: false,
+    })
     setOpen(true)
   }
 
@@ -37,7 +66,7 @@ export function BatchListPage() {
     const v = await form.validateFields()
     try {
       const created = await createMutation.mutateAsync({
-        batchName: AUTO_WITHDRAWAL,
+        batchName: v.batchName,
         enabled: v.enabled,
         runHour: v.runHour,
         thresholdDays: v.thresholdDays,
@@ -65,9 +94,11 @@ export function BatchListPage() {
           <Typography.Text type="secondary" style={{ fontSize: 12 }}>
             테넌트별 배치 스케줄과 실행을 관리합니다.
           </Typography.Text>
-          <Button type="primary" onClick={openCreate}>
-            설정 추가
-          </Button>
+          <Tooltip title={noneAvailable ? '추가할 수 있는 배치가 없습니다. (지원 배치가 모두 등록됨)' : ''}>
+            <Button type="primary" onClick={openCreate} disabled={noneAvailable}>
+              배치 추가
+            </Button>
+          </Tooltip>
         </div>
       }
     >
@@ -123,7 +154,7 @@ export function BatchListPage() {
               <Space direction="vertical" size={6}>
                 <Typography.Text>등록된 배치 설정이 없습니다.</Typography.Text>
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  “설정 추가”로 배치 실행 시각과 유예기간을 먼저 등록하세요.
+                  “배치 추가”로 배치 실행 시각과 유예기간을 먼저 등록하세요.
                 </Typography.Text>
               </Space>
             ),
@@ -133,7 +164,7 @@ export function BatchListPage() {
 
       <Modal
         open={open}
-        title="배치 설정 추가"
+        title="배치 추가"
         okText="생성"
         onOk={onSubmitCreate}
         confirmLoading={createMutation.isPending}
@@ -141,11 +172,18 @@ export function BatchListPage() {
         destroyOnClose
       >
         <Form form={form} layout="vertical" requiredMark={false}>
-          <Form.Item label="배치">
-            <Typography.Text>{batchLabel(AUTO_WITHDRAWAL)}</Typography.Text>
-            <Typography.Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
-              ({AUTO_WITHDRAWAL})
-            </Typography.Text>
+          <Form.Item
+            label="배치"
+            name="batchName"
+            rules={[{ required: true, message: '추가할 배치를 선택하세요' }]}
+          >
+            <Select
+              placeholder="추가할 배치를 선택하세요"
+              options={availableTypes.map((t) => ({
+                value: t.name,
+                label: `${t.label} (${t.name})`,
+              }))}
+            />
           </Form.Item>
           <Form.Item
             label="실행 시각 (매일 HH:00)"

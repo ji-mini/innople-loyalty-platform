@@ -33,12 +33,23 @@ export type BatchExecution = {
 }
 
 /**
- * 배치명 → 한글 라벨 매핑. 코드값(AUTO_WITHDRAWAL)을 화면에 그대로 노출하지 않는다.
- * 향후 배치/다국어 확장에 대비해 상수로 분리한다.
+ * 시스템이 지원하는 배치 종류의 단일 소스.
+ * 배치를 새로 추가할 땐 여기에 `{ name, label }` 한 줄만 추가하면
+ * "배치 추가" 드롭다운 선택지와 화면 라벨이 함께 확장된다.
  */
-export const BATCH_LABELS: Record<string, string> = {
-  [AUTO_WITHDRAWAL]: '회원 자동탈회',
-}
+export type BatchType = { name: string; label: string }
+
+export const BATCH_TYPES: BatchType[] = [
+  { name: AUTO_WITHDRAWAL, label: '회원 자동탈회' },
+]
+
+/**
+ * 배치명 → 한글 라벨 매핑. 코드값(AUTO_WITHDRAWAL)을 화면에 그대로 노출하지 않는다.
+ * BATCH_TYPES 에서 파생하므로 별도로 관리하는 지점이 아니다.
+ */
+export const BATCH_LABELS: Record<string, string> = Object.fromEntries(
+  BATCH_TYPES.map((t) => [t.name, t.label])
+)
 
 export function batchLabel(batchName: string): string {
   return BATCH_LABELS[batchName] ?? batchName
