@@ -41,6 +41,24 @@ public final class DateRangeUtils {
     }
 
     /**
+     * 기준일 기준 이번 달 1일 ~ 기준일(포함) KST half-open 구간.
+     * 예: 8/6 → [8/1 00:00, 8/7 00:00).
+     */
+    public static Range kstMonthToDateRange(LocalDate today) {
+        return kstRange(today.withDayOfMonth(1), today);
+    }
+
+    /**
+     * 기준일 기준 전월 동기 구간: 전월 1일 ~ 전월 동일 일자(포함).
+     * {@link LocalDate#minusMonths(long)} 가 말일을 클램프하므로 3/31 → 2/1~2/28(또는 2/29) 이 된다.
+     * 예: 8/6 → [7/1 00:00, 7/7 00:00).
+     */
+    public static Range kstPreviousMonthToDateRange(LocalDate today) {
+        LocalDate previousMonthSameDay = today.minusMonths(1);
+        return kstRange(previousMonthSameDay.withDayOfMonth(1), previousMonthSameDay);
+    }
+
+    /**
      * KST 기준 half-open 구간. 쿼리 조건: {@code field >= start AND field < endExclusive}.
      */
     public record Range(Instant start, Instant endExclusive) {

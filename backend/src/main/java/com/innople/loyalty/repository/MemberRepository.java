@@ -57,6 +57,80 @@ public interface MemberRepository extends JpaRepository<Member, UUID>, MemberRep
 
     List<Member> findByTenantIdAndIdIn(UUID tenantId, List<UUID> ids);
 
+    /** 대시보드 등급별 분포. 등급 미지정 회원은 gradeName=null 그룹으로 반환된다. */
+    @Query("""
+            select g.name as gradeName, g.level as gradeLevel, count(m) as memberCount
+            from Member m
+            left join m.membershipGrade g
+            where m.tenantId = :tenantId
+              and m.statusCode <> :excludeStatus
+            group by g.name, g.level
+            """)
+    List<GradeDistributionView> aggregateGradeDistribution(
+            @Param("tenantId") UUID tenantId,
+            @Param("excludeStatus") String excludeStatus
+    );
+
+    /** 대시보드 상태별 분포. */
+    @Query("""
+            select m.statusCode as statusCode, count(m) as memberCount
+            from Member m
+            where m.tenantId = :tenantId
+            group by m.statusCode
+            """)
+    List<StatusDistributionView> aggregateStatusDistribution(@Param("tenantId") UUID tenantId);
+
+    /**
+     * KST 일자별 신규 가입 수(joinedAt 기준). 구간 경계는 DateRangeUtils 로 산출한 half-open Instant 를 넘긴다.
+     * 반환: [bucketDate(String, yyyy-MM-dd), count(Long)]
+     */
+    @Query(value = """
+            select to_char(m.joined_at at time zone cast(:zone as text), 'YYYY-MM-DD') as bucket_date,
+                   cast(count(*) as bigint) as bucket_count
+            from members m
+            where m.tenant_id = :tenantId
+              and m.joined_at >= :from
+              and m.joined_at < :toExclusive
+            group by 1
+            """, nativeQuery = true)
+    List<Object[]> aggregateDailySignups(
+            @Param("tenantId") UUID tenantId,
+            @Param("from") Instant from,
+            @Param("toExclusive") Instant toExclusive,
+            @Param("zone") String zone
+    );
+
+    /** KST 일자별 탈퇴(최종 탈회) 수(withdrawnAt 기준). 반환: [bucketDate(String), count(Long)] */
+    @Query(value = """
+            select to_char(m.withdrawn_at at time zone cast(:zone as text), 'YYYY-MM-DD') as bucket_date,
+                   cast(count(*) as bigint) as bucket_count
+            from members m
+            where m.tenant_id = :tenantId
+              and m.withdrawn_at >= :from
+              and m.withdrawn_at < :toExclusive
+            group by 1
+            """, nativeQuery = true)
+    List<Object[]> aggregateDailyWithdrawals(
+            @Param("tenantId") UUID tenantId,
+            @Param("from") Instant from,
+            @Param("toExclusive") Instant toExclusive,
+            @Param("zone") String zone
+    );
+
+    interface GradeDistributionView {
+        String getGradeName();
+
+        Integer getGradeLevel();
+
+        long getMemberCount();
+    }
+
+    interface StatusDistributionView {
+        String getStatusCode();
+
+        long getMemberCount();
+    }
+
     /**
      * 자동 탈퇴 배치 대상 회원 번호 조회.
      * 특정 테넌트에서 status = statusCode(=WITHDRAW_REQUESTED)이고 탈퇴요청 시각이 기준 시각 이하인 회원.

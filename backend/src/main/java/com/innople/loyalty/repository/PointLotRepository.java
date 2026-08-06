@@ -72,31 +72,28 @@ public interface PointLotRepository extends JpaRepository<PointLot, UUID> {
             @Param("referenceAt") Instant referenceAt
     );
 
+    /** 미사용 포인트 총 잔액. lot 잔여분 합계. */
     @Query("""
             select coalesce(sum(l.remainingAmount), 0)
             from PointLot l
             where l.tenantId = :tenantId
               and l.remainingAmount > 0
-              and l.expiresAt > :now
-              and l.expiresAt <= :deadline
             """)
-    long sumRemainingAmountExpiringBetween(
-            @Param("tenantId") UUID tenantId,
-            @Param("now") Instant now,
-            @Param("deadline") Instant deadline
-    );
+    long sumRemainingAmountByTenantId(@Param("tenantId") UUID tenantId);
 
+    /**
+     * 기준 시각 이전에 만료되는 잔여분 합계(소멸 예정 금액).
+     * deadline 은 DateRangeUtils 로 산출한 KST half-open 구간의 종료 경계를 넘긴다.
+     */
     @Query("""
-            select count(distinct l.memberId)
+            select coalesce(sum(l.remainingAmount), 0)
             from PointLot l
             where l.tenantId = :tenantId
               and l.remainingAmount > 0
-              and l.expiresAt > :now
-              and l.expiresAt <= :deadline
+              and l.expiresAt < :deadline
             """)
-    long countDistinctMembersWithLotsExpiringBetween(
+    long sumRemainingAmountExpiringBefore(
             @Param("tenantId") UUID tenantId,
-            @Param("now") Instant now,
             @Param("deadline") Instant deadline
     );
 }

@@ -63,6 +63,23 @@ public interface BatchExecutionHistoryRepository extends JpaRepository<BatchExec
             """)
     Instant findLastStartedAt(@Param("tenantId") UUID tenantId, @Param("batchName") String batchName);
 
+    /**
+     * 배치별 최근 실행 이력 1건씩. 대시보드 배치 상태 요약용(배치 수만큼 재조회하지 않도록 단일 쿼리로 처리).
+     */
+    @Query("""
+            select h
+            from BatchExecutionHistory h
+            where h.tenantId = :tenantId
+              and h.startedAt = (
+                  select max(h2.startedAt)
+                  from BatchExecutionHistory h2
+                  where h2.tenantId = h.tenantId
+                    and h2.batchName = h.batchName
+              )
+            order by h.batchName asc
+            """)
+    List<BatchExecutionHistory> findLatestExecutionPerBatch(@Param("tenantId") UUID tenantId);
+
     /** batch_name → 최신 started_at 집계 투영. */
     interface BatchNameLastStartedAt {
         String getBatchName();
