@@ -4,13 +4,15 @@ import type { PagedResponse } from './types'
 
 /** 현재 지원하는 배치 식별자. 향후 배치 추가 시 여기에 확장한다. */
 export const AUTO_WITHDRAWAL = 'AUTO_WITHDRAWAL'
+export const POINT_EXPIRATION = 'POINT_EXPIRATION'
 
 export type BatchConfig = {
   id: string
   batchName: string
   enabled: boolean
   runHour: number
-  thresholdDays: number
+  /** 배치에 따라 미사용(null). AUTO_WITHDRAWAL 은 필수. */
+  thresholdDays: number | null
   createdAt: string
   updatedAt: string
   updatedBy: string | null
@@ -41,6 +43,7 @@ export type BatchType = { name: string; label: string }
 
 export const BATCH_TYPES: BatchType[] = [
   { name: AUTO_WITHDRAWAL, label: '회원 자동탈회' },
+  { name: POINT_EXPIRATION, label: '포인트 자동소멸' },
 ]
 
 /**
@@ -96,7 +99,7 @@ export type CreateBatchConfigInput = {
   batchName?: string
   enabled: boolean
   runHour: number
-  thresholdDays: number
+  thresholdDays?: number | null
 }
 
 export function useCreateBatchConfig() {
@@ -115,7 +118,7 @@ export function useCreateBatchConfig() {
 export type UpdateBatchConfigInput = {
   enabled: boolean
   runHour: number
-  thresholdDays: number
+  thresholdDays?: number | null
 }
 
 export function useUpdateBatchConfig(batchName: string) {

@@ -7,7 +7,7 @@ import com.innople.loyalty.domain.batch.BatchJobConfig;
 import com.innople.loyalty.domain.batch.BatchNames;
 import com.innople.loyalty.domain.user.AdminRole;
 import com.innople.loyalty.domain.user.AdminUser;
-import com.innople.loyalty.service.batch.AutoWithdrawalBatchService;
+import com.innople.loyalty.service.batch.BatchDispatchService;
 import com.innople.loyalty.service.batch.BatchJobConfigService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -37,7 +37,7 @@ public class BatchAdminController {
 
     private final AdminRoleResolver adminRoleResolver;
     private final BatchJobConfigService batchJobConfigService;
-    private final AutoWithdrawalBatchService autoWithdrawalBatchService;
+    private final BatchDispatchService batchDispatchService;
 
     @GetMapping("/configs")
     public List<BatchDtos.BatchJobConfigResponse> listConfigs(HttpServletRequest httpRequest) {
@@ -127,7 +127,7 @@ public class BatchAdminController {
             HttpServletRequest httpRequest
     ) {
         adminRoleResolver.requireAtLeast(httpRequest, AdminRole.ADMIN);
-        BatchExecutionHistory history = autoWithdrawalBatchService.runManualForCurrentTenant(batchName);
+        BatchExecutionHistory history = batchDispatchService.runManualForCurrentTenant(batchName);
         return toHistoryResponse(history);
     }
 

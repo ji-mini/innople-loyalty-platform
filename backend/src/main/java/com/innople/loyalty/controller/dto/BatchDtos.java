@@ -18,7 +18,7 @@ public final class BatchDtos {
             String batchName,
             boolean enabled,
             short runHour,
-            int thresholdDays,
+            Integer thresholdDays,
             Instant createdAt,
             Instant updatedAt,
             UUID updatedBy,
@@ -32,14 +32,16 @@ public final class BatchDtos {
             String batchName,
             Boolean enabled,
             @NotNull @Min(0) @Max(23) Short runHour,
-            @NotNull @Positive Integer thresholdDays
+            /** 배치에 따라 미사용(null) 가능. 값이 있으면 &gt; 0. */
+            @Positive Integer thresholdDays
     ) {
     }
 
     public record UpdateBatchJobConfigRequest(
             @NotNull Boolean enabled,
             @NotNull @Min(0) @Max(23) Short runHour,
-            @NotNull @Positive Integer thresholdDays
+            /** 배치에 따라 미사용(null) 가능. 값이 있으면 &gt; 0. */
+            @Positive Integer thresholdDays
     ) {
     }
 

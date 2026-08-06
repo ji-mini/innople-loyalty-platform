@@ -21,6 +21,8 @@ import { useParams } from 'react-router-dom'
 import { PageShell } from '../common/PageShell'
 import { col } from '../../shared/tableColumns'
 import {
+  AUTO_WITHDRAWAL,
+  POINT_EXPIRATION,
   batchLabel,
   batchStatusMeta,
   useBatchConfig,
@@ -34,11 +36,39 @@ import {
 type ConfigForm = {
   enabled: boolean
   runHour: number
-  thresholdDays: number
+  thresholdDays?: number | null
 }
 
 function fmt(v: string | null | undefined): string {
   return v ? dayjs(v).format('YYYY-MM-DD HH:mm:ss') : '-'
+}
+
+function usesThreshold(batchName: string): boolean {
+  return batchName === AUTO_WITHDRAWAL
+}
+
+function runConfirmContent(batchName: string, thresholdDays: number | null | undefined) {
+  if (batchName === POINT_EXPIRATION) {
+    return (
+      <Space direction="vertical" size={8}>
+        <Typography.Text>
+          만료일이 경과한 포인트 lot을 즉시 자동소멸(EXPIRE_AUTO) 처리합니다.
+        </Typography.Text>
+        <Typography.Text type="danger">되돌리기 어려운 작업입니다. 계속하시겠습니까?</Typography.Text>
+      </Space>
+    )
+  }
+  const days = thresholdDays ?? 0
+  return (
+    <Space direction="vertical" size={8}>
+      <Typography.Text>
+        탈회 요청 후 {days}일이 경과한 회원을 즉시 자동탈회 처리합니다.
+      </Typography.Text>
+      <Typography.Text type="danger">
+        포인트 소각·개인정보 익명화가 동반되어 되돌리기 어려운 작업입니다. 계속하시겠습니까?
+      </Typography.Text>
+    </Space>
+  )
 }
 
 export function BatchDetailPage() {
@@ -53,6 +83,7 @@ export function BatchDetailPage() {
   const executionsQuery = useBatchExecutions(batchName, page, size)
 
   const config = configQuery.data as BatchConfig | undefined
+  const showThreshold = usesThreshold(batchName)
 
   // 상세 로드 시 폼을 서버 값으로 동기화한다.
   React.useEffect(() => {
@@ -74,7 +105,7 @@ export function BatchDetailPage() {
       await updateMutation.mutateAsync({
         enabled: v.enabled,
         runHour: v.runHour,
-        thresholdDays: v.thresholdDays,
+        thresholdDays: showThreshold ? v.thresholdDays : null,
       })
       message.success('배치 설정이 저장되었습니다.')
     } catch (e: any) {
@@ -111,20 +142,10 @@ export function BatchDetailPage() {
   }
 
   const confirmRun = () => {
-    const days = config?.thresholdDays ?? 0
     Modal.confirm({
       title: `${batchLabel(batchName)} 지금 실행`,
       icon: <ThunderboltOutlined style={{ color: '#faad14' }} />,
-      content: (
-        <Space direction="vertical" size={8}>
-          <Typography.Text>
-            탈회 요청 후 {days}일이 경과한 회원을 즉시 자동탈회 처리합니다.
-          </Typography.Text>
-          <Typography.Text type="danger">
-            포인트 소각·개인정보 익명화가 동반되어 되돌리기 어려운 작업입니다. 계속하시겠습니까?
-          </Typography.Text>
-        </Space>
-      ),
+      content: runConfirmContent(batchName, config?.thresholdDays),
       okText: '실행',
       okButtonProps: { danger: true },
       cancelText: '취소',
@@ -197,16 +218,18 @@ export function BatchDetailPage() {
           >
             <InputNumber min={0} max={23} step={1} style={{ width: '100%' }} addonAfter="시" />
           </Form.Item>
-          <Form.Item
-            label="유예기간 (탈회 요청 후 N일 경과 시 자동탈회)"
-            name="thresholdDays"
-            rules={[
-              { required: true, message: '유예기간을 입력하세요' },
-              { type: 'number', min: 1, message: '1일 이상 입력하세요' },
-            ]}
-          >
-            <InputNumber min={1} step={1} style={{ width: '100%' }} addonAfter="일" />
-          </Form.Item>
+          {showThreshold ? (
+            <Form.Item
+              label="유예기간 (탈회 요청 후 N일 경과 시 자동탈회)"
+              name="thresholdDays"
+              rules={[
+                { required: true, message: '유예기간을 입력하세요' },
+                { type: 'number', min: 1, message: '1일 이상 입력하세요' },
+              ]}
+            >
+              <InputNumber min={1} step={1} style={{ width: '100%' }} addonAfter="일" />
+            </Form.Item>
+          ) : null}
           <Form.Item>
             <Button type="primary" onClick={onSave} loading={updateMutation.isPending}>
               저장

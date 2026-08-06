@@ -19,7 +19,9 @@ import { useNavigate } from 'react-router-dom'
 import { PageShell } from '../common/PageShell'
 import { col } from '../../shared/tableColumns'
 import {
+  AUTO_WITHDRAWAL,
   BATCH_TYPES,
+  POINT_EXPIRATION,
   batchLabel,
   useBatchConfigs,
   useCreateBatchConfig,
@@ -29,8 +31,12 @@ import {
 type CreateForm = {
   batchName: string
   runHour: number
-  thresholdDays: number
+  thresholdDays?: number | null
   enabled: boolean
+}
+
+function usesThreshold(batchName: string): boolean {
+  return batchName === AUTO_WITHDRAWAL
 }
 
 export function BatchListPage() {
@@ -39,6 +45,7 @@ export function BatchListPage() {
   const createMutation = useCreateBatchConfig()
   const [open, setOpen] = React.useState(false)
   const [form] = Form.useForm<CreateForm>()
+  const selectedBatchName = Form.useWatch('batchName', form)
 
   const rows = configsQuery.data ?? []
 
@@ -52,14 +59,22 @@ export function BatchListPage() {
 
   const openCreate = () => {
     if (noneAvailable) return
+    const first = availableTypes[0]
     form.resetFields()
     form.setFieldsValue({
-      batchName: availableTypes[0].name,
-      runHour: 3,
-      thresholdDays: 30,
+      batchName: first.name,
+      runHour: first.name === POINT_EXPIRATION ? 0 : 3,
+      thresholdDays: usesThreshold(first.name) ? 30 : null,
       enabled: false,
     })
     setOpen(true)
+  }
+
+  const onBatchNameChange = (name: string) => {
+    form.setFieldsValue({
+      runHour: name === POINT_EXPIRATION ? 0 : form.getFieldValue('runHour') ?? 3,
+      thresholdDays: usesThreshold(name) ? form.getFieldValue('thresholdDays') ?? 30 : null,
+    })
   }
 
   const onSubmitCreate = async () => {
@@ -69,7 +84,7 @@ export function BatchListPage() {
         batchName: v.batchName,
         enabled: v.enabled,
         runHour: v.runHour,
-        thresholdDays: v.thresholdDays,
+        thresholdDays: usesThreshold(v.batchName) ? v.thresholdDays : null,
       })
       message.success('배치 설정이 생성되었습니다.')
       setOpen(false)
@@ -134,7 +149,7 @@ export function BatchListPage() {
               ...col('유예기간'),
               dataIndex: 'thresholdDays',
               width: 120,
-              render: (v: number) => `${v}일`,
+              render: (v: number | null) => (v != null ? `${v}일` : '-'),
             },
             {
               ...col('마지막 실행일시'),
@@ -154,7 +169,7 @@ export function BatchListPage() {
               <Space direction="vertical" size={6}>
                 <Typography.Text>등록된 배치 설정이 없습니다.</Typography.Text>
                 <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                  “배치 추가”로 배치 실행 시각과 유예기간을 먼저 등록하세요.
+                  “배치 추가”로 배치 실행 시각과 설정을 먼저 등록하세요.
                 </Typography.Text>
               </Space>
             ),
@@ -183,6 +198,7 @@ export function BatchListPage() {
                 value: t.name,
                 label: `${t.label} (${t.name})`,
               }))}
+              onChange={onBatchNameChange}
             />
           </Form.Item>
           <Form.Item
@@ -192,13 +208,15 @@ export function BatchListPage() {
           >
             <InputNumber min={0} max={23} step={1} style={{ width: '100%' }} addonAfter="시" />
           </Form.Item>
-          <Form.Item
-            label="유예기간 (탈회 요청 후 N일 경과 시 자동탈회)"
-            name="thresholdDays"
-            rules={[{ required: true, message: '유예기간(1일 이상)을 입력하세요' }]}
-          >
-            <InputNumber min={1} step={1} style={{ width: '100%' }} addonAfter="일" />
-          </Form.Item>
+          {usesThreshold(selectedBatchName ?? '') ? (
+            <Form.Item
+              label="유예기간 (탈회 요청 후 N일 경과 시 자동탈회)"
+              name="thresholdDays"
+              rules={[{ required: true, message: '유예기간(1일 이상)을 입력하세요' }]}
+            >
+              <InputNumber min={1} step={1} style={{ width: '100%' }} addonAfter="일" />
+            </Form.Item>
+          ) : null}
           <Form.Item label="활성 여부" name="enabled" valuePropName="checked">
             <Switch />
           </Form.Item>

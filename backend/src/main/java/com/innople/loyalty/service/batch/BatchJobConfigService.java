@@ -3,6 +3,7 @@ package com.innople.loyalty.service.batch;
 import com.innople.loyalty.config.TenantContext;
 import com.innople.loyalty.domain.batch.BatchExecutionHistory;
 import com.innople.loyalty.domain.batch.BatchJobConfig;
+import com.innople.loyalty.domain.batch.BatchNames;
 import com.innople.loyalty.repository.BatchExecutionHistoryRepository;
 import com.innople.loyalty.repository.BatchJobConfigRepository;
 import lombok.RequiredArgsConstructor;
@@ -62,7 +63,7 @@ public class BatchJobConfigService {
             String batchName,
             boolean enabled,
             short runHour,
-            int thresholdDays,
+            Integer thresholdDays,
             UUID updatedBy
     ) {
         UUID tenantId = TenantContext.requireTenantId();
@@ -70,6 +71,7 @@ public class BatchJobConfigService {
             throw new BatchExceptions.BatchConfigAlreadyExistsException(
                     "이미 존재하는 배치 설정입니다: " + batchName);
         }
+        requireThresholdForAutoWithdrawal(batchName, thresholdDays);
         BatchJobConfig config = BatchJobConfig.create(batchName, enabled, runHour, thresholdDays, updatedBy);
         BatchJobConfig saved = batchJobConfigRepository.save(config);
         Instant lastExecutedAt = batchExecutionHistoryRepository.findLastStartedAt(tenantId, batchName);
@@ -81,17 +83,26 @@ public class BatchJobConfigService {
             String batchName,
             boolean enabled,
             short runHour,
-            int thresholdDays,
+            Integer thresholdDays,
             UUID updatedBy
     ) {
         UUID tenantId = TenantContext.requireTenantId();
         BatchJobConfig config = batchJobConfigRepository.findByTenantIdAndBatchName(tenantId, batchName)
                 .orElseThrow(() -> new BatchExceptions.BatchConfigNotFoundException(
                         "배치 설정을 찾을 수 없습니다: " + batchName));
+        requireThresholdForAutoWithdrawal(batchName, thresholdDays);
         config.update(enabled, runHour, thresholdDays, updatedBy);
         BatchJobConfig saved = batchJobConfigRepository.save(config);
         Instant lastExecutedAt = batchExecutionHistoryRepository.findLastStartedAt(tenantId, batchName);
         return new BatchJobConfigView(saved, lastExecutedAt);
+    }
+
+    /** AUTO_WITHDRAWAL 은 유예기간이 필수. POINT_EXPIRATION 등은 null 허용. */
+    private static void requireThresholdForAutoWithdrawal(String batchName, Integer thresholdDays) {
+        if (BatchNames.AUTO_WITHDRAWAL.equals(batchName)
+                && (thresholdDays == null || thresholdDays <= 0)) {
+            throw new IllegalArgumentException("AUTO_WITHDRAWAL 배치는 thresholdDays(유예기간)가 필요합니다.");
+        }
     }
 
     @Transactional(readOnly = true)

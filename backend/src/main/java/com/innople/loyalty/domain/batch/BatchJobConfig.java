@@ -13,7 +13,8 @@ import java.util.UUID;
 
 /**
  * 테넌트 × 배치 당 1행의 운영 설정. 운영자가 화면에서 편집한다.
- * <p>V32 스키마(batch_job_config)에 매핑한다. id/tenant_id/created_at/updated_at 는 {@link BaseEntity}가 관리한다.</p>
+ * <p>V32/V33 스키마(batch_job_config)에 매핑한다. id/tenant_id/created_at/updated_at 는 {@link BaseEntity}가 관리한다.</p>
+ * <p>threshold_days 는 배치에 따라 무의미할 수 있어 nullable (V33: NULL 또는 &gt; 0).</p>
  */
 @Entity
 @Table(
@@ -32,13 +33,16 @@ public class BatchJobConfig extends BaseEntity {
     @Column(nullable = false)
     private boolean enabled;
 
-    /** 실행 시각(hour). 0~23. V32 named CHECK(ck_batch_job_config_run_hour)와 일치. */
+    /** 실행 시각(hour). 0~23. named CHECK(ck_batch_job_config_run_hour)와 일치. */
     @Column(nullable = false)
     private short runHour;
 
-    /** 유예기간 일수. > 0. V32 named CHECK(ck_batch_job_config_threshold_days)와 일치. */
-    @Column(nullable = false)
-    private int thresholdDays;
+    /**
+     * 유예기간 일수. 배치에 따라 미사용(null) 가능.
+     * named CHECK(ck_batch_job_config_threshold_days): NULL OR &gt; 0.
+     */
+    @Column
+    private Integer thresholdDays;
 
     /** 마지막 수정 관리자. 최초 seed/시스템 생성은 null 가능. */
     @Column
@@ -48,7 +52,7 @@ public class BatchJobConfig extends BaseEntity {
             String batchName,
             boolean enabled,
             short runHour,
-            int thresholdDays,
+            Integer thresholdDays,
             UUID updatedBy
     ) {
         validateRunHour(runHour);
@@ -63,7 +67,7 @@ public class BatchJobConfig extends BaseEntity {
     }
 
     /** enabled / run_hour / threshold_days 를 수정한다. batch_name 은 변경하지 않는다. */
-    public void update(boolean enabled, short runHour, int thresholdDays, UUID updatedBy) {
+    public void update(boolean enabled, short runHour, Integer thresholdDays, UUID updatedBy) {
         validateRunHour(runHour);
         validateThresholdDays(thresholdDays);
         this.enabled = enabled;
@@ -78,9 +82,9 @@ public class BatchJobConfig extends BaseEntity {
         }
     }
 
-    private static void validateThresholdDays(int thresholdDays) {
-        if (thresholdDays <= 0) {
-            throw new IllegalArgumentException("thresholdDays must be greater than 0");
+    private static void validateThresholdDays(Integer thresholdDays) {
+        if (thresholdDays != null && thresholdDays <= 0) {
+            throw new IllegalArgumentException("thresholdDays must be null or greater than 0");
         }
     }
 
